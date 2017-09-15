@@ -12,6 +12,8 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, we
     N = len(tt)
     #quotes[:, 0] = np.arange(0, -N, -1)
 
+    datefwd = tt[0] - tt[1] > 0
+
     majors = []
     vlines = []
     olines = []
@@ -67,12 +69,26 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, we
     def format_date(x, pos = None):
         index = int(0.5 + x)
         if index < 0:
-            date = matplotlib.dates.num2date(quotes[0, 1] - index)
+            #print('Project to {} days from {}.'.format(-index, matplotlib.dates.num2date(quotes[0, 1]).strftime('%b %d')))
+            k = 0
+            t = quotes[0, 1]
+            while (k <= -index):
+                if datefwd:
+                    t = t + 1.0
+                else:
+                    t = t - 1.0
+                # date = matplotlib.dates.num2date(quotes[0, 1] + k)
+                weekday = matplotlib.dates.num2date(t).weekday()
+                # Only count Mon - Friday
+                if weekday > 0 and weekday < 6:
+                    k = k + 1
+                #print('k = {}  day {}'.format(k, weekday))
+            date = matplotlib.dates.num2date(t)
         elif index > N - 1:
             return ""
         else:
             date = matplotlib.dates.num2date(quotes[index, 1])
-        #print('x = {}   index = {} --> {} ({})'.format(x, int(0.5 - x), date.strftime('%b %d'), date.weekday()))
+        #print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
         return date.strftime('%b %d')
 
     if weekends:
@@ -115,8 +131,9 @@ def showChart(dat, sma_sizes = [10, 20, 50], weekends = False):
         sma[k] = np.pad(sma[k], (0, k - 1), mode = 'constant', constant_values = np.nan)
 
     nums = np.array([oo, ll, hh, cc])
-    ylim = [nums[:, :N].flatten().min(), nums[:, :N].flatten().max()]
+    ylim = [np.nanmin(nums[:, :N].flatten()), np.nanmax(nums[:, :N].flatten())]
 
+    # Main axis and volume axis
     ax = matplotlib.pyplot.axes(rect)
     axv = matplotlib.pyplot.axes(rect, facecolor = None, frameon = False, sharex = ax)
 
@@ -129,10 +146,21 @@ def showChart(dat, sma_sizes = [10, 20, 50], weekends = False):
             sma_line = matplotlib.lines.Line2D(ii[:N], sma[k][:N], label = 'SMA ' + str(k))
         lines.append(sma_line)
         ax.add_line(sma_line)
-        ylim[0] = min(ylim[0], np.nanmin(sma[k][:N]))
-        ylim[1] = max(ylim[1], np.nanmax(sma[k][:N]))
-    ylim[0] = math.floor(ylim[0] * 0.2) * 5.0
-    ylim[1] = math.ceil(ylim[1] * 0.2 + 1) * 5.0
+        if np.sum(np.isfinite(sma[k][:N])):
+            y = np.nanmin(sma[k][:N])
+            if y < ylim[0]:
+                ylim[0] = y
+            y = np.nanmax(sma[k][:N])
+            if y > ylim[1]:
+                ylim[1] = y
+
+    # Round toward nice numbers
+    if ylim[1] < 10:
+        ylim[0] = np.floor(ylim[0])
+        ylim[1] = np.ceil(ylim[1] * 2.0 + 1.0) * 0.5
+    else:
+        ylim[0] = np.floor(ylim[0] * 0.2) * 5.0
+        ylim[1] = np.ceil(ylim[1] * 0.2) * 5.0
 
     candlestick(ax, quotes[:N], volume_axis = axv, weekends = weekends)
 
@@ -163,15 +191,21 @@ def showChart(dat, sma_sizes = [10, 20, 50], weekends = False):
     ax.yaxis.tick_right()
 
     # Volume bars to have the mean at around 10% of the vertical space
-    blim = [0, math.ceil(np.array(vv).mean()) * 10]
-
+    v = np.nanmean(np.array(vv))
+    if v < 1.0:
+        blim = [0, math.ceil(v * 10.0)]
+    else:
+        blim = [0, math.ceil(v) * 10.0]
     axv.set_ylim(blim)
     yticks = axv.get_yticks()
     new_ticks = []
     new_labels = []
     for ii in range(1, math.ceil(len(yticks) / 3)):
         new_ticks.append(yticks[ii])
-        new_labels.append(str(math.floor(yticks[ii])) + 'M')
+        if yticks[1] < 1.0:
+            new_labels.append(str(math.floor(yticks[ii] * 100.0) * 10) + 'K')
+        else:
+            new_labels.append(str(math.floor(yticks[ii])) + 'M')
     axv.set_yticks(new_ticks)
     axv.set_yticklabels(new_labels)
     axv.xaxis.set_visible(False)
