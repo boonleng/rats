@@ -27,6 +27,12 @@ matplotlib.rcParams['figure.dpi'] = 108
 if not os.path.exists(figFolder):
     os.makedirs(figFolder)
 
+# End day is always today, then roll back the maximum SMA window, plus another week
+end = datetime.date.today()
+start = end - datetime.timedelta(days = (N + max(sma_sizes) + 7) * 7 / 5)
+session = requests_cache.CachedSession(cache_name = 'cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 1))
+stock = pandas_datareader.DataReader(symbols, "yahoo", start, end, session = session)
+
 def showChart(stock, sym):
     view = chart.showChart(stock[:, :, sym], sma_sizes = sma_sizes)
     view['title'] = view['axes'].set_title(sym)
@@ -38,21 +44,16 @@ def main(verbose = 0):
     num_cores = multiprocessing.cpu_count()
     print('Number of cores = {}'.format(num_cores))
 
-    # End day is always today, then roll back the maximum SMA window, plus another week
-    end = datetime.date.today()
-    start = end - datetime.timedelta(days = (N + max(sma_sizes) + 7) * 7 / 5)
 
     if args.verbose:
         print(start)
 
-    session = requests_cache.CachedSession(cache_name = 'cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 1))
-    stock = pandas_datareader.DataReader(symbols, "yahoo", start, end, session = session)
 
-    # results = joblib.Parallel(n_jobs = num_cores/2)(joblib.delayed(showChart)(stock, sym) for sym in symbols)
+    results = joblib.Parallel(n_jobs = num_cores/2)(joblib.delayed(showChart)(sym) for sym in symbols)
 
-    for sym in symbols:
-        print('Generating chart for {}'.format(sym))
-        showChart(stock, sym)
+    # for sym in symbols:
+    #     print('Generating chart for {}'.format(sym))
+    #     showChart(stock, sym)
 
 #
 #  M A I N
