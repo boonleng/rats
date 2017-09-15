@@ -1,0 +1,12 @@
+.DS_Store
+._*
+*.o
+*.xcuserstate
+project.xcworkspace/
+xcuserdata/
+*.mp4
+*.csv
+*.png
+.ipynb_checkpoints
+
+# Log files
