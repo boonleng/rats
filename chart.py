@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot
 
-def candlestick(ax, quotes, width = 0.4, linewidth = 1.0, volume_axis = None, weekends = False):
+def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, weekends = False):
     linewidth = 1.0
     offset = 0.5 * width;
     
@@ -27,6 +27,7 @@ def candlestick(ax, quotes, width = 0.4, linewidth = 1.0, volume_axis = None, we
                majors.append(i)
         if c >= o:
             color = 'k'
+            #color = '#33ff00'
         else:
             color = 'r'
         vline = matplotlib.lines.Line2D(xdata = (i, i), ydata = (l, h), color = color, linewidth = linewidth)
@@ -47,16 +48,17 @@ def candlestick(ax, quotes, width = 0.4, linewidth = 1.0, volume_axis = None, we
                 i, t, o, h, l, c, v = q[:7]
             if c >= o:
                 color = 'g'
+                # color = '#33ff00'
             else:
                 color = 'r'
-            vrect = matplotlib.patches.Rectangle(xy = (i - offset, 0.0),
+            vrect = matplotlib.patches.Rectangle(xy = (i - 0.5, 0.0),
                 fill = True,
-            	width = 2.5 * width,
+            	width = 1.0,
             	height = v,
             	facecolor = color,
             	edgecolor = 'k',
-            	linewidth = 0.5,
-            	alpha = 0.3)
+            	linewidth = 0.75,
+            	alpha = 0.33)
             vrects.append(vrect)
             volume_axis.add_patch(vrect)
 
@@ -134,7 +136,9 @@ def showChart(dat, sma_sizes = [10, 20, 50], weekends = False):
 
     # Backdrop
     # shades = ['#c9e6e3', '#ffe6a9', '#ebc3bc']
-    shades = ['#ffffbb', '#ffcccc', '#ccccff']
+    # shades = ['#ffffbb', '#ffcccc', '#ccccff']
+    shades = ['#ccccff', '#d8ccea', '#e5cce5', '#f8cccc', '#fbdecc', '#fff0bb', '#f0f0ee']
+    # shades = ['#000033', '#003366']
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list('sunset', shades)
     if weekends:
         extent = [tt[N], tt[0] + 10, ylim[0], ylim[1]]

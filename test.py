@@ -36,6 +36,7 @@ session = requests_cache.CachedSession(cache_name = 'cache', backend = 'sqlite',
 stock = pandas_datareader.DataReader(symbols, "yahoo", start, end, session = session)
 
 
+
 sym = 'AAPL'
 view = chart.showChart(stock[:, :, sym], sma_sizes = sma_sizes)
 view['title'] = view['axes'].set_title(sym)
