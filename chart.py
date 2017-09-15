@@ -80,9 +80,8 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, sk
                     t = t + 1.0
                 else:
                     t = t - 1.0
-                # date = matplotlib.dates.num2date(quotes[0, 1] + k)
                 weekday = matplotlib.dates.num2date(t).weekday()
-                # Only count Mon - Friday
+                # Only count Mon through Friday
                 if weekday > 0 and weekday < 6:
                     k = k + 1
                 #print('k = {}  day {}'.format(k, weekday))
@@ -107,6 +106,12 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, sk
         ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
 
 def showChart(dat, sma_sizes = [10, 20, 50], skip_weekends = True):
+    """
+        showChart(dat, sma_size = [10, 20, 50], skip_weekends = True):)
+        - dat - Data frame from pandas-datareader
+        - sma_sizes - Window sizes for SMA (sliding moving average)
+        - skip_weekends - Skip plotting weekends and days with no data
+    """
     fig = matplotlib.pyplot.figure()
     fig.patch.set_alpha(0.0)
     rect = [0.075, 0.12, 0.83, 0.78]
