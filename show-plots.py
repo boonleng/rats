@@ -15,7 +15,7 @@ N = 100;                      # Look at stock prices for the last N days
 figFolder = 'figs'            # Default folder to save figures
 sma_sizes = [10, 50, 100]     # SMA window sizes
 
-symbols = ["AAPL", "TSLA", "NVDA", "BIDU", "AMZN", "BABA", "NFLX", "MSFT"]
+symbols = ["AAPL", "TSLA", "NVDA", "BIDU", "BABA"]
 
 # Some default plotting attributes
 matplotlib.rcParams['font.family'] = 'serif'
@@ -45,7 +45,7 @@ def main(verbose = 0):
     if args.verbose:
         print(start)
 
-    session = requests_cache.CachedSession(cache_name = 'cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 3))
+    session = requests_cache.CachedSession(cache_name = 'cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 1))
     stock = pandas_datareader.DataReader(symbols, "yahoo", start, end, session = session)
 
     # results = joblib.Parallel(n_jobs = num_cores/2)(joblib.delayed(showChart)(stock, sym) for sym in symbols)

@@ -3,16 +3,19 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot
 
-def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, weekends = False):
+def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, skip_weekends = True):
     linewidth = 1.0
-    offset = 0.5 * width;
     
     # Original dates
     tt = list(quotes[:, 1])
     N = len(tt)
     #quotes[:, 0] = np.arange(0, -N, -1)
 
-    datefwd = tt[0] - tt[1] > 0
+    daterev = tt[0] - tt[1] > 0
+    if daterev:
+        offset = -0.5 * width;
+    else:
+        offset = 0.5 * width;
 
     majors = []
     vlines = []
@@ -20,13 +23,13 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, we
     clines = []
     vrects = []
     for q in quotes:
-        if weekends:
-            k, i, o, h, l, c = q[:6]
-        else:
+        if skip_weekends:
             i, t, o, h, l, c = q[:6]
             # Gather the indices of weeday == 1 ()
             if matplotlib.dates.num2date(t).weekday() == 1:
                majors.append(i)
+        else:
+            k, i, o, h, l, c = q[:6]
         if c >= o:
             color = 'k'
             #color = '#33ff00'
@@ -44,10 +47,10 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, we
 
     if volume_axis != None:
         for q in quotes:
-            if weekends:
-                k, i, o, h, l, c, v = q[:7]
-            else:
+            if skip_weekends:
                 i, t, o, h, l, c, v = q[:7]
+            else:
+                k, i, o, h, l, c, v = q[:7]
             if c >= o:
                 color = 'g'
                 # color = '#33ff00'
@@ -73,7 +76,7 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, we
             k = 0
             t = quotes[0, 1]
             while (k <= -index):
-                if datefwd:
+                if daterev:
                     t = t + 1.0
                 else:
                     t = t - 1.0
@@ -91,19 +94,19 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, we
         #print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
         return date.strftime('%b %d')
 
-    if weekends:
+    if skip_weekends:
+        ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
+        ax.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(1.0))
+        # ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
+        ax.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(base = 5.0, offset = majors[0]))  # Use the latest Monday
+    else:
         mondays = matplotlib.dates.WeekdayLocator(matplotlib.dates.MONDAY)      # major ticks on the mondays
         alldays = matplotlib.dates.DayLocator()                                 # minor ticks on the days
         ax.xaxis.set_major_locator(mondays)
         ax.xaxis.set_minor_locator(alldays)
         ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
-    else:
-        ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
-        ax.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(1.0))
-        # ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
-        ax.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(base = 5.0, offset = majors[0]))  # Use the latest Monday
 
-def showChart(dat, sma_sizes = [10, 20, 50], weekends = False):
+def showChart(dat, sma_sizes = [10, 20, 50], skip_weekends = True):
     fig = matplotlib.pyplot.figure()
     fig.patch.set_alpha(0.0)
     rect = [0.075, 0.12, 0.83, 0.78]
@@ -139,11 +142,11 @@ def showChart(dat, sma_sizes = [10, 20, 50], weekends = False):
 
     lines = []
     for k in sma.keys():
-        if weekends:
-            sma_line = matplotlib.lines.Line2D(tt[:N], sma[k][:N], label = 'SMA ' + str(k))
-        else:
+        if skip_weekends:
             # Plot the lines in indices; will replace the tics with custom label later
             sma_line = matplotlib.lines.Line2D(ii[:N], sma[k][:N], label = 'SMA ' + str(k))
+        else:
+            sma_line = matplotlib.lines.Line2D(tt[:N], sma[k][:N], label = 'SMA ' + str(k))
         lines.append(sma_line)
         ax.add_line(sma_line)
         if np.sum(np.isfinite(sma[k][:N])):
@@ -162,7 +165,7 @@ def showChart(dat, sma_sizes = [10, 20, 50], weekends = False):
         ylim[0] = np.floor(ylim[0] * 0.2) * 5.0
         ylim[1] = np.ceil(ylim[1] * 0.2) * 5.0
 
-    candlestick(ax, quotes[:N], volume_axis = axv, weekends = weekends)
+    candlestick(ax, quotes[:N], volume_axis = axv, skip_weekends = skip_weekends)
 
     # Backdrop
     # shades = ['#c9e6e3', '#ffe6a9', '#ebc3bc']
@@ -170,10 +173,10 @@ def showChart(dat, sma_sizes = [10, 20, 50], weekends = False):
     shades = ['#ccccff', '#d8ccea', '#e5cce5', '#f8cccc', '#fbdecc', '#fff0bb', '#f0f0ee']
     # shades = ['#000033', '#003366']
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list('sunset', shades)
-    if weekends:
-        extent = [tt[N], tt[0] + 10, ylim[0], ylim[1]]
-    else:
+    if skip_weekends:
         extent = [N, -10, ylim[0], ylim[1]]
+    else:
+        extent = [tt[N], tt[0] + 10, ylim[0], ylim[1]]
     ax.imshow(np.linspace(0, 1, 100).reshape(-1, 1),
                extent = extent,
                aspect = 'auto',
