@@ -66,7 +66,9 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, we
 
     def format_date(x, pos = None):
         index = int(0.5 + x)
-        if index < 0 or index > N - 1:
+        if index < 0:
+            date = matplotlib.dates.num2date(quotes[0, 1] - index)
+        elif index > N - 1:
             return ""
         else:
             date = matplotlib.dates.num2date(quotes[index, 1])
