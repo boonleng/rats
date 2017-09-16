@@ -1,14 +1,42 @@
 def sunset():
-	scheme = type('sunset', (), {})()
-	scheme.backdrop = ['#ccccff', '#d8ccea', '#e5cce5', '#f8cccc', '#fbdecc', '#fff0bb', '#f0f0ee']
-	scheme.line = ['#1155ff', '#ee8822', '#559900']
-	return scheme
+	return colorscheme('sunset')
+
+def sunrise():
+	return colorscheme('sunrise')
 
 def plain():
-	scheme = type('sunset', (), {})()
-	scheme.backdrop = ['#ffff']
-	scheme.line = ['#1155ff', '#ee8822', '#559900']
-	return scheme
+	return colorscheme('plain')
 
 def default():
-	return sunset()
+	return colorscheme('sunset')
+
+# shades = ['#c9e6e3', '#ffe6a9', '#ebc3bc']
+# shades = ['#ffffbb', '#ffcccc', '#ccccff']
+# shades = ['#ccccff', '#d8ccea', '#e5cce5', '#f8cccc', '#fbdecc', '#fff0bb', '#f0f0ee']
+# shades = 
+
+def colorscheme(name = 'sunset'):
+	# Initialize an empty object
+	scheme = type('colorscheme', (), {})()
+	scheme.line = ['#0055ff', '#ee8800', '#559900', '#990000']
+	scheme.up = 'k'
+	scheme.down = 'r'
+	scheme.grid = '#b0b0b0'
+	scheme.text = 'k'
+	scheme.background = 'w'
+    # Backdrop
+	if name is 'sunset':
+		scheme.backdrop = ['#ccccff', '#d8ccea', '#e5cce5', '#f8cccc', '#fbdecc', '#fff0bb', '#f0f0ee']
+	elif name is 'sunrise':
+		scheme.backdrop = ['#c9e6e3', '#ffe6a9', '#ebc3bc']
+	elif name is 'plain':
+		scheme.backdrop = ['#ffffff']
+	elif name is 'night':
+		scheme.backdrop = ['#000033', '#003366']
+		scheme.text = ['#ffffff']
+		scheme.up = '#33ff00'
+		scheme.down = '#ff3300'
+		scheme.grid = '#0066dd'
+		scheme.text = 'w'
+		scheme.background = 'k'
+	return scheme

@@ -4,6 +4,9 @@ import matplotlib
 import matplotlib.pyplot
 import colorscheme
 
+colormap = colorscheme.sunrise()
+# colormap = colorscheme.colorscheme('night')
+
 def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, skip_weekends = True):
     linewidth = 1.0
     
@@ -32,10 +35,9 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, sk
         else:
             k, i, o, h, l, c = q[:6]
         if c >= o:
-            color = 'k'
-            #color = '#33ff00'
+            color = colormap.up
         else:
-            color = 'r'
+            color = colormap.down
         vline = matplotlib.lines.Line2D(xdata = (i, i), ydata = (l, h), color = color, linewidth = linewidth)
         oline = matplotlib.lines.Line2D(xdata = (i - offset, i), ydata = (o, o), color = color, linewidth = linewidth)
         cline = matplotlib.lines.Line2D(xdata = (i + offset, i), ydata = (c, c), color = color, linewidth = linewidth)
@@ -53,10 +55,9 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, sk
             else:
                 k, i, o, h, l, c, v = q[:7]
             if c >= o:
-                color = 'g'
-                # color = '#33ff00'
+                color = colormap.up
             else:
-                color = 'r'
+                color = colormap.down
             vrect = matplotlib.patches.Rectangle(xy = (i - 0.5, 0.0),
                 fill = True,
             	width = 1.0,
@@ -173,13 +174,6 @@ def showChart(dat, sma_sizes = [10, 20, 50], skip_weekends = True):
 
     candlestick(ax, quotes[:N], volume_axis = axv, skip_weekends = skip_weekends)
 
-    colormap = colorscheme.sunset()
-    # Backdrop
-    # shades = ['#c9e6e3', '#ffe6a9', '#ebc3bc']
-    # shades = ['#ffffbb', '#ffcccc', '#ccccff']
-    # shades = ['#ccccff', '#d8ccea', '#e5cce5', '#f8cccc', '#fbdecc', '#fff0bb', '#f0f0ee']
-    # shades = ['#000033', '#003366']
-
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', colormap.backdrop)
     if skip_weekends:
         extent = [N, -10, ylim[0], ylim[1]]
@@ -196,10 +190,22 @@ def showChart(dat, sma_sizes = [10, 20, 50], skip_weekends = True):
     lines[1].set_color(colormap.line[1])
     lines[2].set_color(colormap.line[2])
 
-    ax.legend(handles = lines, loc = 2)
-    ax.grid(linestyle=':')
+    lge = ax.legend(handles = lines, loc = 'best', facecolor = colormap.background, framealpha = 0.9)
+    for text in lge.get_texts():
+        text.set_color(colormap.text)
+    ax.grid(color = colormap.grid, linestyle=':')
     ax.set_ylim(ylim)
     ax.yaxis.tick_right()
+    ax.spines['top'].set_color(colormap.text)
+    ax.spines['bottom'].set_color(colormap.text)
+    ax.spines['left'].set_color(colormap.text)
+    ax.spines['right'].set_color(colormap.text)
+    ax.tick_params(axis = 'x', which = 'both', colors = colormap.text)
+    ax.tick_params(axis = 'y', which = 'both', colors = colormap.text)
+    axv.tick_params(axis = 'x', which = 'both', colors = colormap.text)
+    axv.tick_params(axis = 'y', which = 'both', colors = colormap.text)
+
+    ax.set_title('', color = colormap.text)
 
     # Volume bars to have the mean at around 10% of the vertical space
     v = np.nanmean(np.array(vv))

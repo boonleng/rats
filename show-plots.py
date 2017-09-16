@@ -7,8 +7,8 @@ import matplotlib.pyplot
 import pandas_datareader
 import requests_cache
 import chart
-import joblib
-import multiprocessing
+# import joblib
+# import multiprocessing
 
 # Some global variables
 N = 100;                      # Look at stock prices for the last N days
@@ -31,7 +31,7 @@ if not os.path.exists(figFolder):
 end = datetime.date.today()
 start = end - datetime.timedelta(days = (N + max(sma_sizes) + 7) * 7 / 5)
 session = requests_cache.CachedSession(cache_name = 'cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 1))
-stock = pandas_datareader.DataReader(symbols, "yahoo", start, end, session = session)
+stock = pandas_datareader.DataReader(symbols, 'yahoo', start, end, session = session)
 
 def showChart(stock, sym):
     view = chart.showChart(stock[:, :, sym], sma_sizes = sma_sizes)
@@ -41,24 +41,22 @@ def showChart(stock, sym):
 def main(verbose = 0):
     max(sma_sizes)
 
-    num_cores = multiprocessing.cpu_count()
-    print('Number of cores = {}'.format(num_cores))
-
+    # num_cores = multiprocessing.cpu_count()
+    # print('Number of cores = {}'.format(num_cores))
 
     if args.verbose:
         print(start)
 
-
     # results = joblib.Parallel(n_jobs = num_cores/2)(joblib.delayed(showChart)(sym) for sym in symbols)
 
-    for sym in symbols:
+    for sym in ['AAPL']:
         print('Generating chart for {}'.format(sym))
         showChart(stock, sym)
 
 #
 #  M A I N
 #
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog = "main")
     parser.add_argument('-v', '--verbose', default = 0, action = 'count', help = 'increases verbosity level')
     args = parser.parse_args()
