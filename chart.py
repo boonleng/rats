@@ -29,8 +29,8 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, sk
     for q in quotes:
         if skip_weekends:
             i, t, o, h, l, c = q[:6]
-            # Gather the indices of weeday == 1 ()
-            if matplotlib.dates.num2date(t).weekday() == 1:
+            # Gather the indices of weeday == Monday
+            if matplotlib.dates.num2date(t).weekday() == 0:
                majors.append(i)
         else:
             k, i, o, h, l, c = q[:6]
@@ -55,15 +55,15 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, sk
             else:
                 k, i, o, h, l, c, v = q[:7]
             if c >= o:
-                color = colormap.up
+                color = colormap.bar_up
             else:
-                color = colormap.down
+                color = colormap.bar_down
             vrect = matplotlib.patches.Rectangle(xy = (i - 0.5, 0.0),
                 fill = True,
             	width = 1.0,
             	height = v,
             	facecolor = color,
-            	edgecolor = 'k',
+            	edgecolor = colormap.text,
             	linewidth = 0.75,
             	alpha = 0.33)
             vrects.append(vrect)
@@ -72,8 +72,8 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, sk
     ax.autoscale_view()
 
     def format_date(x, pos = None):
-        index = int(0.5 + x)
-        if index < 0:
+        index = int(x)
+        if x < 0:
             #print('Project to {} days from {}.'.format(-index, matplotlib.dates.num2date(quotes[0, 1]).strftime('%b %d')))
             k = 0
             t = quotes[0, 1]
@@ -84,22 +84,23 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, sk
                     t = t - 1.0
                 weekday = matplotlib.dates.num2date(t).weekday()
                 # Only count Mon through Friday
-                if weekday > 0 and weekday < 6:
+                if weekday >= 0 and weekday <= 4:
                     k = k + 1
-                #print('k = {}  day {}'.format(k, weekday))
+                #print('index = {}   weekday {}   k = {}'.format(index, weekday, k))
             date = matplotlib.dates.num2date(t)
+            #print('date -> {}'.format(date))
         elif index > N - 1:
-            return ""
+            return ''
         else:
             date = matplotlib.dates.num2date(quotes[index, 1])
-        #print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
+        print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
         return date.strftime('%b %d')
 
     if skip_weekends:
         ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
         ax.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(1.0))
-        # ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
-        ax.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(base = 5.0, offset = majors[0]))  # Use the latest Monday
+        ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
+        # ax.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(base = 5.0, offset = majors[0]))  # Use the latest Monday
     else:
         mondays = matplotlib.dates.WeekdayLocator(matplotlib.dates.MONDAY)      # major ticks on the mondays
         alldays = matplotlib.dates.DayLocator()                                 # minor ticks on the days
