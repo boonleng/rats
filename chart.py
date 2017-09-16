@@ -2,6 +2,7 @@ import math
 import numpy as np
 import matplotlib
 import matplotlib.pyplot
+import colorscheme
 
 def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, skip_weekends = True):
     linewidth = 1.0
@@ -172,12 +173,14 @@ def showChart(dat, sma_sizes = [10, 20, 50], skip_weekends = True):
 
     candlestick(ax, quotes[:N], volume_axis = axv, skip_weekends = skip_weekends)
 
+    colormap = colorscheme.sunset()
     # Backdrop
     # shades = ['#c9e6e3', '#ffe6a9', '#ebc3bc']
     # shades = ['#ffffbb', '#ffcccc', '#ccccff']
-    shades = ['#ccccff', '#d8ccea', '#e5cce5', '#f8cccc', '#fbdecc', '#fff0bb', '#f0f0ee']
+    # shades = ['#ccccff', '#d8ccea', '#e5cce5', '#f8cccc', '#fbdecc', '#fff0bb', '#f0f0ee']
     # shades = ['#000033', '#003366']
-    cmap = matplotlib.colors.LinearSegmentedColormap.from_list('sunset', shades)
+
+    cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', colormap.backdrop)
     if skip_weekends:
         extent = [N, -10, ylim[0], ylim[1]]
     else:
@@ -189,9 +192,9 @@ def showChart(dat, sma_sizes = [10, 20, 50], skip_weekends = True):
 
     matplotlib.pyplot.setp(ax.get_xticklabels(), rotation = 45, horizontalalignment = 'right')
 
-    lines[0].set_color('#1155ff')
-    lines[1].set_color('#ee8822')
-    lines[2].set_color('#559900')
+    lines[0].set_color(colormap.line[0])
+    lines[1].set_color(colormap.line[1])
+    lines[2].set_color(colormap.line[2])
 
     ax.legend(handles = lines, loc = 2)
     ax.grid(linestyle=':')

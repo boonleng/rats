@@ -21,7 +21,7 @@ symbols = ["AAPL", "TSLA", "NVDA", "BIDU", "BABA"]
 matplotlib.rcParams['font.family'] = 'serif'
 matplotlib.rcParams['font.serif'] = ['Arial']
 matplotlib.rcParams['font.sans-serif'] = ['System Font', 'Verdana', 'Arial']
-matplotlib.rcParams['figure.figsize'] = (7, 4)   # Change the size of plots
+matplotlib.rcParams['figure.figsize'] = (8, 4)   # Change the size of plots
 matplotlib.rcParams['figure.dpi'] = 108
 
 if not os.path.exists(figFolder):
@@ -49,11 +49,11 @@ def main(verbose = 0):
         print(start)
 
 
-    results = joblib.Parallel(n_jobs = num_cores/2)(joblib.delayed(showChart)(sym) for sym in symbols)
+    # results = joblib.Parallel(n_jobs = num_cores/2)(joblib.delayed(showChart)(sym) for sym in symbols)
 
-    # for sym in symbols:
-    #     print('Generating chart for {}'.format(sym))
-    #     showChart(stock, sym)
+    for sym in symbols:
+        print('Generating chart for {}'.format(sym))
+        showChart(stock, sym)
 
 #
 #  M A I N
