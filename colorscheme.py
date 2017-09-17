@@ -21,16 +21,18 @@ def colorscheme(name = 'sunset'):
 	scheme.grid = '#b0b0b0'
 	scheme.text = 'k'
 	scheme.background = 'w'
+	name = name.lower()
     # Backdrop
-	if name is 'sunset':
+	if name == 'sunset':
 		scheme.backdrop = ['#c9e6e3', '#ffe6a9', '#ebc3bc']
-	elif name is 'sunrise2':
+	elif name == 'sunrise2':
+		print('here')
 		scheme.backdrop = ['#ffffbb', '#ffcccc', '#ccccff']
-	elif name is 'sunrise':
+	elif name == 'sunrise':
 		scheme.backdrop = ['#ccccff', '#d8ccea', '#e5cce5', '#f8cccc', '#fbdecc', '#fff0bb', '#f0f0ee']
-	elif name is 'plain':
+	elif name == 'plain':
 		scheme.backdrop = ['#ffffff']
-	elif name is 'night':
+	elif name == 'night':
 		scheme.backdrop = ['#000033', '#003366']
 		scheme.text = ['#ffffff']
 		scheme.up = '#33ff00'
@@ -40,4 +42,6 @@ def colorscheme(name = 'sunset'):
 		scheme.grid = '#0066dd'
 		scheme.text = 'w'
 		scheme.background = 'k'
+	else:
+		scheme.backdrop = ['#ffffff', '#ffffff']
 	return scheme

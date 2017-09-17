@@ -25,29 +25,29 @@ matplotlib.rcParams['figure.dpi'] = 108
 if not os.path.exists(figFolder):
     os.makedirs(figFolder)
 
-def showChart(stock, symbol):
-    view = chart.showChart(stock[:, :, symbol], sma_sizes = sma_sizes)
+def showChart(stock, symbol, color_scheme = 'sunrise'):
+    view = chart.showChart(stock[:, :, symbol], sma_sizes = sma_sizes, color_scheme = color_scheme)
     view['title'] = view['axes'].set_title(symbol)
     view['figure'].savefig(figFolder + '/' + symbol.lower() + '.png')
 
-def main(symbols, verbose = 0):
+def main(args):
     max(sma_sizes)
 
     # num_cores = multiprocessing.cpu_count()
     # print('Number of cores = {}'.format(num_cores))
 
-    if verbose:
+    if args.verbose:
         print('Retrieving data for {} ...'.format(symbols))
     # End day is always today, then roll back the maximum SMA window, plus another week
     end = datetime.date.today()
     start = end - datetime.timedelta(days = (N + max(sma_sizes) + 7) * 7 / 5)
     session = requests_cache.CachedSession(cache_name = 'cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 1))
-    stock = pandas_datareader.DataReader(symbols, 'yahoo', start, end, session = session)
+    stock = pandas_datareader.DataReader(args.symbols, 'yahoo', start, end, session = session)
 
-    for symbol in symbols:
-        if verbose:
+    for symbol in args.symbols:
+        if args.verbose:
             print('Generating chart for {}'.format(symbol))
-        showChart(stock, symbol)
+        showChart(stock, symbol, color_scheme = args.color_scheme)
 
     # results = joblib.Parallel(n_jobs = num_cores/2)(joblib.delayed(showChart)(sym) for sym in symbols)
 
@@ -58,12 +58,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog = "main")
     parser.add_argument('-v', '--verbose', default = 0, action = 'count', help = 'increases verbosity level')
     parser.add_argument('-s', '--symbols', default = ['AAPL'], nargs = '+', help = 'specify symbols, e.g., -s AAPL NVDA TSLA')
+    parser.add_argument('-c', '--color-scheme', default = 'sunrise', help = 'specify color scheme to use.')
     args = parser.parse_args()
 
     # print('Version {}'.format(sys.version_info))
 
     # print('symbols = {}'.format(args.symbols))
     try:
-        main(symbols = args.symbols, verbose = args.verbose)
+        main(args)
     except KeyboardInterrupt:
         print('Exiting ...')

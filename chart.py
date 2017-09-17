@@ -4,12 +4,7 @@ import matplotlib
 import matplotlib.pyplot
 import colorscheme
 
-# colormap = colorscheme.sunrise()
-colormap = colorscheme.colorscheme('night')
-# colormap = colorscheme.colorscheme('sunset')
-# colormap = colorscheme.colorscheme('sunriseflip')
-
-def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, skip_weekends = True):
+def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, skip_weekends = True, colormap = colorscheme.colorscheme('sunrise')):
     linewidth = 1.0
     
     # Original dates
@@ -110,7 +105,7 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, sk
         ax.xaxis.set_minor_locator(alldays)
         ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
 
-def showChart(dat, sma_sizes = [10, 20, 50], skip_weekends = True):
+def showChart(dat, sma_sizes = [10, 20, 50], skip_weekends = True, color_scheme = 'sunrise'):
     """
         showChart(dat, sma_size = [10, 20, 50], skip_weekends = True):)
         - dat - Data frame from pandas-datareader
@@ -121,6 +116,8 @@ def showChart(dat, sma_sizes = [10, 20, 50], skip_weekends = True):
     fig.patch.set_alpha(0.0)
     rect = [0.075, 0.12, 0.83, 0.78]
     rect = [round(x * 72.0) / 72.0 + 0.5 / 72.0 for x in rect]
+
+    colormap = colorscheme.colorscheme(color_scheme)
 
     ii = list(range(len(dat)))
     tt = list(matplotlib.dates.date2num(dat.index.tolist()))
@@ -175,8 +172,9 @@ def showChart(dat, sma_sizes = [10, 20, 50], skip_weekends = True):
         ylim[0] = np.floor(ylim[0] * 0.2) * 5.0
         ylim[1] = np.ceil(ylim[1] * 0.2) * 5.0
 
-    candlestick(ax, quotes[:N], volume_axis = axv, skip_weekends = skip_weekends)
+    candlestick(ax, quotes[:N], volume_axis = axv, skip_weekends = skip_weekends, colormap = colormap)
 
+    # Backdrop gradient
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', colormap.backdrop)
     if skip_weekends:
         extent = [N, -10, ylim[0], ylim[1]]
