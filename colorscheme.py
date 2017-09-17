@@ -33,13 +33,13 @@ def colorscheme(name = 'sunset'):
 	elif name == 'plain':
 		scheme.backdrop = ['#ffffff']
 	elif name == 'night':
-		scheme.backdrop = ['#000033', '#003366']
+		scheme.backdrop = ['#000033', '#0a3355']
 		scheme.text = ['#ffffff']
 		scheme.up = '#33ff00'
 		scheme.down = '#ff3300'
 		scheme.bar_up = '#33ff00'
 		scheme.down_up = '#ff3300'
-		scheme.grid = '#0066dd'
+		scheme.grid = '#3355cc'
 		scheme.text = 'w'
 		scheme.background = 'k'
 	else:

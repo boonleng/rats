@@ -1,4 +1,3 @@
-import math
 import numpy as np
 import matplotlib
 import matplotlib.pyplot
@@ -6,17 +5,7 @@ import colorscheme
 
 def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, skip_weekends = True, colormap = colorscheme.colorscheme('sunrise')):
     linewidth = 1.0
-    
-    # Original dates
-    tt = list(quotes[:, 1])
-    N = len(tt)
-    #quotes[:, 0] = np.arange(0, -N, -1)
-
-    daterev = tt[0] - tt[1] > 0
-    if daterev:
-        offset = -0.5 * width;
-    else:
-        offset = 0.5 * width;
+    offset = 0.7 * width;
 
     majors = []
     vlines = []
@@ -36,8 +25,8 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, sk
         else:
             color = colormap.down
         vline = matplotlib.lines.Line2D(xdata = (i, i), ydata = (l, h), color = color, linewidth = linewidth)
-        oline = matplotlib.lines.Line2D(xdata = (i - offset, i), ydata = (o, o), color = color, linewidth = linewidth)
-        cline = matplotlib.lines.Line2D(xdata = (i + offset, i), ydata = (c, c), color = color, linewidth = linewidth)
+        oline = matplotlib.lines.Line2D(xdata = (i + offset, i), ydata = (o, o), color = color, linewidth = linewidth)
+        cline = matplotlib.lines.Line2D(xdata = (i - offset, i), ydata = (c, c), color = color, linewidth = linewidth)
         vlines.append(vline)
         olines.append(oline)
         clines.append(cline)
@@ -66,7 +55,7 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, sk
             vrects.append(vrect)
             volume_axis.add_patch(vrect)
 
-    ax.autoscale_view()
+    N = len(quotes)
 
     def format_date(x, pos = None):
         index = int(x)
@@ -75,10 +64,7 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, sk
             k = 0
             t = quotes[0, 1]
             while (k <= -index):
-                if daterev:
-                    t = t + 1.0
-                else:
-                    t = t - 1.0
+                t = t - 1.0
                 weekday = matplotlib.dates.num2date(t).weekday()
                 # Only count Mon through Friday
                 if weekday >= 0 and weekday <= 4:
@@ -105,7 +91,7 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, sk
         ax.xaxis.set_minor_locator(alldays)
         ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
 
-def showChart(dat, sma_sizes = [10, 20, 50], skip_weekends = True, color_scheme = 'sunrise'):
+def showChart(dat, sma_sizes = [10, 50, 100], skip_weekends = True, color_scheme = 'sunrise'):
     """
         showChart(dat, sma_size = [10, 20, 50], skip_weekends = True):)
         - dat - Data frame from pandas-datareader
@@ -128,6 +114,11 @@ def showChart(dat, sma_sizes = [10, 20, 50], skip_weekends = True, color_scheme 
     vv = np.multiply(dat.loc[:, "Volume"], 1.0e-6).tolist()
     quotes = np.transpose([ii, tt, oo, hh, ll, cc, vv])
 
+    # Sort the data  (colums 1 ... 6) so that it is newest first
+    if tt[1] > tt[0]:
+        # print('Resorting ... {}  {}'.format(quotes.shape, sma_sizes))
+        quotes[:, 1:8] = quotes[::-1, 1:8]
+
     # Initialize an empty dictionary from keys based on sma size
     sma = dict.fromkeys(sma_sizes)
     n = 0
@@ -136,12 +127,14 @@ def showChart(dat, sma_sizes = [10, 20, 50], skip_weekends = True, color_scheme 
 
     # Prepare the SMA curves
     N = len(dat) - n - 1
+    # print('N = {} - {} - 1 = {}'.format(len(dat), n, N))
     for k in sma.keys():
-        sma[k] = np.convolve(cc, np.ones((k, )) / k, mode = 'valid')
+        sma[k] = np.convolve(quotes[:, 5], np.ones((k, )) / k, mode = 'valid')
         sma[k] = np.pad(sma[k], (0, k - 1), mode = 'constant', constant_values = np.nan)
 
-    nums = np.array([oo, ll, hh, cc])
-    ylim = [np.nanmin(nums[:, :N].flatten()), np.nanmax(nums[:, :N].flatten())]
+    # Find the span of colums 2 to 5 (OHLC)
+    nums = np.array(quotes[:N, 2:6]).flatten()
+    ylim = [np.nanmin(nums), np.nanmax(nums)]
 
     # Main axis and volume axis
     ax = matplotlib.pyplot.axes(rect)
@@ -151,9 +144,9 @@ def showChart(dat, sma_sizes = [10, 20, 50], skip_weekends = True, color_scheme 
     for k in sma.keys():
         if skip_weekends:
             # Plot the lines in indices; will replace the tics with custom label later
-            sma_line = matplotlib.lines.Line2D(ii[:N], sma[k][:N], label = 'SMA ' + str(k))
+            sma_line = matplotlib.lines.Line2D(quotes[:N, 0], sma[k][:N], label = 'SMA ' + str(k))
         else:
-            sma_line = matplotlib.lines.Line2D(tt[:N], sma[k][:N], label = 'SMA ' + str(k))
+            sma_line = matplotlib.lines.Line2D(quotes[:N, 1], sma[k][:N], label = 'SMA ' + str(k))
         lines.append(sma_line)
         ax.add_line(sma_line)
         if np.sum(np.isfinite(sma[k][:N])):
@@ -180,10 +173,7 @@ def showChart(dat, sma_sizes = [10, 20, 50], skip_weekends = True, color_scheme 
         extent = [N, -10, ylim[0], ylim[1]]
     else:
         extent = [tt[N], tt[0] + 10, ylim[0], ylim[1]]
-    ax.imshow(np.linspace(0, 1, 100).reshape(-1, 1),
-               extent = extent,
-               aspect = 'auto',
-               cmap = cmap)
+    ax.imshow(np.linspace(0, 1, 100).reshape(-1, 1), extent = extent, aspect = 'auto', cmap = cmap)
 
     matplotlib.pyplot.setp(ax.get_xticklabels(), rotation = 45, horizontalalignment = 'right')
 
@@ -211,19 +201,19 @@ def showChart(dat, sma_sizes = [10, 20, 50], skip_weekends = True, color_scheme 
     # Volume bars to have the mean at around 10% of the vertical space
     v = np.nanmean(np.array(vv))
     if v < 1.0:
-        blim = [0, math.ceil(v * 10.0)]
+        blim = [0, np.ceil(v * 10.0)]
     else:
-        blim = [0, math.ceil(v) * 10.0]
+        blim = [0, np.ceil(v) * 10.0]
     axv.set_ylim(blim)
     yticks = axv.get_yticks()
     new_ticks = []
     new_labels = []
-    for ii in range(1, math.ceil(len(yticks) / 3)):
+    for ii in range(1, int(len(yticks) / 3 + 1)):
         new_ticks.append(yticks[ii])
         if yticks[1] < 1.0:
-            new_labels.append(str(math.floor(yticks[ii] * 100.0) * 10) + 'K')
+            new_labels.append(str(int(yticks[ii] * 100.0) * 10) + 'K')
         else:
-            new_labels.append(str(math.floor(yticks[ii])) + 'M')
+            new_labels.append(str(int(yticks[ii])) + 'M')
     axv.set_yticks(new_ticks)
     axv.set_yticklabels(new_labels)
     axv.xaxis.set_visible(False)

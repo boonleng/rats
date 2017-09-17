@@ -7,13 +7,13 @@ import matplotlib.pyplot
 import pandas_datareader
 import requests_cache
 import chart
-# import joblib
-# import multiprocessing
+
+import joblib
+import multiprocessing
 
 # Some global variables
 N = 100;                      # Look at stock prices for the last N days
 figFolder = 'figs'            # Default folder to save figures
-sma_sizes = [10, 50, 100]     # SMA window sizes
 
 # Some default plotting attributes
 matplotlib.rcParams['font.family'] = 'serif'
@@ -25,31 +25,39 @@ matplotlib.rcParams['figure.dpi'] = 108
 if not os.path.exists(figFolder):
     os.makedirs(figFolder)
 
-def showChart(stock, symbol, color_scheme = 'sunrise'):
-    view = chart.showChart(stock[:, :, symbol], sma_sizes = sma_sizes, color_scheme = color_scheme)
+def showChart(symbol, stock, color_scheme = 'sunrise'):
+    view = chart.showChart(stock[:, :, symbol], color_scheme = color_scheme)
+    # view = chart.showChart(stock.iloc[:, :, i], color_scheme = color_scheme)
     view['title'] = view['axes'].set_title(symbol)
     view['figure'].savefig(figFolder + '/' + symbol.lower() + '.png')
+    #matplotlib.pyplot.close(view['figure'])
+    return view
 
 def main(args):
-    max(sma_sizes)
-
-    # num_cores = multiprocessing.cpu_count()
-    # print('Number of cores = {}'.format(num_cores))
-
+    days = N + 100;
     if args.verbose:
-        print('Retrieving data for {} ...'.format(symbols))
+        print('Retrieving data for {} for {} days ...'.format(args.symbols, days))
     # End day is always today, then roll back the maximum SMA window, plus another week
     end = datetime.date.today()
-    start = end - datetime.timedelta(days = (N + max(sma_sizes) + 7) * 7 / 5)
+    start = end - datetime.timedelta(days = days)
     session = requests_cache.CachedSession(cache_name = 'cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 1))
-    stock = pandas_datareader.DataReader(args.symbols, 'yahoo', start, end, session = session)
+    stock = pandas_datareader.DataReader(args.symbols, 'google', start, end, session = session)
+    # Google reports at least 250 days, truncate to desired length
+    if stock.shape[1] > days:
+        if args.verbose > 1:
+            print('Truncating data from {} to {} ...'.format(stock.shape[1], days))
+        stock = stock.iloc[:, -days:, :]
 
     for symbol in args.symbols:
         if args.verbose:
             print('Generating chart for {}'.format(symbol))
-        showChart(stock, symbol, color_scheme = args.color_scheme)
+        showChart(symbol, stock, color_scheme = args.color_scheme)
 
-    # results = joblib.Parallel(n_jobs = num_cores/2)(joblib.delayed(showChart)(sym) for sym in symbols)
+    # num_cores = multiprocessing.cpu_count()
+    # print('Number of cores = {}'.format(num_cores))
+
+    # with joblib.parallel_backend('threading'):
+    #     joblib.Parallel(n_jobs = 2)(joblib.delayed(showChart)(symbol, stock) for symbol in args.symbols)
 
 #
 #  M A I N
@@ -60,8 +68,6 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--symbols', default = ['AAPL'], nargs = '+', help = 'specify symbols, e.g., -s AAPL NVDA TSLA')
     parser.add_argument('-c', '--color-scheme', default = 'sunrise', help = 'specify color scheme to use.')
     args = parser.parse_args()
-
-    # print('Version {}'.format(sys.version_info))
 
     # print('symbols = {}'.format(args.symbols))
     try:
