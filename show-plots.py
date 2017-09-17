@@ -29,8 +29,10 @@ def showChart(symbol, stock, color_scheme = 'sunrise'):
     view = chart.showChart(stock[:, :, symbol], color_scheme = color_scheme)
     # view = chart.showChart(stock.iloc[:, :, i], color_scheme = color_scheme)
     view['title'] = view['axes'].set_title(symbol)
-    view['figure'].savefig(figFolder + '/' + symbol.lower() + '.png')
-    #matplotlib.pyplot.close(view['figure'])
+    filename = figFolder + '/' + symbol.lower() + '.png'
+    view['figure'].savefig(filename)
+    matplotlib.pyplot.close(view['figure'])
+    os.system('open ' + filename)
     return view
 
 def main(args):

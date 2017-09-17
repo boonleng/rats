@@ -220,3 +220,157 @@ def showChart(dat, sma_sizes = [10, 50, 100], skip_weekends = True, color_scheme
 
     dic = {'figure':fig, 'axes':ax, 'lines':lines, 'volume_axis':axv}
     return dic
+
+# def update(obj, quotes):
+
+class Chart:
+    """
+        A chart class
+    """
+    def __init__(self, n, sma_sizes = [10, 50, 100], color_scheme = 'sunrise', skip_weekends = True):
+        rect = [0.075, 0.12, 0.83, 0.78]
+
+        self.n = n
+        self.sma = dict.fromkeys(sma_sizes)
+        self.colormap = colorscheme.colorscheme(color_scheme)
+        self.skip_weekends = skip_weekends
+
+        self.fig = matplotlib.pyplot.figure()
+        self.fig.patch.set_alpha(0.0)
+        self.rect = [round(x * 72.0) / 72.0 + 0.5 / 72.0 for x in rect]
+        self.axb = self.fig.add_axes(self.rect, frameon = False)
+        self.axb.yaxis.set_visible(False)
+        self.axb.xaxis.set_visible(False)
+        
+        self.axq = self.fig.add_axes(self.rect, label = 'Quotes')
+        self.axq.patch.set_visible(False)
+        self.axq.yaxis.tick_right()
+        
+        self.axv = self.fig.add_axes(self.rect, frameon = False, sharex = self.axq)
+        self.axv.patch.set_visible(False)
+        self.axv.xaxis.set_visible(False)
+        
+        print('Setting up for {} points ...'.format(self.n))
+
+        # Backdrop gradient
+        cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', self.colormap.backdrop)
+        self.im = self.axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), extent = [0.0, 1.0, 0.0, 1.0], cmap = cmap, aspect = 'auto')
+
+        # SMA lines
+        self.lines = []
+        for j, k in enumerate(self.sma.keys()):
+            sma_line = matplotlib.lines.Line2D(range(self.n), np.multiply(range(self.n), k / self.n), label = 'SMA ' + str(k), color = self.colormap.line[j])
+            self.axq.add_line(sma_line)
+            self.lines.append(sma_line)
+
+        # Candles
+        width = 0.5
+        linewidth = 1.0
+        offset = 0.7 * width;
+        self.majors = []
+        self.vlines = []
+        self.olines = []
+        self.clines = []
+        self.vrects = []
+        for i in np.arange(self.n):
+            # print('x = {}'.format(i))
+            vline = matplotlib.lines.Line2D(xdata = (i, i), ydata = (i - 5.0, i + 5.0), color = 'k', linewidth = linewidth)
+            oline = matplotlib.lines.Line2D(xdata = (i - offset, i), ydata = (i - 2.0, i - 2.0), color = 'k', linewidth = linewidth)
+            cline = matplotlib.lines.Line2D(xdata = (i + offset, i), ydata = (i + 2.0, i + 2.0), color = 'k', linewidth = linewidth)
+            self.vlines.append(vline)
+            self.olines.append(oline)
+            self.clines.append(cline)
+            self.axq.add_line(vline)
+            self.axq.add_line(oline)
+            self.axq.add_line(cline)
+
+        # A forecast point
+        line = matplotlib.lines.Line2D(xdata = (self.n + 10.0, self.n + 10.0), ydata = (100.0, 100.0), color = 'r')
+        self.axq.add_line(line)
+
+        self.axq.grid(color = self.colormap.grid, linestyle=':')
+        for side in ['top', 'bottom', 'left', 'right']:
+            self.axq.spines[side].set_color(self.colormap.text)
+            self.axv.spines[side].set_color(self.colormap.text)
+        self.axq.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
+        self.axq.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
+        self.axv.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
+        self.axv.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
+
+        self.axq.set_xlim([0, self.n + 10])
+
+        self.axq.set_ylim([0, 110])
+
+        self.axq.set_title('', color = self.colormap.text)
+
+
+    def set_xdata(self, xdata):
+        if len(xdata) != self.n:
+            print('xdata must have the same length as the chart setup (n = {}).'.format(self.n))
+            return
+        dates = matplotlib.dates.date2num(xdata.tolist())
+
+        # Gather the major indices of weeday == Monday
+        majors = []
+        for i, t in enumerate(dates):
+            if matplotlib.dates.num2date(t).weekday() == 0:
+               majors.append(i)
+
+        # print(majors)
+
+        def format_date(x, pos = None):
+            index = int(x)
+            # print('x = {}'.format(x))
+            if x < 0:
+                #print('Project to {} days from {}.'.format(-index, matplotlib.dates.num2date(dates[0]).strftime('%b %d')))
+                k = 0
+                t = dates[0]
+                while (k <= -index):
+                    t = t - 1.0
+                    weekday = matplotlib.dates.num2date(t).weekday()
+                    # Only count Mon through Friday
+                    if weekday >= 0 and weekday <= 4:
+                        k = k + 1
+                    #print('index = {}   weekday {}   k = {}'.format(index, weekday, k))
+                date = matplotlib.dates.num2date(t)
+                #print('date -> {}'.format(date))
+            elif index > self.n - 1:
+                #print('Extrapolate {} days from {}.'.format(index - self.n, matplotlib.dates.num2date(dates[-1]).strftime('%b %d')))
+                k = 0
+                t = dates[-1]
+                while (k <= index - self.n):
+                    t = t + 1.0
+                    weekday = matplotlib.dates.num2date(t).weekday()
+                    # Only count Mon through Friday
+                    if weekday >= 0 and weekday <= 4:
+                        k = k + 1
+                    #print('index = {}   weekday {}   k = {}'.format(index, weekday, k))
+                date = matplotlib.dates.num2date(t)
+            else:
+                date = matplotlib.dates.num2date(dates[index])
+            #print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
+            return date.strftime('%b %d')
+
+        print(self.axq.get_xlim())
+
+        if self.skip_weekends:
+            self.axq.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
+            self.axq.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
+            # self.axq.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator())
+            # self.axq.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
+            self.axq.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[0]))  # Use the latest Monday
+        else:
+            mondays = matplotlib.dates.WeekdayLocator(matplotlib.dates.MONDAY)      # major ticks on the mondays
+            alldays = matplotlib.dates.DayLocator()                                 # minor ticks on the days
+            self.axq.xaxis.set_major_locator(mondays)
+            self.axq.xaxis.set_minor_locator(alldays)
+            self.axq.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
+
+        matplotlib.pyplot.setp(self.axq.get_xticklabels(), rotation = 45, horizontalalignment = 'right')
+
+        # self.fig.canvas.draw()
+        # self.fig.canvas.flush_events()
+
+    def savefig(self, filename):
+        self.fig.savefig(filename)
+

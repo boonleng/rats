@@ -11,34 +11,40 @@ import chart
 # Some global variables
 N = 100;                      # Look at stock prices for the last N days
 figFolder = 'figs'            # Default folder to save figures
-sma_sizes = [10, 50, 100]     # SMA window sizes
-
-symbols = ["AAPL", "TSLA", "NVDA", "BIDU", "AMZN", "BABA", "NFLX", "MSFT"]
 
 # Some default plotting attributes
 matplotlib.rcParams['font.family'] = 'serif'
 matplotlib.rcParams['font.serif'] = ['Arial']
 matplotlib.rcParams['font.sans-serif'] = ['System Font', 'Verdana', 'Arial']
-matplotlib.rcParams['figure.figsize'] = (7, 4)   # Change the size of plots
+matplotlib.rcParams['figure.figsize'] = (8, 4)   # Change the size of plots
 matplotlib.rcParams['figure.dpi'] = 108
 
 if not os.path.exists(figFolder):
     os.makedirs(figFolder)
 
+symbols = ['AAPL']
 
-max(sma_sizes)
-
+days = N + 100;
+# if args.verbose:
+#     print('Retrieving data for {} for {} days ...'.format(args.symbols, days))
 # End day is always today, then roll back the maximum SMA window, plus another week
 end = datetime.date.today()
-start = end - datetime.timedelta(days = (N + max(sma_sizes) + 7) * 7 / 5)
+start = end - datetime.timedelta(days = days)
+session = requests_cache.CachedSession(cache_name = 'cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 1))
+stock = pandas_datareader.DataReader(symbols, 'google', start, end, session = session)
+# Google reports at least 250 days, truncate to desired length
+if stock.shape[1] > days:
+    print('Truncating data from {} to {} ...'.format(stock.shape[1], days))
+    stock = stock.iloc[:, -days:, :]
 
-session = requests_cache.CachedSession(cache_name = 'cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 3))
-stock = pandas_datareader.DataReader(symbols, "yahoo", start, end, session = session)
 
+view = chart.Chart(100)
+view.set_xdata(stock.iloc[:, :, 0].index[-100:])
+view.savefig('figs/test.png')
 
+os.system('open figs/test.png')
 
-sym = 'AAPL'
-view = chart.showChart(stock[:, :, sym], sma_sizes = sma_sizes)
-view['title'] = view['axes'].set_title(sym)
-# view['figure'].savefig(figFolder + '/' + sym.lower() + '.png')
-matplotlib.pyplot.show()
+# for symbol in args.symbols:
+#     if args.verbose:
+#         print('Generating chart for {}'.format(symbol))
+#     showChart(symbol, stock, color_scheme = args.color_scheme)
