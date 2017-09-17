@@ -4,8 +4,10 @@ import matplotlib
 import matplotlib.pyplot
 import colorscheme
 
-colormap = colorscheme.sunrise()
-# colormap = colorscheme.colorscheme('night')
+# colormap = colorscheme.sunrise()
+colormap = colorscheme.colorscheme('night')
+# colormap = colorscheme.colorscheme('sunset')
+# colormap = colorscheme.colorscheme('sunriseflip')
 
 def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, skip_weekends = True):
     linewidth = 1.0
@@ -93,14 +95,14 @@ def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, sk
             return ''
         else:
             date = matplotlib.dates.num2date(quotes[index, 1])
-        print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
+        # print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
         return date.strftime('%b %d')
 
     if skip_weekends:
         ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
         ax.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(1.0))
-        ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
-        # ax.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(base = 5.0, offset = majors[0]))  # Use the latest Monday
+        # ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
+        ax.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(base = 5.0, offset = majors[0]))  # Use the latest Monday
     else:
         mondays = matplotlib.dates.WeekdayLocator(matplotlib.dates.MONDAY)      # major ticks on the mondays
         alldays = matplotlib.dates.DayLocator()                                 # minor ticks on the days

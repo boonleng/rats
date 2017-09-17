@@ -7,6 +7,7 @@ import matplotlib.pyplot
 import pandas_datareader
 import requests_cache
 import chart
+import tensorflow as tf
 
 # Some global variables
 N = 1000;                     # Look at stock prices for the last N days
@@ -65,3 +66,4 @@ if not os.path.exists(figFolder):
 #     view['title'] = view['axes'].set_title(sym)
 #     view['figure'].savefig(figFolder + '/' + sym.lower() + '.png')
 #     matplotlib.pyplot.close(view['figure'])
+

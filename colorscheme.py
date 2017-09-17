@@ -10,11 +10,6 @@ def plain():
 def default():
 	return colorscheme('sunset')
 
-# shades = ['#c9e6e3', '#ffe6a9', '#ebc3bc']
-# shades = ['#ffffbb', '#ffcccc', '#ccccff']
-# shades = ['#ccccff', '#d8ccea', '#e5cce5', '#f8cccc', '#fbdecc', '#fff0bb', '#f0f0ee']
-# shades = 
-
 def colorscheme(name = 'sunset'):
 	# Initialize an empty object
 	scheme = type('colorscheme', (), {})()
@@ -28,9 +23,11 @@ def colorscheme(name = 'sunset'):
 	scheme.background = 'w'
     # Backdrop
 	if name is 'sunset':
-		scheme.backdrop = ['#ccccff', '#d8ccea', '#e5cce5', '#f8cccc', '#fbdecc', '#fff0bb', '#f0f0ee']
-	elif name is 'sunrise':
 		scheme.backdrop = ['#c9e6e3', '#ffe6a9', '#ebc3bc']
+	elif name is 'sunrise2':
+		scheme.backdrop = ['#ffffbb', '#ffcccc', '#ccccff']
+	elif name is 'sunrise':
+		scheme.backdrop = ['#ccccff', '#d8ccea', '#e5cce5', '#f8cccc', '#fbdecc', '#fff0bb', '#f0f0ee']
 	elif name is 'plain':
 		scheme.backdrop = ['#ffffff']
 	elif name is 'night':
