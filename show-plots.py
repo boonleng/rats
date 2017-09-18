@@ -8,8 +8,8 @@ import pandas_datareader
 import requests_cache
 import chart
 
-import joblib
-import multiprocessing
+# import joblib
+# import multiprocessing
 
 # Some global variables
 N = 100;                      # Look at stock prices for the last N days
@@ -50,14 +50,22 @@ def main(args):
             print('Truncating data from {} to {} ...'.format(stock.shape[1], days))
         stock = stock.iloc[:, -days:, :]
 
+    # Set up the chart
+    view = chart.Chart(N, color_scheme = args.color_scheme)
+    view.set_xdata(stock.iloc[:, :, 0].index[-N:])
+    # matplotlib.pyplot.show()
+
+    # Go through the symbols
     for symbol in args.symbols:
         if args.verbose:
-            print('Generating chart for {}'.format(symbol))
-        showChart(symbol, stock, color_scheme = args.color_scheme)
+            print('Generating {} ...'.format(symbol))
+        view.set_data(stock[:, :, symbol])
+        view.set_title(symbol)
+        filename = figFolder + '/' + symbol.lower() + '.png'
+        view.savefig(filename)
 
     # num_cores = multiprocessing.cpu_count()
-    # print('Number of cores = {}'.format(num_cores))
-
+    # print('Number of cores = {}'.format(num_cores))\
     # with joblib.parallel_backend('threading'):
     #     joblib.Parallel(n_jobs = 2)(joblib.delayed(showChart)(symbol, stock) for symbol in args.symbols)
 

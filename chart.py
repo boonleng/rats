@@ -231,7 +231,7 @@ class Chart:
         linewidth = 1.0
         width = 0.5
         offset = 0.4
-        rect = [0.075, 0.12, 0.83, 0.78]
+        rect = [0.075, 0.14, 0.83, 0.78]
 
         self.n = n
         self.sma = dict.fromkeys(sma_sizes)
@@ -240,7 +240,10 @@ class Chart:
 
         self.fig = matplotlib.pyplot.figure()
         self.fig.patch.set_alpha(0.0)
-        self.rect = [(round(x * 72.0) + 0.5) / 72.0 for x in rect]
+        #dpi = self.fig.dpi
+        #print('dpi = {}'.format(dpi))
+        #self.rect = [(round(x * self.dpi)  + 0.5) / dpi for x in rect]
+        self.rect = rect
         self.axb = self.fig.add_axes(self.rect, frameon = False)
         self.axb.yaxis.set_visible(False)
         self.axb.xaxis.set_visible(False)
@@ -253,8 +256,6 @@ class Chart:
         self.axv.patch.set_visible(False)
         self.axv.xaxis.set_visible(False)
         
-        print('Setting up for {} points ...'.format(self.n))
-
         # Backdrop gradient
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', self.colormap.backdrop)
         self.im = self.axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, aspect = 'auto')
@@ -317,11 +318,13 @@ class Chart:
 
         self.axq.set_xlim([-1.5, self.n + 9.5])
         self.axv.set_xlim([-1.5, self.n + 9.5])
+        self.axq.xaxis.set_data_interval(-1.0, self.n + 10.0)
+        self.axv.xaxis.set_data_interval(-1.0, self.n + 10.0)
 
         self.axq.set_ylim([0, 110])
         self.axv.set_ylim([0, 10])
 
-        self.axq.set_title('', color = self.colormap.text)
+        self.title = self.axq.set_title('', color = self.colormap.text)
 
     def set_xdata(self, xdata):
         if len(xdata) != self.n:
@@ -365,11 +368,11 @@ class Chart:
                 date = matplotlib.dates.num2date(t)
             else:
                 date = matplotlib.dates.num2date(dates[index])
-            print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
+            #print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
             return date.strftime('%b %d')
 
         if self.skip_weekends:
-            print((self.n - majors[-1]) + 1)
+            #print((self.n - majors[-1]) + 1)
             self.axq.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
             self.axq.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
             # self.axq.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(5))
@@ -425,25 +428,34 @@ class Chart:
 
         # Volume bars to have the mean at around 10% of the vertical space
         v = np.nanmean(quotes[-self.n:, 4])
-        if v < 1.0:
-            blim = [0, np.ceil(v * 10.0)]
-        else:
-            blim = [0, np.ceil(v) * 10.0]
-        self.axv.set_ylim(blim)
-        yticks = self.axv.get_yticks()
         new_ticks = []
         new_labels = []
-        for ii in range(1, int(len(yticks) / 3) + 1):
-            new_ticks.append(yticks[ii])
-            if yticks[1] < 1.0:
-                new_labels.append(str(int(yticks[ii] * 100.0) * 10) + 'K')
-            else:
-                new_labels.append(str(int(yticks[ii])) + 'M')
+        blim = [0, np.ceil(v * 10.0)]
+        if v < 1.0:
+            steps = np.array([0.02, 0.05, 0.1, 0.2, 0.5])
+            step = steps[np.argmin(np.abs(steps - v))]
+            t = 0.0
+            while t < 3.0 * v:
+                t = t + step
+                new_ticks.append(t)
+                new_labels.append(str(int(t * 100)) + 'K')
+        else:
+            steps = np.array([1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500])
+            step = steps[np.argmin(np.abs(steps - v))]
+            t = 0.0
+            while t < 3.0 * v:
+                t = t + step
+                new_ticks.append(t)
+                new_labels.append(str(int(t)) + 'M')
+        # print('step = {}'.format(step))
+        self.axv.set_ylim(blim)
         self.axv.set_yticks(new_ticks)
         self.axv.set_yticklabels(new_labels)
-
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
+
+    def set_title(self, title):
+        self.title.set_text(title)
 
     def savefig(self, filename):
         self.fig.savefig(filename)
