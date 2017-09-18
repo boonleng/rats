@@ -75,7 +75,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog = "main")
     parser.add_argument('-v', '--verbose', default = 0, action = 'count', help = 'increases verbosity level')
-    parser.add_argument('-s', '--symbols', default = ['AAPL'], nargs = '+', help = 'specify symbols, e.g., -s AAPL NVDA TSLA')
+    parser.add_argument('-s', '--symbols', default = ['NVDA', 'TSLA', 'AAPL'], nargs = '+', help = 'specify symbols, e.g., -s NVDA TSLA AAPL')
     parser.add_argument('-c', '--color-scheme', default = 'sunrise', help = 'specify color scheme to use.')
     args = parser.parse_args()
 

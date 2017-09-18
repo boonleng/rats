@@ -387,9 +387,6 @@ class Chart:
 
         matplotlib.pyplot.setp(self.axq.get_xticklabels(), rotation = 45, horizontalalignment = 'right')
 
-        # self.fig.canvas.draw()
-        # self.fig.canvas.flush_events()
-
     def set_data(self, data):
         quotes = np.transpose([
             data.loc[:, "Open"].tolist(),
@@ -415,42 +412,48 @@ class Chart:
             self.vrects[k].set_height(v)
             self.vrects[k].set_facecolor(bar_color)
 
-        # Compute SMA
+        # Find the span of columns (OHLC)
+        nums = np.array(quotes[-self.n:, 0:4]).flatten()
+        qlim = [np.nanmin(nums), np.nanmax(nums)]
+
+        # Compute SMA and update qlim
         for j, k in enumerate(self.sma.keys()):
             sma = np.convolve(quotes[:, 3], np.ones((k, )) / k, mode = 'valid')
             self.sma[k] = sma[-self.n:]
             self.lines[j].set_ydata(self.sma[k])
-
-        # Find the span of colums (OHLC)
-        nums = np.array(quotes[-self.n:, 0:4]).flatten()
-        ylim = [round(np.nanmin(nums) * 0.2 - 1.0) * 5.0, round(np.nanmax(nums) * 0.2 + 1.0) * 5.0]
-        self.axq.set_ylim(ylim)
+            if np.sum(np.isfinite(self.sma[k])):
+                qlim[0] = min(qlim[0], np.nanpercentile(self.sma[k], 20))
+                qlim[1] = max(qlim[1], np.nanpercentile(self.sma[k], 80))
+        qlim = [round(qlim[0] * 0.2 - 1.0) * 5.0, round(qlim[1] * 0.2 + 1.0) * 5.0]
 
         # Volume bars to have the mean at around 10% of the vertical space
         v = np.nanmean(quotes[-self.n:, 4])
-        new_ticks = []
-        new_labels = []
-        blim = [0, np.ceil(v * 10.0)]
+        ticks = []
+        labels = []
+        vlim = [0, np.ceil(v * 10.0)]
         if v < 1.0:
             steps = np.array([0.02, 0.05, 0.1, 0.2, 0.5])
             step = steps[np.argmin(np.abs(steps - v))]
             t = 0.0
             while t < 3.0 * v:
                 t = t + step
-                new_ticks.append(t)
-                new_labels.append(str(int(t * 100)) + 'K')
+                ticks.append(t)
+                labels.append(str(int(t * 100)) + 'K')
         else:
             steps = np.array([1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500])
             step = steps[np.argmin(np.abs(steps - v))]
             t = 0.0
             while t < 3.0 * v:
                 t = t + step
-                new_ticks.append(t)
-                new_labels.append(str(int(t)) + 'M')
+                ticks.append(t)
+                labels.append(str(int(t)) + 'M')
         # print('step = {}'.format(step))
-        self.axv.set_ylim(blim)
-        self.axv.set_yticks(new_ticks)
-        self.axv.set_yticklabels(new_labels)
+
+        # Update axis limits
+        self.axq.set_ylim(qlim)
+        self.axv.set_ylim(vlim)
+        self.axv.set_yticks(ticks)
+        self.axv.set_yticklabels(labels)
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
