@@ -14,6 +14,13 @@ N = 1000;                     # Look at stock prices for the last N days
 figFolder = 'figs'            # Default folder to save figures
 sma_sizes = [10, 50, 100]     # SMA window sizes
 
+# Some default plotting attributes
+matplotlib.rcParams['font.family'] = 'serif'
+matplotlib.rcParams['font.serif'] = ['Arial']
+matplotlib.rcParams['font.sans-serif'] = ['System Font', 'Verdana', 'Arial']
+matplotlib.rcParams['figure.figsize'] = (8, 4)   # Change the size of plots
+matplotlib.rcParams['figure.dpi'] = 108
+
 # Fang - GOOG, NFLX, AMZN, FB
 # Chip - MU, AMAT, MRVL, NVDA
 symbols = [
@@ -47,7 +54,18 @@ print('Loading data since ' + str(start) + ' ...')
 session = requests_cache.CachedSession(cache_name = 'cache-big', backend = 'sqlite', expire_after = datetime.timedelta(days = 30))
 stock = pandas_datareader.DataReader(symbols, 'yahoo', start, end, session = session)
 
+# Set up the chart
+print('Preparing figure ...')
+view = chart.Chart(100)
+view.set_xdata(stock.iloc[:, :, 0].index[:100])
 
+# Go through the symbols
+for symbol in symbols:
+    print('Generating {} ...'.format(symbol))
+    view.set_data(stock[:, :, symbol].iloc[:, -200:])
+    view.set_title(symbol)
+    filename = figFolder + '/' + symbol.lower() + '.png'
+    view.savefig(filename)
 
 # Create the model
 L = stock.shape[2]
