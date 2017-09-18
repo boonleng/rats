@@ -240,7 +240,7 @@ class Chart:
 
         self.fig = matplotlib.pyplot.figure()
         self.fig.patch.set_alpha(0.0)
-        self.rect = [round(x * 72.0) / 72.0 + 0.5 / 72.0 for x in rect]
+        self.rect = [(round(x * 72.0) + 0.5) / 72.0 for x in rect]
         self.axb = self.fig.add_axes(self.rect, frameon = False)
         self.axb.yaxis.set_visible(False)
         self.axb.xaxis.set_visible(False)
@@ -257,7 +257,7 @@ class Chart:
 
         # Backdrop gradient
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', self.colormap.backdrop)
-        self.im = self.axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), extent = [0.0, 1.0, 0.0, 1.0], cmap = cmap, aspect = 'auto')
+        self.im = self.axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, aspect = 'auto')
 
         # SMA lines
         self.lines = []
@@ -312,6 +312,8 @@ class Chart:
         self.axq.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
         self.axv.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
         self.axv.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
+
+        self.axq.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
 
         self.axq.set_xlim([-1.5, self.n + 9.5])
         self.axv.set_xlim([-1.5, self.n + 9.5])

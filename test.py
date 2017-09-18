@@ -40,11 +40,12 @@ if stock.shape[1] > days:
 
 view = chart.Chart(100)
 view.set_xdata(stock.iloc[:, :, 0].index[-100:])
+view.savefig('figs/test.png')
 
-for sym in symbols:
-	view.set_data(stock[:, :, sym])
-	filename = figFolder + '/' + sym.lower() + '.png'
-	view.savefig(filename)
+# for sym in symbols:
+# 	view.set_data(stock[:, :, sym])
+# 	filename = figFolder + '/' + sym.lower() + '.png'
+	# view.savefig(filename)
 	#os.system('open ' + filename)
 
 # for symbol in args.symbols:
