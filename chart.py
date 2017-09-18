@@ -337,6 +337,7 @@ class Chart:
         for i, t in enumerate(dates):
             if matplotlib.dates.num2date(t).weekday() == 0:
                majors.append(i)
+        print('{}, ..., {} -> {}'.format(majors[0], majors[-1], xdata[majors[-1]]))
 
         def format_date(x, pos = None):
             index = int(x)
@@ -377,7 +378,8 @@ class Chart:
             self.axq.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
             # self.axq.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(5))
             # self.axq.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
-            self.axq.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, (self.n - majors[-1]) + 1))  # Use the last Monday
+            # self.axq.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, (self.n - majors[-1]) - 1))  # Use the last Monday
+            self.axq.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[-1] % 5 + 1))  # Use the last Monday
         else:
             mondays = matplotlib.dates.WeekdayLocator(matplotlib.dates.MONDAY)      # major ticks on the mondays
             alldays = matplotlib.dates.DayLocator()                                 # minor ticks on the days

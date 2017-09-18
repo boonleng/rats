@@ -44,6 +44,7 @@ def main(args):
     start = end - datetime.timedelta(days = days)
     session = requests_cache.CachedSession(cache_name = 'cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 1))
     stock = pandas_datareader.DataReader(args.symbols, 'google', start, end, session = session)
+    print(stock.iloc[:, ::-1, 0].head())
     # Google reports at least 250 days, truncate to desired length
     if stock.shape[1] > days:
         if args.verbose > 1:
