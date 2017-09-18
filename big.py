@@ -47,6 +47,8 @@ print('Loading data since ' + str(start) + ' ...')
 session = requests_cache.CachedSession(cache_name = 'cache-big', backend = 'sqlite', expire_after = datetime.timedelta(days = 30))
 stock = pandas_datareader.DataReader(symbols, 'yahoo', start, end, session = session)
 
+
+
 # Create the model
 L = stock.shape[2]
 # x = tf.placeholder(tf.float32, [None, L])

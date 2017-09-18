@@ -22,7 +22,7 @@ matplotlib.rcParams['figure.dpi'] = 108
 if not os.path.exists(figFolder):
     os.makedirs(figFolder)
 
-symbols = ['AAPL']
+symbols = ['AAPL', 'TSLA', 'NVDA']
 
 days = N + 100;
 # if args.verbose:
@@ -40,9 +40,12 @@ if stock.shape[1] > days:
 
 view = chart.Chart(100)
 view.set_xdata(stock.iloc[:, :, 0].index[-100:])
-view.savefig('figs/test.png')
 
-os.system('open figs/test.png')
+for sym in symbols:
+	view.set_data(stock[:, :, sym])
+	filename = figFolder + '/' + sym.lower() + '.png'
+	view.savefig(filename)
+	#os.system('open ' + filename)
 
 # for symbol in args.symbols:
 #     if args.verbose:

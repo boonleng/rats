@@ -228,6 +228,9 @@ class Chart:
         A chart class
     """
     def __init__(self, n, sma_sizes = [10, 50, 100], color_scheme = 'sunrise', skip_weekends = True):
+        linewidth = 1.0
+        width = 0.5
+        offset = 0.4
         rect = [0.075, 0.12, 0.83, 0.78]
 
         self.n = n
@@ -263,31 +266,44 @@ class Chart:
             self.axq.add_line(sma_line)
             self.lines.append(sma_line)
 
-        # Candles
-        width = 0.5
-        linewidth = 1.0
-        offset = 0.7 * width;
+        # Candles and bars
         self.majors = []
         self.vlines = []
         self.olines = []
         self.clines = []
         self.vrects = []
-        for i in np.arange(self.n):
+        for i in range(self.n):
             # print('x = {}'.format(i))
             vline = matplotlib.lines.Line2D(xdata = (i, i), ydata = (i - 5.0, i + 5.0), color = 'k', linewidth = linewidth)
             oline = matplotlib.lines.Line2D(xdata = (i - offset, i), ydata = (i - 2.0, i - 2.0), color = 'k', linewidth = linewidth)
             cline = matplotlib.lines.Line2D(xdata = (i + offset, i), ydata = (i + 2.0, i + 2.0), color = 'k', linewidth = linewidth)
+            vrect = matplotlib.patches.Rectangle(xy = (i - 0.5, 0.0),
+                fill = True,
+                width = 1.0,
+                height = (i % 10) * 0.5,
+                facecolor = '#0000ff',
+                edgecolor = self.colormap.text,
+                linewidth = 0.75,
+                alpha = 0.33)
             self.vlines.append(vline)
             self.olines.append(oline)
             self.clines.append(cline)
+            self.vrects.append(vrect)
             self.axq.add_line(vline)
             self.axq.add_line(oline)
             self.axq.add_line(cline)
+            self.axv.add_patch(vrect)            
 
         # A forecast point
         line = matplotlib.lines.Line2D(xdata = (self.n + 10.0, self.n + 10.0), ydata = (100.0, 100.0), color = 'r')
         self.axq.add_line(line)
 
+        # Legend
+        self.leg = self.axq.legend(handles = self.lines, loc = 'best', facecolor = self.colormap.background, framealpha = 0.9)
+        for text in self.leg.get_texts():
+            text.set_color(self.colormap.text)
+
+        # Grid
         self.axq.grid(color = self.colormap.grid, linestyle=':')
         for side in ['top', 'bottom', 'left', 'right']:
             self.axq.spines[side].set_color(self.colormap.text)
@@ -297,12 +313,13 @@ class Chart:
         self.axv.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
         self.axv.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
 
-        self.axq.set_xlim([0, self.n + 10])
+        self.axq.set_xlim([-1.5, self.n + 9.5])
+        self.axv.set_xlim([-1.5, self.n + 9.5])
 
         self.axq.set_ylim([0, 110])
+        self.axv.set_ylim([0, 10])
 
         self.axq.set_title('', color = self.colormap.text)
-
 
     def set_xdata(self, xdata):
         if len(xdata) != self.n:
@@ -315,8 +332,6 @@ class Chart:
         for i, t in enumerate(dates):
             if matplotlib.dates.num2date(t).weekday() == 0:
                majors.append(i)
-
-        # print(majors)
 
         def format_date(x, pos = None):
             index = int(x)
@@ -348,17 +363,16 @@ class Chart:
                 date = matplotlib.dates.num2date(t)
             else:
                 date = matplotlib.dates.num2date(dates[index])
-            #print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
+            print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
             return date.strftime('%b %d')
 
-        print(self.axq.get_xlim())
-
         if self.skip_weekends:
+            print((self.n - majors[-1]) + 1)
             self.axq.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
             self.axq.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
-            # self.axq.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator())
+            # self.axq.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(5))
             # self.axq.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
-            self.axq.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[0]))  # Use the latest Monday
+            self.axq.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, (self.n - majors[-1]) + 1))  # Use the last Monday
         else:
             mondays = matplotlib.dates.WeekdayLocator(matplotlib.dates.MONDAY)      # major ticks on the mondays
             alldays = matplotlib.dates.DayLocator()                                 # minor ticks on the days
@@ -370,6 +384,64 @@ class Chart:
 
         # self.fig.canvas.draw()
         # self.fig.canvas.flush_events()
+
+    def set_data(self, data):
+        quotes = np.transpose([
+            data.loc[:, "Open"].tolist(),
+            data.loc[:, "High"].tolist(),
+            data.loc[:, "Low"].tolist(),
+            data.loc[:, "Close"].tolist(),
+            np.multiply(data.loc[:, "Volume"], 1.0e-6).tolist()
+        ])
+        for k, q in enumerate(quotes[-self.n:, :]):
+            o, h, l, c, v = q[:5]
+            if c >= o:
+                line_color = self.colormap.up
+                bar_color = self.colormap.bar_up
+            else:
+                line_color = self.colormap.down
+                bar_color = self.colormap.bar_down
+            self.vlines[k].set_ydata((l, h))
+            self.vlines[k].set_color(line_color)
+            self.olines[k].set_ydata((o, o))
+            self.olines[k].set_color(line_color)
+            self.clines[k].set_ydata((c, c))    
+            self.clines[k].set_color(line_color)
+            self.vrects[k].set_height(v)
+            self.vrects[k].set_facecolor(bar_color)
+
+        # Compute SMA
+        for j, k in enumerate(self.sma.keys()):
+            sma = np.convolve(quotes[:, 3], np.ones((k, )) / k, mode = 'valid')
+            self.sma[k] = sma[-self.n:]
+            self.lines[j].set_ydata(self.sma[k])
+
+        # Find the span of colums (OHLC)
+        nums = np.array(quotes[-self.n:, 0:4]).flatten()
+        ylim = [round(np.nanmin(nums) * 0.2 - 1.0) * 5.0, round(np.nanmax(nums) * 0.2 + 1.0) * 5.0]
+        self.axq.set_ylim(ylim)
+
+        # Volume bars to have the mean at around 10% of the vertical space
+        v = np.nanmean(quotes[-self.n:, 4])
+        if v < 1.0:
+            blim = [0, np.ceil(v * 10.0)]
+        else:
+            blim = [0, np.ceil(v) * 10.0]
+        self.axv.set_ylim(blim)
+        yticks = self.axv.get_yticks()
+        new_ticks = []
+        new_labels = []
+        for ii in range(1, int(len(yticks) / 3) + 1):
+            new_ticks.append(yticks[ii])
+            if yticks[1] < 1.0:
+                new_labels.append(str(int(yticks[ii] * 100.0) * 10) + 'K')
+            else:
+                new_labels.append(str(int(yticks[ii])) + 'M')
+        self.axv.set_yticks(new_ticks)
+        self.axv.set_yticklabels(new_labels)
+
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
     def savefig(self, filename):
         self.fig.savefig(filename)
