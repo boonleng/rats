@@ -64,7 +64,7 @@ for symbol in symbols:
     print('Generating {} ...'.format(symbol))
     view.set_data(stock[:, :, symbol].iloc[:, -200:])
     view.set_title(symbol)
-    filename = figFolder + '/' + symbol.lower() + '.png'
+    filename = figFolder + '/' + symbol.lower() + '.pdf'
     view.savefig(filename)
 
 # Create the model

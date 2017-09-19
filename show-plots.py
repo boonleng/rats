@@ -61,7 +61,11 @@ def main(args):
             print('Generating {} ...'.format(symbol))
         view.set_data(stock[:, :, symbol])
         view.set_title(symbol)
-        filename = figFolder + '/' + symbol.lower() + '.png'
+        filename = figFolder + '/' + symbol.lower()
+        if args.pdf:
+            filename = filename + '.pdf'
+        else:
+            filename = filename + '.png'
         view.savefig(filename)
 
     # num_cores = multiprocessing.cpu_count()
@@ -73,11 +77,15 @@ def main(args):
 #  M A I N
 #
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(prog = "main")
-    parser.add_argument('-v', '--verbose', default = 0, action = 'count', help = 'increases verbosity level')
+    parser = argparse.ArgumentParser(prog = 'main')
+    parser.add_argument('-v', '--verbose', default = 1, action = 'count', help = 'increases verbosity level')
     parser.add_argument('-s', '--symbols', default = ['NVDA', 'TSLA', 'AAPL'], nargs = '+', help = 'specify symbols, e.g., -s NVDA TSLA AAPL')
     parser.add_argument('-c', '--color-scheme', default = 'sunrise', help = 'specify color scheme to use.')
+    parser.add_argument('-p', '--pdf', action = 'store_true', help = 'generate PDF.')
+    parser.add_argument('-q', '--quiet', action = 'store_true', help = 'quiet mode.')
     args = parser.parse_args()
+    if args.quiet:
+        args.verbose = 0
 
     # print('symbols = {}'.format(args.symbols))
     try:
