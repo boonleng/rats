@@ -185,8 +185,8 @@ def showChart(panel, sma_sizes = [10, 50, 100], skip_weekends = True, color_sche
     lines[1].set_color(colormap.line[1])
     lines[2].set_color(colormap.line[2])
 
-    lge = ax.legend(handles = lines, loc = 'best', facecolor = colormap.background, framealpha = 0.9)
-    for text in lge.get_texts():
+    leg = ax.legend(handles = lines, loc = 'best', facecolor = colormap.background, framealpha = 0.9)
+    for text in leg.get_texts():
         text.set_color(colormap.text)
     ax.grid(color = colormap.grid, linestyle=':')
     ax.set_ylim(ylim)
@@ -307,7 +307,7 @@ class Chart:
         self.axq.add_line(line)
 
         # Legend
-        self.leg = self.axq.legend(handles = self.lines, loc = 'best', facecolor = self.colormap.background, framealpha = 0.9)
+        self.leg = self.axq.legend(handles = self.lines, loc = 'upper left', facecolor = self.colormap.background, framealpha = 0.85)
         for text in self.leg.get_texts():
             text.set_color(self.colormap.text)
 
@@ -334,10 +334,10 @@ class Chart:
         self.title = self.axq.set_title(self.symbol, color = self.colormap.text)
 
     def set_xdata(self, xdata):
-        if len(xdata) != self.n:
-            print('xdata must have the same length as the chart setup (n = {}).'.format(self.n))
+        dates = list(xdata[-self.n:])
+        if len(dates) != self.n:
+            print('xdata must be at least the same length as the chart setup (n = {}).'.format(self.n))
             return
-        dates = xdata.tolist()
         dnums = matplotlib.dates.date2num(dates)
 
         # Gather the major indices of weeday == Monday
@@ -436,7 +436,7 @@ class Chart:
             # self.axq.draw_artist(self.clines[k])
             # self.axq.draw_artist(self.vrects[k])
 
-        # Find the span of columns (OHLC)
+        # Find the span of (OHLC)
         nums = np.array(quotes[-self.n:, 0:4]).flatten()
         qlim = [np.nanmin(nums), np.nanmax(nums)]
 
@@ -453,6 +453,13 @@ class Chart:
             qlim = [round(qlim[0]) - 0.5, round(qlim[1]) + 0.5]
         else:
             qlim = [round(qlim[0] * 0.2 - 1.0) * 5.0, round(qlim[1] * 0.2 + 1.0) * 5.0]
+
+        # Legend position: upper right if SMA-N is increasing, upper left otherwise (Not in public API)
+        sma = self.sma[list(self.sma)[-2]]
+        if sma[-10] > sma[0]:
+            self.leg._loc = 2
+        else:
+            self.leg._loc = 1
 
         # Volume bars to have the mean at around 10% of the vertical space
         v = np.nanmean(quotes[-self.n:, 4])
