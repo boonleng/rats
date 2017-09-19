@@ -55,15 +55,20 @@ stock = pandas_datareader.DataReader(symbols, 'yahoo', start, end, session = ses
 # Set up the chart
 print('Preparing figure ...')
 view = chart.Chart(100)
-view.set_xdata(stock.iloc[:, :, 0].index[:100])
+view.set_xdata(stock.major_axis[-100:])
 
 # Go through the symbols
+idx = stock.axes[1]
+sss = stock[:, idx[-200:], :]
 for symbol in symbols:
-    print('Generating {} ...'.format(symbol))
-    view.set_data(stock[:, :, symbol].iloc[:, -200:])
-    view.set_title(symbol)
-    filename = figFolder + '/' + symbol.lower() + '.pdf'
+    view.set_data(sss[:, :, [symbol]])
+    filename = figFolder + '/' + symbol + '.png'
+    print('Generating {} ... {} ...'.format(symbol, filename))
     view.savefig(filename)
+    # print('Generating {} ...'.format(symbol))
+    # view.set_data(stock[:, :, symbol].iloc[:, -200:])
+    # filename = figFolder + '/' + symbol.lower() + '.pdf'
+    # view.savefig(filename)
 
 # Create the model
 L = stock.shape[2]

@@ -63,21 +63,21 @@ def main(args):
 
     # Set up the chart
     view = chart.Chart(N, color_scheme = args.color_scheme)
-    view.set_xdata(stock.iloc[:, :, 0].index[-N:])
-    matplotlib.pyplot.show(block = False)
+    view.set_xdata(stock.major_axis[-N:])
+    # matplotlib.pyplot.show(block = False)
     # matplotlib.pyplot.show()
 
     # Go through the symbols
     for symbol in args.symbols:
-        if args.verbose:
-            print('Generating {} ...'.format(symbol))
         view.set_data(stock[:, :, [(symbol)]])
-        filename = figFolder + '/' + symbol.lower()
+        filename = figFolder + '/' + symbol
         if args.pdf:
             filename = filename + '.pdf'
         else:
             filename = filename + '.png'
-        filename = figFolder + '/' + symbol.lower() + '.png'
+        filename = figFolder + '/' + symbol + '.png'
+        if args.verbose:
+            print('Generating {} ... {} ...'.format(symbol, filename))
         view.savefig(filename)
 
     # num_cores = multiprocessing.cpu_count()
@@ -98,6 +98,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.quiet:
         args.verbose = 0
+    args.symbols = [x.upper() for x in args.symbols]
 
     # print('symbols = {}'.format(args.symbols))
     try:

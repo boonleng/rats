@@ -445,7 +445,10 @@ class Chart:
             if np.sum(np.isfinite(self.sma[k])):
                 qlim[0] = min(qlim[0], np.nanpercentile(self.sma[k], 20))
                 qlim[1] = max(qlim[1], np.nanpercentile(self.sma[k], 80))
-        qlim = [round(qlim[0] * 0.2 - 1.0) * 5.0, round(qlim[1] * 0.2 + 1.0) * 5.0]
+        if qlim[1] - qlim[0] < 10:
+            qlim = [round(qlim[0]) - 0.5, round(qlim[1]) + 0.5]
+        else:
+            qlim = [round(qlim[0] * 0.2 - 1.0) * 5.0, round(qlim[1] * 0.2 + 1.0) * 5.0]
 
         # Volume bars to have the mean at around 10% of the vertical space
         v = np.nanmean(quotes[-self.n:, 4])
