@@ -3,95 +3,8 @@ import matplotlib
 import matplotlib.pyplot
 import colorscheme
 
-def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, skip_weekends = True, colormap = colorscheme.colorscheme('sunrise')):
-    linewidth = 1.0
-    offset = 0.7 * width;
-
-    majors = []
-    vlines = []
-    olines = []
-    clines = []
-    vrects = []
-    for q in quotes:
-        if skip_weekends:
-            i, t, o, h, l, c = q[:6]
-            # Gather the indices of weeday == Monday
-            if matplotlib.dates.num2date(t).weekday() == 0:
-               majors.append(i)
-        else:
-            k, i, o, h, l, c = q[:6]
-        if c >= o:
-            color = colormap.up
-        else:
-            color = colormap.down
-        vline = matplotlib.lines.Line2D(xdata = (i, i), ydata = (l, h), color = color, linewidth = linewidth)
-        oline = matplotlib.lines.Line2D(xdata = (i + offset, i), ydata = (o, o), color = color, linewidth = linewidth)
-        cline = matplotlib.lines.Line2D(xdata = (i - offset, i), ydata = (c, c), color = color, linewidth = linewidth)
-        vlines.append(vline)
-        olines.append(oline)
-        clines.append(cline)
-        ax.add_line(vline)
-        ax.add_line(oline)
-        ax.add_line(cline)
-
-    if volume_axis != None:
-        for q in quotes:
-            if skip_weekends:
-                i, t, o, h, l, c, v = q[:7]
-            else:
-                k, i, o, h, l, c, v = q[:7]
-            if c >= o:
-                color = colormap.bar_up
-            else:
-                color = colormap.bar_down
-            vrect = matplotlib.patches.Rectangle(xy = (i - 0.5, 0.0),
-                fill = True,
-            	width = 1.0,
-            	height = v,
-            	facecolor = color,
-            	edgecolor = colormap.text,
-            	linewidth = 0.75,
-            	alpha = 0.33)
-            vrects.append(vrect)
-            volume_axis.add_patch(vrect)
-
-    N = len(quotes)
-
-    def format_date(x, pos = None):
-        index = int(x)
-        if x < 0:
-            #print('Project to {} days from {}.'.format(-index, matplotlib.dates.num2date(quotes[0, 1]).strftime('%b %d')))
-            k = 0
-            t = quotes[0, 1]
-            while (k <= -index):
-                t = t - 1.0
-                weekday = matplotlib.dates.num2date(t).weekday()
-                # Only count Mon through Friday
-                if weekday >= 0 and weekday <= 4:
-                    k = k + 1
-                #print('index = {}   weekday {}   k = {}'.format(index, weekday, k))
-            date = matplotlib.dates.num2date(t)
-            #print('date -> {}'.format(date))
-        elif index > N - 1:
-            return ''
-        else:
-            date = matplotlib.dates.num2date(quotes[index, 1])
-        # print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
-        return date.strftime('%b %d')
-
-    if skip_weekends:
-        ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
-        ax.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(1.0))
-        # ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
-        ax.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(base = 5.0, offset = majors[0]))  # Use the latest Monday
-    else:
-        mondays = matplotlib.dates.WeekdayLocator(matplotlib.dates.MONDAY)      # major ticks on the mondays
-        alldays = matplotlib.dates.DayLocator()                                 # minor ticks on the days
-        ax.xaxis.set_major_locator(mondays)
-        ax.xaxis.set_minor_locator(alldays)
-        ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
-
-def showChart(dat, sma_sizes = [10, 50, 100], skip_weekends = True, color_scheme = 'sunrise'):
+# The old way
+def showChart(panel, sma_sizes = [10, 50, 100], skip_weekends = True, color_scheme = 'sunrise'):
     """
         showChart(dat, sma_size = [10, 20, 50], skip_weekends = True):)
         - dat - Data frame from pandas-datareader
@@ -105,17 +18,20 @@ def showChart(dat, sma_sizes = [10, 50, 100], skip_weekends = True, color_scheme
 
     colormap = colorscheme.colorscheme(color_scheme)
 
-    ii = list(range(len(dat)))
-    tt = list(matplotlib.dates.date2num(dat.index.tolist()))
-    oo = dat.loc[:, "Open"].tolist()
-    hh = dat.loc[:, "High"].tolist()
-    ll = dat.loc[:, "Low"].tolist()
-    cc = dat.loc[:, "Close"].tolist()
-    vv = np.multiply(dat.loc[:, "Volume"], 1.0e-6).tolist()
-    quotes = np.transpose([ii, tt, oo, hh, ll, cc, vv])
+    # Get the first frame
+    dat = panel.iloc[:, :, 0]
+    quotes = np.transpose([
+        list(range(len(dat))),
+        list(matplotlib.dates.date2num(dat.index.tolist())),
+        dat.loc[:, 'Open'].tolist(),
+        dat.loc[:, 'High'].tolist(),
+        dat.loc[:, 'Low'].tolist(),
+        dat.loc[:, 'Close'].tolist(),
+        np.multiply(dat.loc[:, 'Volume'], 1.0e-6).tolist()
+    ])
 
     # Sort the data  (colums 1 ... 6) so that it is newest first
-    if tt[1] > tt[0]:
+    if quotes[1, 1] > quotes[1, 0]:
         # print('Resorting ... {}  {}'.format(quotes.shape, sma_sizes))
         quotes[:, 1:8] = quotes[::-1, 1:8]
 
@@ -165,6 +81,94 @@ def showChart(dat, sma_sizes = [10, 50, 100], skip_weekends = True, color_scheme
         ylim[0] = np.floor(ylim[0] * 0.2) * 5.0
         ylim[1] = np.ceil(ylim[1] * 0.2) * 5.0
 
+    def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, skip_weekends = True, colormap = colorscheme.colorscheme('sunrise')):
+        linewidth = 1.0
+        offset = 0.7 * width;
+
+        majors = []
+        vlines = []
+        olines = []
+        clines = []
+        vrects = []
+        for q in quotes:
+            if skip_weekends:
+                i, t, o, h, l, c = q[:6]
+                # Gather the indices of weeday == Monday
+                if matplotlib.dates.num2date(t).weekday() == 0:
+                   majors.append(i)
+            else:
+                k, i, o, h, l, c = q[:6]
+            if c >= o:
+                color = colormap.up
+            else:
+                color = colormap.down
+            vline = matplotlib.lines.Line2D(xdata = (i, i), ydata = (l, h), color = color, linewidth = linewidth)
+            oline = matplotlib.lines.Line2D(xdata = (i + offset, i), ydata = (o, o), color = color, linewidth = linewidth)
+            cline = matplotlib.lines.Line2D(xdata = (i - offset, i), ydata = (c, c), color = color, linewidth = linewidth)
+            vlines.append(vline)
+            olines.append(oline)
+            clines.append(cline)
+            ax.add_line(vline)
+            ax.add_line(oline)
+            ax.add_line(cline)
+
+        if volume_axis != None:
+            for q in quotes:
+                if skip_weekends:
+                    i, t, o, h, l, c, v = q[:7]
+                else:
+                    k, i, o, h, l, c, v = q[:7]
+                if c >= o:
+                    color = colormap.bar_up
+                else:
+                    color = colormap.bar_down
+                vrect = matplotlib.patches.Rectangle(xy = (i - 0.5, 0.0),
+                    fill = True,
+                    width = 1.0,
+                    height = v,
+                    facecolor = color,
+                    edgecolor = colormap.text,
+                    linewidth = 0.75,
+                    alpha = 0.33)
+                vrects.append(vrect)
+                volume_axis.add_patch(vrect)
+
+        N = len(quotes)
+
+        def format_date(x, pos = None):
+            index = int(x)
+            if x < 0:
+                #print('Project to {} days from {}.'.format(-index, matplotlib.dates.num2date(quotes[0, 1]).strftime('%b %d')))
+                k = 0
+                t = quotes[0, 1]
+                while (k <= -index):
+                    t = t - 1.0
+                    weekday = matplotlib.dates.num2date(t).weekday()
+                    # Only count Mon through Friday
+                    if weekday >= 0 and weekday <= 4:
+                        k = k + 1
+                    #print('index = {}   weekday {}   k = {}'.format(index, weekday, k))
+                date = matplotlib.dates.num2date(t)
+                #print('date -> {}'.format(date))
+            elif index > N - 1:
+                return ''
+            else:
+                date = matplotlib.dates.num2date(quotes[index, 1])
+            # print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
+            return date.strftime('%b %d')
+
+        if skip_weekends:
+            ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
+            ax.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(1.0))
+            # ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
+            ax.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(base = 5.0, offset = majors[0]))  # Use the latest Monday
+        else:
+            mondays = matplotlib.dates.WeekdayLocator(matplotlib.dates.MONDAY)      # major ticks on the mondays
+            alldays = matplotlib.dates.DayLocator()                                 # minor ticks on the days
+            ax.xaxis.set_major_locator(mondays)
+            ax.xaxis.set_minor_locator(alldays)
+            ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
+
     candlestick(ax, quotes[:N], volume_axis = axv, skip_weekends = skip_weekends, colormap = colormap)
 
     # Backdrop gradient
@@ -199,7 +203,7 @@ def showChart(dat, sma_sizes = [10, 50, 100], skip_weekends = True, color_scheme
     ax.set_title('', color = colormap.text)
 
     # Volume bars to have the mean at around 10% of the vertical space
-    v = np.nanmean(np.array(vv))
+    v = np.nanmean(np.array(quotes[:, 6]))
     if v < 1.0:
         blim = [0, np.ceil(v * 10.0)]
     else:
@@ -235,15 +239,15 @@ class Chart:
 
         self.n = n
         self.sma = dict.fromkeys(sma_sizes)
-        self.symbol = 'ABCD'
+        self.symbol = ''
         self.colormap = colorscheme.colorscheme(color_scheme)
         self.skip_weekends = skip_weekends
 
         self.fig = matplotlib.pyplot.figure()
         self.fig.patch.set_alpha(0.0)
-        #dpi = self.fig.dpi
-        #print('dpi = {}'.format(dpi))
-        #self.rect = [(round(x * self.dpi)  + 0.5) / dpi for x in rect]
+        # dpi = self.fig.dpi
+        # print('dpi = {}'.format(dpi))
+        # self.rect = [(round(x * self.dpi)  + 0.5) / dpi for x in rect]
         self.rect = rect
         self.axb = self.fig.add_axes(self.rect, frameon = False)
         self.axb.yaxis.set_visible(False)
@@ -259,7 +263,7 @@ class Chart:
         
         # Backdrop gradient
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', self.colormap.backdrop)
-        fprop = matplotlib.font_manager.FontProperties(style = 'normal', size = 48, weight = 'bold', stretch = 'normal')
+        fprop = matplotlib.font_manager.FontProperties(style = 'normal', size = 60, weight = 'bold', stretch = 'normal')
         self.im = self.axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, extent = (-1, 1, -1, 1), aspect = 'auto')
         self.st = self.axb.text(0, 0, self.symbol, fontproperties = fprop, horizontalalignment = 'center', verticalalignment = 'center', color = 'w', alpha = 0.33)
 
@@ -342,7 +346,7 @@ class Chart:
             if t.weekday() == 0:
                majors.append(i)
         n = majors[-1]
-        print('{}, ..., {} -> {} ({})'.format(majors[0], n, dates[n].strftime('%Y-%m-%d'), dates[n].weekday()))
+        print('DEBUG: {}, ..., {} -> \033[38;5;214m{}\033[0m ({})'.format(majors[0], n, dates[n].strftime('%Y-%m-%d'), dates[n].weekday()))
 
         def format_date(x, pos = None):
             index = int(x)
@@ -456,14 +460,14 @@ class Chart:
         labels = []
         vlim = [0, np.ceil(v * 10.0)]
         if v < 1.0:
-            steps = np.array([0.02, 0.05, 0.1, 0.2, 0.5])
+            steps = np.array([0.01, 0.02, 0.05, 0.1, 0.2, 0.5])
             step = steps[np.argmin(np.abs(steps - v))]
             t = 0.0
             while t < 3.0 * v:
                 t = t + step
                 ticks.append(t)
                 labels.append(str(int(t * 100)) + 'K')
-        else:
+        elif v < 1000.0:
             steps = np.array([1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500])
             step = steps[np.argmin(np.abs(steps - v))]
             t = 0.0
@@ -471,6 +475,14 @@ class Chart:
                 t = t + step
                 ticks.append(t)
                 labels.append(str(int(t)) + 'M')
+        else:
+            steps = np.array([500, 1000, 2000, 2500, 5000])
+            step = steps[np.argmin(np.abs(steps - v))]
+            t = 0.0
+            while t < 3.0 * v:
+                t = t + step
+                ticks.append(t)
+                labels.append(str(t * 0.001) + 'B')
         # print('step = {}'.format(step))
 
         # Update axis limits

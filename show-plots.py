@@ -8,11 +8,9 @@ import pandas_datareader
 import requests_cache
 import chart
 
-# import joblib
-# import multiprocessing
-
 # Some global variables
 N = 100;                      # Look at stock prices for the last N days
+sma_sizes = [10, 50, 100]     # SMA window sizes for moving average
 figFolder = 'figs'            # Default folder to save figures
 
 # Some default plotting attributes
@@ -25,26 +23,16 @@ matplotlib.rcParams['figure.dpi'] = 108
 if not os.path.exists(figFolder):
     os.makedirs(figFolder)
 
-def showChart(symbol, stock, color_scheme = 'sunrise'):
-    view = chart.showChart(stock[:, :, symbol], color_scheme = color_scheme)
-    # view = chart.showChart(stock.iloc[:, :, i], color_scheme = color_scheme)
-    view['title'] = view['axes'].set_title(symbol)
-    filename = figFolder + '/' + symbol.lower() + '.png'
-    view['figure'].savefig(filename)
-    matplotlib.pyplot.close(view['figure'])
-    os.system('open ' + filename)
-    return view
-
 def main(args):
-    days = N + 100;
+    days = N + max(sma_sizes);
     if args.verbose:
         print('Retrieving data for {} for {} days ...'.format(args.symbols, days))
 
     # End day is always today, then roll back the maximum SMA window, plus another week
     end = datetime.date.today()
-    start = end - datetime.timedelta(days = days)
-    session = requests_cache.CachedSession(cache_name = 'cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 1))
-    stock = pandas_datareader.DataReader(args.symbols, 'google', start, end, session = session)
+    start = end - datetime.timedelta(days = int(days * 1.6))
+    #session = requests_cache.CachedSession(cache_name = 'cache', backend = 'sqlite', expire_after = datetime.timedelta(hours = 1))
+    stock = pandas_datareader.DataReader(args.symbols, 'yahoo', start, end)
 
     # Make sure the order of data is ascending
     if stock.major_axis[1] < stock.major_axis[0]:
@@ -53,6 +41,7 @@ def main(args):
         stock = stock.sort_index(axis = 1, ascending = True)
 
     if args.verbose > 1:
+        print(stock)
         print(stock.iloc[:, ::-1, 0].head())
 
     # Google reports at least 250 days, truncate to desired length
@@ -79,11 +68,6 @@ def main(args):
         if args.verbose:
             print('Generating {} ... {} ...'.format(symbol, filename))
         view.savefig(filename)
-
-    # num_cores = multiprocessing.cpu_count()
-    # print('Number of cores = {}'.format(num_cores))\
-    # with joblib.parallel_backend('threading'):
-    #     joblib.Parallel(n_jobs = 2)(joblib.delayed(showChart)(symbol, stock) for symbol in args.symbols)
 
 #
 #  M A I N
