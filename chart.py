@@ -235,6 +235,7 @@ class Chart:
 
         self.n = n
         self.sma = dict.fromkeys(sma_sizes)
+        self.symbol = 'ABCD'
         self.colormap = colorscheme.colorscheme(color_scheme)
         self.skip_weekends = skip_weekends
 
@@ -258,7 +259,9 @@ class Chart:
         
         # Backdrop gradient
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', self.colormap.backdrop)
-        self.im = self.axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, aspect = 'auto')
+        fprop = matplotlib.font_manager.FontProperties(style = 'normal', size = 48, weight = 'bold', stretch = 'normal')
+        self.im = self.axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, extent = (-1, 1, -1, 1), aspect = 'auto')
+        self.st = self.axb.text(0, 0, self.symbol, fontproperties = fprop, horizontalalignment = 'center', verticalalignment = 'center', color = 'w', alpha = 0.33)
 
         # SMA lines
         self.lines = []
@@ -324,20 +327,22 @@ class Chart:
         self.axq.set_ylim([0, 110])
         self.axv.set_ylim([0, 10])
 
-        self.title = self.axq.set_title('', color = self.colormap.text)
+        self.title = self.axq.set_title(self.symbol, color = self.colormap.text)
 
     def set_xdata(self, xdata):
         if len(xdata) != self.n:
             print('xdata must have the same length as the chart setup (n = {}).'.format(self.n))
             return
-        dates = matplotlib.dates.date2num(xdata.tolist())
+        dates = xdata.tolist()
+        dnums = matplotlib.dates.date2num(dates)
 
         # Gather the major indices of weeday == Monday
         majors = []
         for i, t in enumerate(dates):
-            if matplotlib.dates.num2date(t).weekday() == 0:
+            if t.weekday() == 0:
                majors.append(i)
-        print('{}, ..., {} -> {}'.format(majors[0], majors[-1], xdata[majors[-1]]))
+        n = majors[-1]
+        print('{}, ..., {} -> {} ({})'.format(majors[0], n, dates[n].strftime('%Y-%m-%d'), dates[n].weekday()))
 
         def format_date(x, pos = None):
             index = int(x)
@@ -345,7 +350,7 @@ class Chart:
             if x < 0:
                 #print('Project to {} days from {}.'.format(-index, matplotlib.dates.num2date(dates[0]).strftime('%b %d')))
                 k = 0
-                t = dates[0]
+                t = dnums[0]
                 while (k <= -index):
                     t = t - 1.0
                     weekday = matplotlib.dates.num2date(t).weekday()
@@ -358,7 +363,7 @@ class Chart:
             elif index > self.n - 1:
                 #print('Extrapolate {} days from {}.'.format(index - self.n, matplotlib.dates.num2date(dates[-1]).strftime('%b %d')))
                 k = 0
-                t = dates[-1]
+                t = dnums[-1]
                 while (k <= index - self.n):
                     t = t + 1.0
                     weekday = matplotlib.dates.num2date(t).weekday()
@@ -368,7 +373,7 @@ class Chart:
                     #print('index = {}   weekday {}   k = {}'.format(index, weekday, k))
                 date = matplotlib.dates.num2date(t)
             else:
-                date = matplotlib.dates.num2date(dates[index])
+                date = dates[index]
             #print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
             return date.strftime('%b %d')
 
@@ -389,14 +394,23 @@ class Chart:
 
         matplotlib.pyplot.setp(self.axq.get_xticklabels(), rotation = 45, horizontalalignment = 'right')
 
-    def set_data(self, data):
+    def set_data(self, panel):
+        # Get the symbol from minor axis
+        self.symbol = panel.minor_axis[0]
+
+        # Get the first frame
+        data = panel.iloc[:, :, 0]
         quotes = np.transpose([
-            data.loc[:, "Open"].tolist(),
-            data.loc[:, "High"].tolist(),
-            data.loc[:, "Low"].tolist(),
-            data.loc[:, "Close"].tolist(),
-            np.multiply(data.loc[:, "Volume"], 1.0e-6).tolist()
+            data.loc[:, 'Open'].tolist(),
+            data.loc[:, 'High'].tolist(),
+            data.loc[:, 'Low'].tolist(),
+            data.loc[:, 'Close'].tolist(),
+            np.multiply(data.loc[:, 'Volume'], 1.0e-6).tolist()
         ])
+
+        # self.axq.draw_artist(self.axq.patch)
+        # self.axv.draw_artist(self.axv.patch)
+
         for k, q in enumerate(quotes[-self.n:, :]):
             o, h, l, c, v = q[:5]
             if c >= o:
@@ -413,6 +427,10 @@ class Chart:
             self.clines[k].set_color(line_color)
             self.vrects[k].set_height(v)
             self.vrects[k].set_facecolor(bar_color)
+            # self.axq.draw_artist(self.vlines[k])
+            # self.axq.draw_artist(self.olines[k])
+            # self.axq.draw_artist(self.clines[k])
+            # self.axq.draw_artist(self.vrects[k])
 
         # Find the span of columns (OHLC)
         nums = np.array(quotes[-self.n:, 0:4]).flatten()
@@ -423,6 +441,7 @@ class Chart:
             sma = np.convolve(quotes[:, 3], np.ones((k, )) / k, mode = 'valid')
             self.sma[k] = sma[-self.n:]
             self.lines[j].set_ydata(self.sma[k])
+            # self.axq.draw_artist(self.lines[j])
             if np.sum(np.isfinite(self.sma[k])):
                 qlim[0] = min(qlim[0], np.nanpercentile(self.sma[k], 20))
                 qlim[1] = max(qlim[1], np.nanpercentile(self.sma[k], 80))
@@ -456,8 +475,8 @@ class Chart:
         self.axv.set_ylim(vlim)
         self.axv.set_yticks(ticks)
         self.axv.set_yticklabels(labels)
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
+        self.title.set_text(self.symbol)
+        self.st.set_text(self.symbol)
 
     def set_title(self, title):
         self.title.set_text(title)

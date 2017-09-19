@@ -39,12 +39,22 @@ def main(args):
     days = N + 100;
     if args.verbose:
         print('Retrieving data for {} for {} days ...'.format(args.symbols, days))
+
     # End day is always today, then roll back the maximum SMA window, plus another week
     end = datetime.date.today()
     start = end - datetime.timedelta(days = days)
     session = requests_cache.CachedSession(cache_name = 'cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 1))
     stock = pandas_datareader.DataReader(args.symbols, 'google', start, end, session = session)
-    print(stock.iloc[:, ::-1, 0].head())
+
+    # Make sure the order of data is ascending
+    if stock.major_axis[1] < stock.major_axis[0]:
+        print('Reordering data ...')
+        # Panel object is usually like this: Dimensions: 5 (items) x days (major_axis) x nstocks (minor_axis)
+        stock = stock.sort_index(axis = 1, ascending = True)
+
+    if args.verbose > 1:
+        print(stock.iloc[:, ::-1, 0].head())
+
     # Google reports at least 250 days, truncate to desired length
     if stock.shape[1] > days:
         if args.verbose > 1:
@@ -54,14 +64,14 @@ def main(args):
     # Set up the chart
     view = chart.Chart(N, color_scheme = args.color_scheme)
     view.set_xdata(stock.iloc[:, :, 0].index[-N:])
+    matplotlib.pyplot.show(block = False)
     # matplotlib.pyplot.show()
 
     # Go through the symbols
     for symbol in args.symbols:
         if args.verbose:
             print('Generating {} ...'.format(symbol))
-        view.set_data(stock[:, :, symbol])
-        view.set_title(symbol)
+        view.set_data(stock[:, :, [(symbol)]])
         filename = figFolder + '/' + symbol.lower() + '.png'
         view.savefig(filename)
 

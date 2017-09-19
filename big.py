@@ -10,7 +10,7 @@ import chart
 import tensorflow as tf
 
 # Some global variables
-N = 1000;                     # Look at stock prices for the last N days
+N = 1250;                     # Look at stock prices for the last N days
 figFolder = 'figs'            # Default folder to save figures
 sma_sizes = [10, 50, 100]     # SMA window sizes
 
@@ -24,22 +24,20 @@ matplotlib.rcParams['figure.dpi'] = 108
 # Fang - GOOG, NFLX, AMZN, FB
 # Chip - MU, AMAT, MRVL, NVDA
 symbols = [
-    '^DJI',
+    '^DJI', '^SPX',
     'AAPL', 'TSLA',
     'GOOG', 'BIDU', 'MSFT',
-    'NVDA', 'AMAT', 'MRVL', 'MU', 'AMD',
-    'AMZN', 'EBAY', 'BABA', 'BKS',
+    'NVDA', 'AMAT', 'MRVL', 'MU', 'AMD', 'INTC',
+    'AMZN', 'NFLX', 'EBAY', 'BABA', 'BKS',
     'FB', 'TWTR', 'YELP',
-    'NFLX',
     'NDLS', 'CMG', 'MCD',
-    'S', 'T', 'VZ', 'TMUS',
+    'S', 'T', 'VZ', 'TMUS', 'QCOM',
     'SBUX',
-    'STX', 'WDC', 'INTC', 'MSFT',
+    'STX', 'WDC', 'DVMT', 'SNDK', 'HTCH', 'TXN', 'ADI', 'MCHP',
     'SNE',
-    'OGE', 'JASO',
     'C', 'V', 'BAC', 'WFC', 'AMTD',
-    'BP',
-    'F', 'TM', 'Z'
+    'BP', 'XON', 'CVX', 'OGE', 'JASO',
+    'F', 'GM', 'TM'
 ]
 
 max(sma_sizes)
