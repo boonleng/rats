@@ -45,5 +45,5 @@ def get():
     start = end - datetime.timedelta(days = N)
     print('Loading data since from ' + str(start) + ' to ' + str(end) + ' ...')
     session = requests_cache.CachedSession(cache_name = 'cache-sub', backend = 'sqlite', expire_after = datetime.timedelta(days = 1))
-    quotes = pandas_datareader.DataReader(symbols, 'yahoo', start, end, session = session)
+    quotes = pandas_datareader.DataReader(symbols, 'google', start, end, session = session)
     return quotes

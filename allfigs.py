@@ -20,7 +20,8 @@ matplotlib.rcParams['figure.dpi'] = 108
 stock = data.get()
 
 print('Preparing figure ...')
-view = chart.Chart(K)
+view = chart.Chart(K, color_scheme = 'night')
+# view = chart.Chart(K)
 view.set_xdata(stock.major_axis[-K:])
 
 # Make sure we get enough data so that all SMA curves are valid
@@ -34,6 +35,11 @@ for symbol in stock.minor_axis:
     view.set_data(sss[:, :, [symbol]])
     # Derive the filename
     filename = figFolder + '/' + symbol + '.png'
-    print('\033[38;5;46m{}\033[0m -> {}'.format(symbol.rjust(5), filename))
+    s = sss[['Open'], :, [symbol]].iloc[0, -1, 0]
+    e = sss[['Close'], :, [symbol]].iloc[0, -1, 0]
+    if e > s: 
+        print('\033[38;5;46m{}\033[0m -> {}'.format(symbol.rjust(5), filename))
+    else:
+        print('\033[38;5;196m{}\033[0m -> {}'.format(symbol.rjust(5), filename))
     # Save an image
     view.savefig(filename)

@@ -265,7 +265,7 @@ class Chart:
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', self.colormap.backdrop)
         fprop = matplotlib.font_manager.FontProperties(style = 'normal', size = 60, weight = 'bold', stretch = 'normal')
         self.im = self.axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, extent = (-1, 1, -1, 1), aspect = 'auto')
-        self.st = self.axb.text(0, 0, self.symbol, fontproperties = fprop, horizontalalignment = 'center', verticalalignment = 'center', color = 'w', alpha = 0.33)
+        self.st = self.axb.text(0, 0, self.symbol, fontproperties = fprop, horizontalalignment = 'center', verticalalignment = 'center', color = self.colormap.background, alpha = 0.33)
 
         # SMA lines
         self.lines = []

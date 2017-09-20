@@ -21,6 +21,8 @@ def colorscheme(name = 'sunset'):
 	scheme.grid = '#b0b0b0'
 	scheme.text = 'k'
 	scheme.background = 'w'
+	scheme.backtextalpha = 0.33
+	scheme.backtextcolor = 'w'
 	name = name.lower()
     # Backdrop
 	if name == 'sunset':
