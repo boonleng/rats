@@ -13,7 +13,7 @@ def default():
 def colorscheme(name = 'sunset'):
 	# Initialize an empty object
 	scheme = type('colorscheme', (), {})()
-	scheme.line = ['#0055ff', '#ee8800', '#559900', '#990000']
+	scheme.line = ['#0055ff', '#ee8800', '#55aa00', '#990000']
 	scheme.up = 'k'
 	scheme.down = 'r'
 	scheme.bar_up = 'g'
@@ -21,8 +21,8 @@ def colorscheme(name = 'sunset'):
 	scheme.grid = '#b0b0b0'
 	scheme.text = 'k'
 	scheme.background = 'w'
-	scheme.backtextalpha = 0.33
-	scheme.backtextcolor = 'w'
+	scheme.background_text_color = 'w'
+	scheme.background_text_alpha = 0.33
 	name = name.lower()
     # Backdrop
 	if name == 'sunset':
@@ -44,6 +44,8 @@ def colorscheme(name = 'sunset'):
 		scheme.grid = '#3355cc'
 		scheme.text = 'w'
 		scheme.background = 'k'
+		scheme.background_text_color = '#0077ff'
+		scheme.background_text_alpha = 0.20
 	else:
 		scheme.backdrop = ['#ffffff', '#ffffff']
 	return scheme
