@@ -26,13 +26,13 @@ symbols = [
 ]
 
 # Specify end day, then roll back the maximum SMA window, plus another week
-end = datetime.date(2017, 9, 15)
+end = datetime.date(2017, 9, 21)
 start = end - datetime.timedelta(days = N)
 
 def get_old_data():
     print('Loading data since ' + str(start) + ' ...')
     session = requests_cache.CachedSession(cache_name = 'cache-big', backend = 'sqlite', expire_after = datetime.timedelta(days = 60))
-    quotes = pandas_datareader.DataReader(symbols, 'google', start, end, session = session)
+    quotes = pandas_datareader.DataReader(symbols, 'yahoo', start, end, session = session)
     return quotes
 
 def get_old_indices():

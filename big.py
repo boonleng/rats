@@ -1,8 +1,7 @@
-import datetime
-import numpy as np
+import os
+import pandas
 import data
-import time
-import tensorflow as tf
+# import tensorflow as tf
 
 quotes = data.get_old_data()
 
@@ -22,3 +21,13 @@ L = quotes.shape[2]
 # tf.global_variables_initializer().run()
 
 # for i in range(L):
+
+symbolFolder = 'symbols'            # Default folder
+if not os.path.exists(symbolFolder):
+    os.makedirs(symbolFolder)
+
+symbols = quotes.minor_axis.tolist()
+
+for sym in symbols:
+	df = quotes[:, :, sym]
+	df.to_pickle(symbolFolder + '/' + sym + '.pkl')
