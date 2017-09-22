@@ -324,8 +324,8 @@ class Chart:
 
         self.axq.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
 
-        self.axq.set_xlim([-1.5, self.n + 9.5])
-        self.axv.set_xlim([-1.5, self.n + 9.5])
+        self.axq.set_xlim([-1.5, self.n + 0.5])
+        self.axv.set_xlim([-1.5, self.n + 0.5])
         self.axq.xaxis.set_data_interval(-1.0, self.n + 10.0)
         self.axv.xaxis.set_data_interval(-1.0, self.n + 10.0)
 

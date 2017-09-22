@@ -1,48 +1,95 @@
 import data
 import matplotlib
 import tensorflow as tf
+import numpy as np
+import pandas
+import chart
+
+# Some default plotting attributes
+matplotlib.rcParams['font.family'] = 'serif'
+matplotlib.rcParams['font.serif'] = ['Arial']
+matplotlib.rcParams['font.sans-serif'] = ['System Font', 'Verdana', 'Arial']
+matplotlib.rcParams['figure.figsize'] = (7, 4)   # Change the size of plots
+matplotlib.rcParams['figure.dpi'] = 108
 
 quotes = data.get_old_data()
 # quotes = data.get_old_data(reload = True)
 sym = 'NVDA'
 data = quotes[:, :, sym]
-yy = data.loc[:, 'Close'].tolist()
+yy = np.array(data.loc[:, 'Close'].tolist(), dtype = np.float32)
 
 # print(quotes)
 
 print('Setting up \033[38;5;214mTensorflow\033[0m ...')
 
-W = tf.Variable([0.3], dtype=tf.float32)
-b = tf.Variable([-0.8], dtype=tf.float32)
-x = tf.placeholder(tf.float32)
-y = tf.placeholder(tf.float32)
-y_ = W * x + b
 
-loss = tf.reduce_sum(tf.square(y_ - y))
+# Model parameters
+W = tf.Variable([0.01], dtype = tf.float32)
+b = tf.Variable([0.01], dtype = tf.float32)
+# Model input and output
+x = tf.placeholder(tf.float32)
+linear_model = W * x + b
+y = tf.placeholder(tf.float32)
+
+# loss
+loss = tf.reduce_mean(tf.square(linear_model - y)) # sum of the squares
+# optimizer
 optimizer = tf.train.GradientDescentOptimizer(0.01)
 train = optimizer.minimize(loss)
 
-# Training data
-# x_train = list(matplotlib.dates.date2num(data.index[0:-5].tolist()))
-x_train = list(range(len(yy) - 5))
-y_train = yy[0:-5]
+# training data
+# x_train = [1, 2, 3, 4, 5, 6]
+# y_train = [0, -1, -2, -3, -4, -5]
+N = 5
+# y_train = yy[0:N]
+# print(x_train)
+# print(y_train)
 
+# training loop
 init = tf.global_variables_initializer()
 sess = tf.Session()
-sess.run(init)
+sess.run(init) # reset values to wrong
 
-print('Training ...')
-for i in range(1000):
-    sess.run(train, {x: x_train, y: y_train})
+for k in range(int(len(yy) / N)):
+    x_train = np.multiply(np.array(list(range(k * N, k * N + N)), dtype = np.float32), 0.002)
+    # y_train = x_train
+    y_train = yy[k * N : k * N + N]
+    # print(x_train, y_train)
+    sess.run(train, feed_dict = {x: x_train, y: y_train})
+    if k % 10 == 0:
+        curr_W, curr_b, curr_loss = sess.run([W, b, loss], {x: x_train, y: y_train})
+        print("i: %s   W: %s b: %s loss: %s" % (x_train[0], curr_W, curr_b, curr_loss))
 
-W_c, b_c, loss_c = sess.run([W, b, loss], {x: x_train, y: y_train})
-print("W: %s b: %s loss: %s" % (W_c, b_c, loss_c))
+x0 = np.multiply(np.array(range(k * N, k * N + N), dtype = np.float32), 0.002)
+y0 = curr_W * x0 + curr_b
+print('y0 = %s' % (y0))
 
-# Create the model
-# L = quotes.shape[2]
-# x = tf.placeholder(tf.float32, [None, L], label = 'x')
-# w = tf.Variable(tf.zeros([L, L]), label = 'w')
-# b = tf.Variable(tf.zeros([L, L]), label = 'b')
-# y = tf.matmul(x, W) + b
+dnum = matplotlib.dates.date2num(quotes.major_axis.tolist()[-1])
+dates = quotes.major_axis.tolist()
+k = 0
+i = 0;
+while k < N:
+    day = matplotlib.dates.num2date(dnum + i).weekday()
+    if day >= 0 and day < 5:
+        dates.append(matplotlib.dates.num2date(dnum + i))
+        k = k + 1
+    i = i + 1
 
-# y_ = tf.placeholder(tf.float32, [None, L])
+for d in dates[-8:]:
+    print(d.strftime('%Y-%m-%d'))
+
+qq = np.zeros((5, len(data) + N, 1))
+qq[:, :, 0] = [
+    data.loc[:, 'Open'].tolist() + list(np.add(y0, -3.0)),
+    data.loc[:, 'High'].tolist() + list(np.add(y0, 1.0)),
+    data.loc[:, 'Low'].tolist() + list(np.add(y0, -4.0)),
+    data.loc[:, 'Close'].tolist() + list(y0),
+    data.loc[:, 'Volume'].tolist() + np.multiply(np.ones(N), 10.0e6).tolist()
+]
+
+d2 = pandas.Panel(data = qq, items = ['Open', 'High', 'Low', 'Close', 'Volume'], minor_axis = [sym], major_axis = dates)
+
+view = chart.Chart(90)
+view.set_xdata(dates[-90:])
+view.set_data(d2)
+view.savefig('figs/_test.png')
