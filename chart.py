@@ -265,8 +265,9 @@ class Chart:
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', self.colormap.backdrop)
         fprop = matplotlib.font_manager.FontProperties(style = 'normal', size = 60, weight = 'bold', stretch = 'normal')
         self.im = self.axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, extent = (-1, 1, -1, 1), aspect = 'auto')
-        self.st = self.axb.text(0, 0, self.symbol, fontproperties = fprop, horizontalalignment = 'center', verticalalignment = 'center',
-         color = self.colormap.background_text_color, alpha = self.colormap.background_text_alpha)
+        self.st = self.axb.text(0, 0, self.symbol,
+            fontproperties = fprop, horizontalalignment = 'center', verticalalignment = 'center',
+            color = self.colormap.background_text_color, alpha = self.colormap.background_text_alpha)
 
         # SMA lines
         self.lines = []
@@ -289,7 +290,7 @@ class Chart:
             vrect = matplotlib.patches.Rectangle(xy = (i - 0.5, 0.0),
                 fill = True,
                 width = 1.0,
-                height = (i % 10) * 0.5,
+                height = 10.0,
                 facecolor = '#0000ff',
                 edgecolor = self.colormap.text,
                 linewidth = 0.75,
@@ -416,7 +417,7 @@ class Chart:
         # self.axq.draw_artist(self.axq.patch)
         # self.axv.draw_artist(self.axv.patch)
 
-        for k, q in enumerate(quotes[-self.n:, :]):
+        for k, q in enumerate(quotes[-self.n:-5, :]):
             o, h, l, c, v = q[:5]
             if c >= o:
                 line_color = self.colormap.up
@@ -436,6 +437,16 @@ class Chart:
             # self.axq.draw_artist(self.olines[k])
             # self.axq.draw_artist(self.clines[k])
             # self.axq.draw_artist(self.vrects[k])
+        for q in quotes[-5:, :]:
+            o, h, l, c, v = q[:5]
+            line_color = '#0077aa'
+            self.vlines[k].set_ydata((l, h))
+            self.vlines[k].set_color(line_color)
+            self.olines[k].set_ydata((o, o))           
+            self.olines[k].set_color(line_color)
+            self.clines[k].set_ydata((c, c))    
+            self.clines[k].set_color(line_color)
+            k = k + 1
 
         # Find the span of (OHLC)
         nums = np.array(quotes[-self.n:, 0:4]).flatten()

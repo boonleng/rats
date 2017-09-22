@@ -38,12 +38,7 @@ optimizer = tf.train.GradientDescentOptimizer(0.01)
 train = optimizer.minimize(loss)
 
 # training data
-# x_train = [1, 2, 3, 4, 5, 6]
-# y_train = [0, -1, -2, -3, -4, -5]
 N = 5
-# y_train = yy[0:N]
-# print(x_train)
-# print(y_train)
 
 # training loop
 init = tf.global_variables_initializer()
@@ -52,13 +47,11 @@ sess.run(init) # reset values to wrong
 
 for k in range(int(len(yy) / N)):
     x_train = np.multiply(np.array(list(range(k * N, k * N + N)), dtype = np.float32), 0.002)
-    # y_train = x_train
     y_train = yy[k * N : k * N + N]
-    # print(x_train, y_train)
     sess.run(train, feed_dict = {x: x_train, y: y_train})
     if k % 10 == 0:
         curr_W, curr_b, curr_loss = sess.run([W, b, loss], {x: x_train, y: y_train})
-        print("i: %s   W: %s b: %s loss: %s" % (x_train[0], curr_W, curr_b, curr_loss))
+        print("i: %.4f   W: %9.4f  b: %9.4f loss: %9.4f" % (x_train[0], curr_W, curr_b, curr_loss))
 
 x0 = np.multiply(np.array(range(k * N, k * N + N), dtype = np.float32), 0.002)
 y0 = curr_W * x0 + curr_b
