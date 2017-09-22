@@ -1,9 +1,8 @@
-import os
-import pandas
 import data
 # import tensorflow as tf
 
 quotes = data.get_old_data()
+# quotes = data.get_old_data(reload = True)
 
 # Create the model
 L = quotes.shape[2]
@@ -22,12 +21,7 @@ L = quotes.shape[2]
 
 # for i in range(L):
 
-symbolFolder = 'symbols'            # Default folder
-if not os.path.exists(symbolFolder):
-    os.makedirs(symbolFolder)
+# print('Saving to offline files ...')
+# data.save_to_folder(quotes)
 
-symbols = quotes.minor_axis.tolist()
-
-for sym in symbols:
-	df = quotes[:, :, sym]
-	df.to_pickle(symbolFolder + '/' + sym + '.pkl')
+print(quotes)
