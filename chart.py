@@ -418,23 +418,25 @@ class Chart:
         # self.axq.draw_artist(self.axq.patch)
         # self.axv.draw_artist(self.axv.patch)
 
+        for k, q in enumerate(quotes[-self.n:, :]):
+            o, h, l, c, v = q[:5]
+            if c >= o:
+                line_color = self.colormap.up
+                bar_color = self.colormap.bar_up
+            else:
+                line_color = self.colormap.down
+                bar_color = self.colormap.bar_down
+            self.vlines[k].set_ydata((l, h))
+            self.vlines[k].set_color(line_color)
+            self.olines[k].set_ydata((o, o))
+            self.olines[k].set_color(line_color)
+            self.clines[k].set_ydata((c, c))    
+            self.clines[k].set_color(line_color)
+            self.vrects[k].set_height(v)
+            self.vrects[k].set_facecolor(bar_color)
+        # Replace the colors of the last portion if self.forecast > 0
         if self.forecast > 0:
-            for k, q in enumerate(quotes[-self.n : -self.forecast + 1, :]):
-                o, h, l, c, v = q[:5]
-                if c >= o:
-                    line_color = self.colormap.up
-                    bar_color = self.colormap.bar_up
-                else:
-                    line_color = self.colormap.down
-                    bar_color = self.colormap.bar_down
-                self.vlines[k].set_ydata((l, h))
-                self.vlines[k].set_color(line_color)
-                self.olines[k].set_ydata((o, o))
-                self.olines[k].set_color(line_color)
-                self.clines[k].set_ydata((c, c))    
-                self.clines[k].set_color(line_color)
-                self.vrects[k].set_height(v)
-                self.vrects[k].set_facecolor(bar_color)
+            k = self.n - self.forecast
             for q in quotes[-self.forecast:, :]:
                 o, h, l, c, v = q[:5]
                 line_color = '#2b8aff'
@@ -447,23 +449,6 @@ class Chart:
                 self.clines[k].set_color(line_color)
                 self.vrects[k].set_facecolor(bar_color)
                 k = k + 1
-        else:
-            for k, q in enumerate(quotes[-self.n:, :]):
-                o, h, l, c, v = q[:5]
-                if c >= o:
-                    line_color = self.colormap.up
-                    bar_color = self.colormap.bar_up
-                else:
-                    line_color = self.colormap.down
-                    bar_color = self.colormap.bar_down
-                self.vlines[k].set_ydata((l, h))
-                self.vlines[k].set_color(line_color)
-                self.olines[k].set_ydata((o, o))
-                self.olines[k].set_color(line_color)
-                self.clines[k].set_ydata((c, c))    
-                self.clines[k].set_color(line_color)
-                self.vrects[k].set_height(v)
-                self.vrects[k].set_facecolor(bar_color)
         # self.axq.draw_artist(self.vlines[k])
         # self.axq.draw_artist(self.olines[k])
         # self.axq.draw_artist(self.clines[k])
