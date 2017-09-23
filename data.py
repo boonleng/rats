@@ -8,7 +8,7 @@ import requests_cache
 # Chip - MU, AMAT, MRVL, NVDA
     # '^DJI', '^GSPC', '^IXIC',
 indices = ['^DJI', '^GSPC', '^IXIC']
-symbols = [
+SYMBOLS = [
     'AAPL', 'TSLA',
     'GOOG', 'BIDU', 'MSFT',
     'NVDA', 'AMAT', 'MRVL', 'MU', 'AMD', 'INTC',
@@ -23,10 +23,14 @@ symbols = [
     'BP', 'XON', 'CVX', 'OGE', 'JASO',
     'F', 'GM', 'TM'
 ]
+LATEST_DATE = datetime.date(2017, 9, 23)
 
 def get_old_data(folder = 'data', reload = False):
     """
-        Get 5 years worth of data on the selected symbols
+        Get a set of 5-year stock data on the selected symbols
+        NOTE: If the offline folder is present, data will be loaded
+        from that folder. Newly added symbols to the script do not
+        mean they will be available
     """
     if os.path.exists(folder) and not reload:
         import re
@@ -51,27 +55,23 @@ def get_old_data(folder = 'data', reload = False):
             dd[:, :, i] = np.transpose(df.values, (1, 0))
         quotes = pandas.Panel(data = dd, items = df.keys().tolist(), minor_axis = local_symbols, major_axis = df.index.tolist())
     else:
-        end = datetime.date(2017, 9, 21)
-        start = end - datetime.timedelta(days = 5 * 365)
-        print('Loading data from ' + str(start) + ' to ' + str(end) + ' ...')
-        session = requests_cache.CachedSession(cache_name = 'cache-big', backend = 'sqlite', expire_after = datetime.timedelta(days = 60))
-        quotes = pandas_datareader.DataReader(symbols, 'yahoo', start, end, session = session)
+        quotes = get_data_from_net(SYMBOLS)
     return quotes
 
 def get_old_indices():
-    end = datetime.date(2017, 9, 21)
+    end = LATEST_DATE
     start = end - datetime.timedelta(days = 5 * 365)
     print('Loading indices from ' + str(start) + ' to ' + str(end) + ' ...')
-    session = requests_cache.CachedSession(cache_name = 'cache-idx', backend = 'sqlite', expire_after = datetime.timedelta(days = 60))
+    session = requests_cache.CachedSession(cache_name = 'cache-idx', backend = 'sqlite', expire_after = datetime.timedelta(days = 5))
     quotes = pandas_datareader.DataReader(indices, 'yahoo', start, end, session = session)
     return quotes
 
-def get(engine = 'yahoo'):
-    end = datetime.date.today()
-    start = end - datetime.timedelta(days = 250)
+def get_data_from_net(symbols, engine = 'yahoo'):
+    end = LATEST_DATE
+    start = end - datetime.timedelta(days = 5 * 365)
     print('Loading data from ' + str(start) + ' to ' + str(end) + ' ...')
-    session = requests_cache.CachedSession(cache_name = 'cache-sub', backend = 'sqlite', expire_after = datetime.timedelta(days = 1))
-    quotes = pandas_datareader.DataReader(symbols, engine, start, end, session = session)
+    session = requests_cache.CachedSession(cache_name = 'cache-big', backend = 'sqlite', expire_after = datetime.timedelta(days = 5))
+    quotes = pandas_datareader.DataReader(symbols, 'yahoo', start, end, session = session)
     return quotes
 
 def save_to_folder(quotes, folder = 'data'):
