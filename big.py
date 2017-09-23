@@ -53,7 +53,8 @@ for k in range(int(len(yy) / N)):
         curr_W, curr_b, curr_loss = sess.run([W, b, loss], {x: x_train, y: y_train})
         print("i: %.4f   W: %9.4f  b: %9.4f loss: %9.4f" % (x_train[0], curr_W, curr_b, curr_loss))
 
-x0 = np.multiply(np.array(range(k * N, k * N + N), dtype = np.float32), 0.002)
+k = len(yy)
+x0 = np.multiply(np.array(range(k, k + N), dtype = np.float32), 0.002)
 y0 = curr_W * x0 + curr_b
 print('y0 = %s' % (y0))
 
@@ -68,9 +69,6 @@ while k < N:
         k = k + 1
     i = i + 1
 
-for d in dates[-8:]:
-    print(d.strftime('%Y-%m-%d'))
-
 qq = np.zeros((5, len(data) + N, 1))
 qq[:, :, 0] = [
     data.loc[:, 'Open'].tolist() + list(np.add(y0, -3.0)),
@@ -82,7 +80,7 @@ qq[:, :, 0] = [
 
 d2 = pandas.Panel(data = qq, items = ['Open', 'High', 'Low', 'Close', 'Volume'], minor_axis = [sym], major_axis = dates)
 
-view = chart.Chart(90)
+view = chart.Chart(90, color_scheme = 'sunset', forecast = N)
 view.set_xdata(dates[-90:])
 view.set_data(d2)
 view.savefig('figs/_test.png')

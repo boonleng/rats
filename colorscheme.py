@@ -27,11 +27,15 @@ def colorscheme(name = 'sunset'):
     # Backdrop
 	if name == 'sunset':
 		scheme.backdrop = ['#c9e6e3', '#ffe6a9', '#ebc3bc']
+		scheme.background_text_color = '#dd7700'
+		scheme.background_text_alpha = 0.13
 	elif name == 'sunrise2':
 		print('here')
 		scheme.backdrop = ['#ffffbb', '#ffcccc', '#ccccff']
 	elif name == 'sunrise':
 		scheme.backdrop = ['#ccccff', '#d8ccea', '#e5cce5', '#f8cccc', '#fbdecc', '#fff0bb', '#f0f0ee']
+		scheme.background_text_color = '#dd3377'
+		scheme.background_text_alpha = 0.13
 	elif name == 'plain':
 		scheme.backdrop = ['#ffffff']
 	elif name == 'night':
