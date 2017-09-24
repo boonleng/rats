@@ -46,7 +46,6 @@ def get_old_data(folder = 'data', reload = False):
         # Read the last one for the data dimensions
         df = pandas.read_pickle(file)
         print('Loading \033[38;5;212moffline\033[0m data from ' + str(df.index[0].strftime('%Y-%m-%d')) + ' to ' + str(df.index[-1].strftime('%Y-%m-%d')) + ' ...')
-        #dd = np.empty([df.shape[0], df.shape[1], len(symbols)])
         dd = np.empty([df.shape[1], df.shape[0], len(local_symbols)])
         # Now we go through the files again and read them this time
         for i, sym in enumerate(local_symbols):
@@ -55,7 +54,7 @@ def get_old_data(folder = 'data', reload = False):
             dd[:, :, i] = np.transpose(df.values, (1, 0))
         quotes = pandas.Panel(data = dd, items = df.keys().tolist(), minor_axis = local_symbols, major_axis = df.index.tolist())
     else:
-        quotes = get_data_from_net(SYMBOLS)
+        quotes = get_from_net(SYMBOLS, end = LATEST_DATE, days = 5 * 365, cache = True)
         save_to_folder(quotes)
     return quotes
 
@@ -63,16 +62,20 @@ def get_old_indices():
     end = LATEST_DATE
     start = end - datetime.timedelta(days = 5 * 365)
     print('Loading indices from ' + str(start) + ' to ' + str(end) + ' ...')
-    session = requests_cache.CachedSession(cache_name = 'cache-idx', backend = 'sqlite', expire_after = datetime.timedelta(days = 5))
+    session = requests_cache.CachedSession(cache_name = 'data-idx-cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 5))
     quotes = pandas_datareader.DataReader(indices, 'yahoo', start, end, session = session)
     return quotes
 
-def get_data_from_net(symbols, engine = 'yahoo'):
-    end = LATEST_DATE
-    start = end - datetime.timedelta(days = 5 * 365)
+def get_from_net(symbols, end = datetime.date.today(), days = 150, engine = 'yahoo', cache = False):
+    if not isinstance(symbols, list):
+        symbols = [symbols]
+    start = end - datetime.timedelta(days = days)
     print('Loading data from ' + str(start) + ' to ' + str(end) + ' ...')
-    session = requests_cache.CachedSession(cache_name = 'cache-big', backend = 'sqlite', expire_after = datetime.timedelta(days = 5))
-    quotes = pandas_datareader.DataReader(symbols, 'yahoo', start, end, session = session)
+    if cache:
+        session = requests_cache.CachedSession(cache_name = 'data-' + engine + '-cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 5))
+        quotes = pandas_datareader.DataReader(symbols, engine, start, end, session = session)
+    else:
+        quotes = pandas_datareader.DataReader(symbols, engine, start, end)
     return quotes
 
 def save_to_folder(quotes, folder = 'data'):
@@ -85,3 +88,12 @@ def save_to_folder(quotes, folder = 'data'):
     for sym in symbols:
         df = quotes[:, :, sym]
         df.to_pickle(folder + '/' + sym + '.pkl')
+
+def add_offline(symbols):
+    quotes = get_from_net(symbols, end = LATEST_DATE, days = 5 * 365)
+    # Get around: Somehow pandas Panel data comes in descending order when only one symbol is requested
+    if quotes.major_axis[0] > quotes.major_axis[1]:
+        quotes = quotes.sort_index(axis = 1)
+    print(quotes)
+    save_to_folder(quotes)
+    return quotes

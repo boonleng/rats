@@ -406,7 +406,7 @@ class Chart:
         self.symbol = panel.minor_axis[0]
 
         # Get the first frame
-        data = panel.iloc[:, :, 0]
+        data = panel.loc[:, :, self.symbol]
         quotes = np.transpose([
             data.loc[:, 'Open'].tolist(),
             data.loc[:, 'High'].tolist(),
@@ -414,6 +414,10 @@ class Chart:
             data.loc[:, 'Close'].tolist(),
             np.multiply(data.loc[:, 'Volume'], 1.0e-6).tolist()
         ])
+
+        if data.shape[0] < self.n:
+            print('ERROR: Supplied data is less than the promised setup: {} vs {}'.format(self.n, data.shape[0]))
+            return
 
         # self.axq.draw_artist(self.axq.patch)
         # self.axv.draw_artist(self.axv.patch)
@@ -423,9 +427,11 @@ class Chart:
             if c >= o:
                 line_color = self.colormap.up
                 bar_color = self.colormap.bar_up
+                #print(' Open:{0:.2f} Close:{1:.2f} \033[38;5;46mUp\033[0m'.format(o, c))
             else:
                 line_color = self.colormap.down
                 bar_color = self.colormap.bar_down
+                #print(' Open:{0:.2f} Close:{1:.2f} \033[38;5;196mDown\033[0m'.format(o, c))
             self.vlines[k].set_ydata((l, h))
             self.vlines[k].set_color(line_color)
             self.olines[k].set_ydata((o, o))

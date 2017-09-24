@@ -2,24 +2,14 @@ import os
 import argparse
 import datetime
 import numpy as np
-import matplotlib
-import matplotlib.pyplot
-import pandas_datareader
-import requests_cache
+import data
 import chart
+import mystyle
 
 # Some global variables
 N = 90;                       # Look at stock prices for the last N days
 sma_sizes = [10, 50, 100]     # SMA window sizes for moving average
 figFolder = 'figs'            # Default folder to save figures
-
-# Some default plotting attributes
-matplotlib.rcParams['font.family'] = 'serif'
-matplotlib.rcParams['font.serif'] = ['Arial']
-matplotlib.rcParams['font.sans-serif'] = ['System Font', 'Verdana', 'Arial']
-matplotlib.rcParams['figure.figsize'] = (7, 4)   # Change the size of plots
-matplotlib.rcParams['figure.dpi'] = 108
-
 if not os.path.exists(figFolder):
     os.makedirs(figFolder)
 
@@ -28,11 +18,8 @@ def main(args):
     if args.verbose:
         print('Retrieving data for {} for L = {} ...'.format(args.symbols, L))
 
-    # End day is always today, then roll back the maximum SMA window, plus another week
-    end = datetime.date.today()
-    start = end - datetime.timedelta(days = int(L * 1.6))
-    session = requests_cache.CachedSession(cache_name = 'cache', backend = 'sqlite', expire_after = datetime.timedelta(hours = 1))
-    stock = pandas_datareader.DataReader(args.symbols, 'google', start, end, session = session)
+    # Get the latest data
+    stock = data.get_from_net(args.symbols, days = int(L * 1.6))
 
     # Make sure the order of data is ascending
     if stock.major_axis[1] < stock.major_axis[0]:
@@ -49,6 +36,7 @@ def main(args):
 
     # Go through the symbols
     for symbol in args.symbols:
+        print(stock[:, :, [(symbol)]])
         view.set_data(stock[:, :, [(symbol)]])
         filename = figFolder + '/' + symbol
         if args.pdf:
