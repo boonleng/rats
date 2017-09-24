@@ -56,6 +56,7 @@ def get_old_data(folder = 'data', reload = False):
         quotes = pandas.Panel(data = dd, items = df.keys().tolist(), minor_axis = local_symbols, major_axis = df.index.tolist())
     else:
         quotes = get_data_from_net(SYMBOLS)
+        save_to_folder(quotes)
     return quotes
 
 def get_old_indices():
