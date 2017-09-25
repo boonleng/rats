@@ -32,7 +32,7 @@ def colorscheme(name = 'sunset'):
 	elif name == 'sunrise2':
 		print('here')
 		scheme.backdrop = ['#ffffbb', '#ffcccc', '#ccccff']
-	elif name == 'sunrise':
+	elif name == 'sunrise' or name == 'default':
 		scheme.backdrop = ['#ccccff', '#d8ccea', '#e5cce5', '#f8cccc', '#fbdecc', '#fff0bb', '#f0f0ee']
 		scheme.background_text_color = '#dd3377'
 		scheme.background_text_alpha = 0.13

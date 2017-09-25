@@ -2,6 +2,7 @@ import datetime
 import numpy as np
 import matplotlib
 import matplotlib.pyplot
+import mystyle
 import chart
 import data
 import time
@@ -10,13 +11,6 @@ import time
 # Some global variables
 K = 100                       # Number of days to show
 sma_sizes = [10, 50, 100]     # SMA window sizes
-
-# Some default plotting attributes
-matplotlib.rcParams['font.family'] = 'serif'
-matplotlib.rcParams['font.serif'] = ['Arial']
-matplotlib.rcParams['font.sans-serif'] = ['System Font', 'Verdana', 'Arial']
-matplotlib.rcParams['figure.figsize'] = (8, 4)   # Change the size of plots
-matplotlib.rcParams['figure.dpi'] = 108
 
 quotes = data.get_old_data()
 

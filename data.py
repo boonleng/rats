@@ -10,7 +10,7 @@ import requests_cache
 indices = ['^DJI', '^GSPC', '^IXIC']
 SYMBOLS = [
     'AAPL', 'TSLA',
-    'GOOG', 'BIDU', 'MSFT',
+    'GOOG', 'BIDU', 'MSFT', 'AABA',
     'NVDA', 'AMAT', 'MRVL', 'MU', 'AMD', 'INTC',
     'AMZN', 'NFLX', 'EBAY', 'BABA', 'BKS',
     'FB', 'TWTR', 'YELP',
