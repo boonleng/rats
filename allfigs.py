@@ -14,8 +14,8 @@ def refresh(days = 90, color_scheme = 'default', fig_folder = 'figs'):
     stock = data.get_old_data()
 
     # Check for output folder
-    if not os.path.exists(figFolder):
-        os.makedirs(figFolder)
+    if not os.path.exists(fig_folder):
+        os.makedirs(fig_folder)
 
     # Prepare the figure canvas
     print('Preparing figure ...')
