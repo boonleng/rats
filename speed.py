@@ -1,52 +1,50 @@
-import datetime
-import numpy as np
-import matplotlib
-import matplotlib.pyplot
-import mystyle
-import chart
+
 import data
+import chart
+import mystyle
 import time
-# import tensorflow as tf
 
 # Some global variables
 K = 100                       # Number of days to show
 sma_sizes = [10, 50, 100]     # SMA window sizes
 
+# Get offline data
 quotes = data.get_old_data()
 
-# Method 0 or 1
+# Method 0 or 1: 0 - recreate the chart everytime; 1 - update only the data portion
+delta = [0, 0]
 for method in [0, 1]:
 
-    print('Method {}:'.format(method))
+    print('\033[38;5;190mMethod {}\033[0m:'.format(method))
 
-    # Set up the chart
+    # Set up the chart in method 1
     if method is 1:
-        print('Preparing figure ...')
         view = chart.Chart(K)
         view.set_xdata(quotes.major_axis[-K:])
-        #matplotlib.pyplot.show(block = False)
 
     # Make sure we get enough data so that all SMA curves are valid
     K = K + max(sma_sizes)
     sss = quotes[:, quotes.axes[1][-K:], :]
-    print(sss)
+
+    t1 = time.time()
 
     # Go through the symbols
-    t1 = time.time()
     for symbol in quotes.minor_axis:
         if method is 0:
-            view = chart.showChart(sss[:, :, [symbol]], color_scheme = 'sunrise')
+            # Recreate the chart everytime in method 0
+            view = chart.showChart(sss[:, :, [symbol]])
         else:
             view.set_data(sss[:, :, [symbol]])
-            #view.fig.canvas.draw()
-            #view.fig.canvas.flush_events()
-            #matplotlib.pyplot.pause(0.001)
-
         print('-> \033[38;5;46m{}\033[0m'.format(symbol.rjust(4)))
-        # Close it if needed
+        # view.savefig('figs/_speed.png')
+        # Destroy the chart everytime in method 0
         if method is 0:
-            matplotlib.pyplot.close(view['figure'])
+            view['close'](view['figure'])
 
     t0 = time.time()
 
+    delta[method] = t0 - t1
+
     print('Elapsed time: {0:.3f} s'.format(t0 - t1))
+
+print('Method 0 : Method 1 = {0:.3f}'.format(delta[0] / delta[1]))

@@ -222,7 +222,7 @@ def showChart(panel, sma_sizes = [10, 50, 100], skip_weekends = True, color_sche
     axv.set_yticklabels(new_labels)
     axv.xaxis.set_visible(False)
 
-    dic = {'figure':fig, 'axes':ax, 'lines':lines, 'volume_axis':axv}
+    dic = {'figure':fig, 'axes':ax, 'lines':lines, 'volume_axis':axv, 'close':matplotlib.pyplot.close}
     return dic
 
 # def update(obj, quotes):
@@ -527,6 +527,9 @@ class Chart:
 
     def set_title(self, title):
         self.title.set_text(title)
+
+    def close(self):
+        matplotlib.pyplot.close(self.figure)
 
     def savefig(self, filename):
         self.fig.savefig(filename)
