@@ -349,7 +349,7 @@ class Chart:
             if t.weekday() == 0:
                majors.append(i)
         n = majors[-1]
-        print('DEBUG: {}, ..., {} -> \033[38;5;214m{}\033[0m ({})'.format(majors[0], n, dates[n].strftime('%Y-%m-%d'), dates[n].weekday()))
+        #print('DEBUG: {}, ..., {} -> \033[38;5;214m{}\033[0m ({})'.format(majors[0], n, dates[n].strftime('%Y-%m-%d'), dates[n].weekday()))
 
         def format_date(x, pos = None):
             index = int(x)
