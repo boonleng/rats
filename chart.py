@@ -231,7 +231,7 @@ class Chart:
     """
         A chart class
     """
-    def __init__(self, n, sma_sizes = [10, 50, 100], color_scheme = 'sunrise', skip_weekends = True, forecast = 0):
+    def __init__(self, n, data = None, sma_sizes = [10, 50, 100], color_scheme = 'sunrise', skip_weekends = True, forecast = 0):
         linewidth = 1.0
         width = 0.5
         offset = 0.4
@@ -335,6 +335,10 @@ class Chart:
         self.axv.set_ylim([0, 10])
 
         self.title = self.axq.set_title(self.symbol, color = self.colormap.text)
+
+        if data is not None:
+            self.set_xdata(data.major_axis)
+            self.set_data(data)
 
     def set_xdata(self, xdata):
         dates = list(xdata[-self.n:])
@@ -468,7 +472,10 @@ class Chart:
         # Compute SMA and update qlim
         for j, k in enumerate(self.sma.keys()):
             sma = np.convolve(quotes[:, 3], np.ones((k, )) / k, mode = 'valid')
-            self.sma[k] = sma[-self.n:]
+            if len(sma) < self.n:
+                self.sma[k] = np.concatenate((np.full(self.n - len(sma), np.nan), sma))
+            else:
+                self.sma[k] = sma[-self.n:]
             self.lines[j].set_ydata(self.sma[k])
             # self.axq.draw_artist(self.lines[j])
             if np.sum(np.isfinite(self.sma[k])):
@@ -529,7 +536,7 @@ class Chart:
         self.title.set_text(title)
 
     def close(self):
-        matplotlib.pyplot.close(self.figure)
+        matplotlib.pyplot.close(self.fig)
 
     def savefig(self, filename):
         self.fig.savefig(filename)
