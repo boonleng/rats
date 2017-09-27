@@ -174,9 +174,9 @@ def showChart(panel, sma_sizes = [10, 50, 100], skip_weekends = True, color_sche
     # Backdrop gradient
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', colormap.backdrop)
     if skip_weekends:
-        extent = [N, -10, ylim[0], ylim[1]]
+        extent = [N, -1, ylim[0], ylim[1]]
     else:
-        extent = [tt[N], tt[0] + 10, ylim[0], ylim[1]]
+        extent = [tt[N], tt[0] + 1, ylim[0], ylim[1]]
     ax.imshow(np.linspace(0, 1, 100).reshape(-1, 1), extent = extent, aspect = 'auto', cmap = cmap)
 
     matplotlib.pyplot.setp(ax.get_xticklabels(), rotation = 45, horizontalalignment = 'right')
