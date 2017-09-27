@@ -69,7 +69,7 @@ def get_old_indices():
 def get_from_net(symbols, end = datetime.date.today(), days = 150, engine = 'yahoo', cache = False):
     if not isinstance(symbols, list):
         symbols = [symbols]
-    start = end - datetime.timedelta(days = days)
+    start = end - datetime.timedelta(days = int(days * 1.6))
     print('Loading \033[38;5;46mlive\033[0m data from ' + str(start) + ' to ' + str(end) + ' ...')
     if cache:
         session = requests_cache.CachedSession(cache_name = 'data-' + engine + '-cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 5))
@@ -79,6 +79,7 @@ def get_from_net(symbols, end = datetime.date.today(), days = 150, engine = 'yah
     # Make sure time is ascending; Panel dimensions: 5/6 (items) x days (major_axis) x symbols (minor_axis)
     if quotes.major_axis[1] < quotes.major_axis[0]:
         quotes = quotes.sort_index(axis = 1, ascending = True)
+    quotes = quotes[:, quotes.major_axis[-days:], :]
     return quotes
 
 def save_to_folder(quotes, folder = 'data'):
