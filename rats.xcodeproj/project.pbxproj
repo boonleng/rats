@@ -21,12 +21,12 @@
 		B5379C641F7D5FC5003D3F0D = {
 			isa = PBXGroup;
 			children = (
-				B5379C761F7D6201003D3F0D /* New Group */,
 				B5379C6B1F7D5FD6003D3F0D /* README.md */,
 				B5379C6F1F7D5FE2003D3F0D /* data.py */,
 				B5379C6C1F7D5FE2003D3F0D /* mystyle.py */,
 				B5379C6E1F7D5FE2003D3F0D /* colorscheme.py */,
 				B5379C6D1F7D5FE2003D3F0D /* chart.py */,
+				B5379C761F7D6201003D3F0D /* New Group */,
 			);
 			sourceTree = "<group>";
 		};
