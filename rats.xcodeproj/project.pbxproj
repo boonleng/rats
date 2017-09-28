@@ -1,0 +1,94 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 48;
+	objects = {
+
+/* Begin PBXFileReference section */
+		B5379C6B1F7D5FD6003D3F0D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		B5379C6C1F7D5FE2003D3F0D /* mystyle.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = mystyle.py; sourceTree = "<group>"; };
+		B5379C6D1F7D5FE2003D3F0D /* chart.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = chart.py; sourceTree = "<group>"; };
+		B5379C6E1F7D5FE2003D3F0D /* colorscheme.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = colorscheme.py; sourceTree = "<group>"; };
+		B5379C6F1F7D5FE2003D3F0D /* data.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = data.py; sourceTree = "<group>"; };
+		B5379C701F7D5FE2003D3F0D /* speed.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = speed.py; sourceTree = "<group>"; };
+		B5379C711F7D5FE2003D3F0D /* big.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = big.py; sourceTree = "<group>"; };
+		B5379C721F7D5FE2003D3F0D /* plot.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = plot.py; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		B5379C641F7D5FC5003D3F0D = {
+			isa = PBXGroup;
+			children = (
+				B5379C761F7D6201003D3F0D /* New Group */,
+				B5379C6B1F7D5FD6003D3F0D /* README.md */,
+				B5379C6F1F7D5FE2003D3F0D /* data.py */,
+				B5379C6C1F7D5FE2003D3F0D /* mystyle.py */,
+				B5379C6E1F7D5FE2003D3F0D /* colorscheme.py */,
+				B5379C6D1F7D5FE2003D3F0D /* chart.py */,
+			);
+			sourceTree = "<group>";
+		};
+		B5379C761F7D6201003D3F0D /* New Group */ = {
+			isa = PBXGroup;
+			children = (
+				B5379C711F7D5FE2003D3F0D /* big.py */,
+				B5379C701F7D5FE2003D3F0D /* speed.py */,
+				B5379C721F7D5FE2003D3F0D /* plot.py */,
+			);
+			name = "New Group";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXProject section */
+		B5379C651F7D5FC5003D3F0D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0900;
+			};
+			buildConfigurationList = B5379C681F7D5FC5003D3F0D /* Build configuration list for PBXProject "rats" */;
+			compatibilityVersion = "Xcode 8.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = B5379C641F7D5FC5003D3F0D;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+			);
+		};
+/* End PBXProject section */
+
+/* Begin XCBuildConfiguration section */
+		B5379C691F7D5FC5003D3F0D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		B5379C6A1F7D5FC5003D3F0D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		B5379C681F7D5FC5003D3F0D /* Build configuration list for PBXProject "rats" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B5379C691F7D5FC5003D3F0D /* Debug */,
+				B5379C6A1F7D5FC5003D3F0D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B5379C651F7D5FC5003D3F0D /* Project object */;
+}
