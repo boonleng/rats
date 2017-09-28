@@ -1,6 +1,7 @@
 .DS_Store
 ._*
 *.o
+*.pyc
 *.xcuserstate
 project.xcworkspace/
 xcuserdata/
@@ -8,5 +9,12 @@ xcuserdata/
 *.csv
 *.png
 .ipynb_checkpoints
+
+# Some folders
+data
+figs
+
+# Caches
+*.sqlite
 
 # Log files
