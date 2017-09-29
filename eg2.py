@@ -14,7 +14,9 @@ quotes = data.get_old_data()
 
 sym = 'NVDA'
 data = quotes[:, :, sym]
-yy = np.array(data.loc[:, 'Close'].tolist(), dtype = np.float32)
+y_close = np.array(data.loc[:, 'Close'].tolist(), dtype = np.float32)
+y_open = np.array(data.loc[:, 'Close'].tolist(), dtype = np.float32)
+y_true = y_close < y_open
 
 def nn(x):
     """
@@ -63,23 +65,36 @@ def bias_variable(shape):
 print('Setting up \033[38;5;214mTensorflow\033[0m ...')
 
 x = tf.placeholder(tf.float32, [None, 26])
-y_ = tf.placeholder(tf.float32, [None, 10])
-y, keep_prob = nn(x)
+y_true = tf.placeholder(tf.float32, [None, 2])
+y_pred, keep_prob = nn(x)
 
-#with tf.name_scope('loss'):
-#	cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels = y_, logits = y)
-#    loss = tf.reduce_mean(tf.square(y_conv - y_))
-#
-#train = tf.train.GradientDescentOptimizer(0.01).minimize(loss)
+with tf.name_scope('loss'):
+	cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels = y_true, logits = y_pred)
 
+cross_entropy = tf.reduce_mean(cross_entropy)
+
+with tf.name_scope('adam_optimizer'):
+	train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
+
+with tf.name_scope('accuracy'):
+	correct_prediction = tf.equal(tf.argmax(y_pred, 1), tf.argmax(y_true, 1))
+	correct_prediction = tf.cast(correct_prediction, tf.float32)
+		accuracy = tf.reduce_mean(correct_prediction)
+
+# Saving the graph
 graph_location = './eg2'
 print('Saving graph to: %s' % graph_location)
 train_writer = tf.summary.FileWriter(graph_location)
 train_writer.add_graph(tf.get_default_graph())
 
-with tf.Session() as sess:
-	tf.global_variables_initializer().run()
+N = 5
 
-#sess = tf.Session()
-#ss.run()
+#with tf.Session() as sess:
+#	sess.run(tf.global_variables_initializer())
+#	for i in range(200):
+#		batch = yy[i : i * 26]
+#		train_accuracy = accuracy.eval(feed_dict={
+#									   x: batch[0], y_: batch[1], keep_prob: 1.0})
+#		print('step %d, training accuracy %g' % (i, train_accuracy))
+
 
