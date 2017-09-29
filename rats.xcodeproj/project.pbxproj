@@ -7,13 +7,14 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		B52BC8FD1F7EB89600480208 /* eg1.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = eg1.py; sourceTree = "<group>"; };
+		B52BC8FE1F7EB89900480208 /* eg2.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = eg2.py; sourceTree = "<group>"; };
 		B5379C6B1F7D5FD6003D3F0D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		B5379C6C1F7D5FE2003D3F0D /* mystyle.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = mystyle.py; sourceTree = "<group>"; };
 		B5379C6D1F7D5FE2003D3F0D /* chart.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = chart.py; sourceTree = "<group>"; };
 		B5379C6E1F7D5FE2003D3F0D /* colorscheme.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = colorscheme.py; sourceTree = "<group>"; };
 		B5379C6F1F7D5FE2003D3F0D /* data.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = data.py; sourceTree = "<group>"; };
 		B5379C701F7D5FE2003D3F0D /* speed.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = speed.py; sourceTree = "<group>"; };
-		B5379C711F7D5FE2003D3F0D /* big.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = big.py; sourceTree = "<group>"; };
 		B5379C721F7D5FE2003D3F0D /* plot.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = plot.py; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -33,9 +34,10 @@
 		B5379C761F7D6201003D3F0D /* New Group */ = {
 			isa = PBXGroup;
 			children = (
-				B5379C711F7D5FE2003D3F0D /* big.py */,
 				B5379C701F7D5FE2003D3F0D /* speed.py */,
 				B5379C721F7D5FE2003D3F0D /* plot.py */,
+				B52BC8FD1F7EB89600480208 /* eg1.py */,
+				B52BC8FE1F7EB89900480208 /* eg2.py */,
 			);
 			name = "New Group";
 			sourceTree = "<group>";
