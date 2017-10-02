@@ -37,7 +37,7 @@ def nn(x):
         x_rect = tf.reshape(x, [-1, kernel_size, 1, 1])
 
     with tf.name_scope('conv1'):
-        W_conv1 = weight_variable([5, 1, 1, N_conv])
+        W_conv1 = weight_variable([3, 1, 1, N_conv])
         b_conv1 = bias_variable([N_conv])
         h_conv1 = tf.nn.relu(tf.nn.conv2d(x_rect, W_conv1, strides = [1, 1, 1, 1], padding = 'SAME') + b_conv1)
 
@@ -59,7 +59,7 @@ def nn(x):
         W_fc2 = weight_variable([N_fc, 2])
         b_fc2 = bias_variable([2])
 
-        y_conv = tf.matmul(h_fc_drop, W_fc2) + b_fc2
+        y_conv = tf.nn.relu(tf.matmul(h_fc_drop, W_fc2) + b_fc2)
     return y_conv, keep_prob
 
 def weight_variable(shape):
@@ -97,25 +97,31 @@ print('Saving graph to: %s' % graph_location)
 train_writer = tf.summary.FileWriter(graph_location)
 train_writer.add_graph(tf.get_default_graph())
 
-N = 3
+N = 10
 
-with tf.Session() as sess:
-   sess.run(tf.global_variables_initializer())
-   for i in range(len(data) - kernel_size - N - 1):
-       if i % 10 == 0:
-           train_accuracy = accuracy.eval(feed_dict={
-                                          x: y_close[:, i : i + kernel_size],
-                                          y_true: ups[i + kernel_size + 1 : i + kernel_size + 2, :],
-                                          keep_prob: 1.0
-                                          })
-           print('step %d, training accuracy %.3f' % (i, train_accuracy))
-       train_accuracy = accuracy.eval(feed_dict={
-                                      x: y_close[:, i : i + kernel_size],
-                                      y_true: ups[i + kernel_size + 1 : i + kernel_size + 2, :],
-                                      keep_prob: 0.7
-                                      })
+sess = tf.Session()
 
-# while i < len(data):
-#     y_fore = 0.0
-#     print('Forecast %d  up/down: %d / %d' % (i, y_fore, ups[i, 0]))
-#     i = i + 1
+sess.run(tf.global_variables_initializer())
+
+for i in range(len(data) - kernel_size - N - 1):
+    xx = np.zeros((N, kernel_size))
+    yy = np.zeros((N, 2))
+    for k in range(N):
+        xx[k, :] = y_close[:, i + k : i + k + kernel_size]
+        yy[k, :] = ups[i + k + kernel_size + 1 : i + k + kernel_size + 2, :]
+    if i % 50 == 0:
+        train_accuracy = accuracy.eval(session = sess,
+                                       feed_dict = {x: xx, y_true: yy, keep_prob: 0.5})
+        print('step %4d, training accuracy %.3f. %s %s' % (i, train_accuracy, xx.shape, yy.shape))
+    train_accuracy = accuracy.eval(session = sess,
+                                   feed_dict = {x: xx, y_true: yy, keep_prob: 0.7})
+
+print(i)
+while i < len(data) - kernel_size:
+    y_fore = y_conv.eval(session = sess,
+                         feed_dict = {
+                             x: y_close[:, i : i + kernel_size],
+                             keep_prob: 1.0
+                         })
+    print('Forecast %d : %.3f / %.3f.  up/down: %s / %d' % (i, y_fore[0, 0], y_fore[0, 1], y_fore[0, 0] > 0, ups[i, 0]))
+    i = i + 1
