@@ -12,7 +12,7 @@ import mystyle
 
 quotes = data.get_old_data()
 
-sym = 'NVDA'
+sym = 'AAPL'
 data = quotes[:, :, sym]
 y_close = np.array([data.loc[:, 'Close'].tolist()], dtype = np.float32)
 y_open = np.array([data.loc[:, 'Open'].tolist()], dtype = np.float32)
@@ -20,29 +20,35 @@ mask = y_close[0] > y_open[0]
 ups = np.zeros((len(data), 2), dtype=np.float32)
 ups[~mask, 0] = 1.0   # Row 0 for down
 ups[mask, 1] = 1.0    # Row 1 for up
+# ups = np.zeros((2, len(data)), dtype=np.float32)
+# ups[0, ~mask] = 1.0   # Row 0 for down
+# ups[1, mask] = 1.0    # Row 1 for up
 
-kernel_size = 26
+kernel_size = 24
 
 def nn(x):
     """
         Neural network for analyzing the time series
     """
+    N_conv = 32 # Filter features
+    N_fc = 256 # Fully connected features
+
     with tf.name_scope('reshape'):
         x_rect = tf.reshape(x, [-1, kernel_size, 1, 1])
 
     with tf.name_scope('conv1'):
-        W_conv1 = weight_variable([5, 1, 1, 16])
-        b_conv1 = bias_variable([16])
+        W_conv1 = weight_variable([5, 1, 1, N_conv])
+        b_conv1 = bias_variable([N_conv])
         h_conv1 = tf.nn.relu(tf.nn.conv2d(x_rect, W_conv1, strides = [1, 1, 1, 1], padding = 'SAME') + b_conv1)
 
     with tf.name_scope('pool1'):
         h_pool1 = tf.nn.max_pool(h_conv1, ksize = [1, 2, 1, 1], strides = [1, 2, 1, 1], padding = 'SAME')
 
     with tf.name_scope('fc'):
-        W_fc = weight_variable([int(kernel_size / 2) * 16, 512])
-        b_fc = bias_variable([512])
+        W_fc = weight_variable([int(kernel_size / 2) * N_conv, N_fc])
+        b_fc = bias_variable([N_fc])
 
-        h_pool1_flat = tf.reshape(h_pool1, [-1, int(kernel_size  / 2) * 16])
+        h_pool1_flat = tf.reshape(h_pool1, [-1, int(kernel_size  / 2) * N_conv])
         h_fc = tf.nn.relu(tf.matmul(h_pool1_flat, W_fc) + b_fc)
 
     with tf.name_scope('droptout'):
@@ -50,7 +56,7 @@ def nn(x):
         h_fc_drop = tf.nn.dropout(h_fc, keep_prob)
 
     with tf.name_scope('fc2'):
-        W_fc2 = weight_variable([512, 2])
+        W_fc2 = weight_variable([N_fc, 2])
         b_fc2 = bias_variable([2])
 
         y_conv = tf.matmul(h_fc_drop, W_fc2) + b_fc2
@@ -60,7 +66,6 @@ def weight_variable(shape):
   """weight_variable generates a weight variable of a given shape."""
   initial = tf.truncated_normal(shape, stddev = 0.1)
   return tf.Variable(initial)
-
 
 def bias_variable(shape):
   """bias_variable generates a bias variable of a given shape."""
@@ -92,14 +97,25 @@ print('Saving graph to: %s' % graph_location)
 train_writer = tf.summary.FileWriter(graph_location)
 train_writer.add_graph(tf.get_default_graph())
 
-N = 5
+N = 3
 
 with tf.Session() as sess:
    sess.run(tf.global_variables_initializer())
-   for i in range(len(data) - kernel_size):
+   for i in range(len(data) - kernel_size - N - 1):
+       if i % 10 == 0:
+           train_accuracy = accuracy.eval(feed_dict={
+                                          x: y_close[:, i : i + kernel_size],
+                                          y_true: ups[i + kernel_size + 1 : i + kernel_size + 2, :],
+                                          keep_prob: 1.0
+                                          })
+           print('step %d, training accuracy %.3f' % (i, train_accuracy))
        train_accuracy = accuracy.eval(feed_dict={
                                       x: y_close[:, i : i + kernel_size],
-                                      y_true: ups[i : i + kernel_size, :],
-                                      keep_prob: 0.99
+                                      y_true: ups[i + kernel_size + 1 : i + kernel_size + 2, :],
+                                      keep_prob: 0.7
                                       })
-       print('step %d, training accuracy %.3f' % (i, train_accuracy))
+
+# while i < len(data):
+#     y_fore = 0.0
+#     print('Forecast %d  up/down: %d / %d' % (i, y_fore, ups[i, 0]))
+#     i = i + 1
