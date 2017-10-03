@@ -103,7 +103,7 @@ sess = tf.Session()
 
 sess.run(tf.global_variables_initializer())
 
-for i in range(len(data) - kernel_size - N - 1):
+for i in range(0, len(data) - kernel_size - 5, N):
     xx = np.zeros((N, kernel_size))
     yy = np.zeros((N, 2))
     for k in range(N):
@@ -111,17 +111,21 @@ for i in range(len(data) - kernel_size - N - 1):
         yy[k, :] = ups[i + k + kernel_size + 1 : i + k + kernel_size + 2, :]
     if i % 50 == 0:
         train_accuracy = accuracy.eval(session = sess,
-                                       feed_dict = {x: xx, y_true: yy, keep_prob: 0.5})
+                                       feed_dict = {x: xx, y_true: yy, keep_prob: 1.0})
         print('step %4d, training accuracy %.3f. %s %s' % (i, train_accuracy, xx.shape, yy.shape))
     train_accuracy = accuracy.eval(session = sess,
                                    feed_dict = {x: xx, y_true: yy, keep_prob: 0.7})
 
-print(i)
-while i < len(data) - kernel_size:
-    y_fore = y_conv.eval(session = sess,
-                         feed_dict = {
-                             x: y_close[:, i : i + kernel_size],
-                             keep_prob: 1.0
-                         })
-    print('Forecast %d : %.3f / %.3f.  up/down: %s / %d' % (i, y_fore[0, 0], y_fore[0, 1], y_fore[0, 0] > 0, ups[i, 0]))
-    i = i + 1
+# Test
+N = len(data) - i - kernel_size - 1
+xx = np.zeros((N, kernel_size))
+yy = np.zeros((N, 2))
+for k in range(N):
+    xx[k, :] = y_close[:, i + k : i + k + kernel_size]
+    yy[k, :] = ups[i + k + kernel_size + 1 : i + k + kernel_size + 2, :]
+y_fore = y_conv.eval(session = sess, feed_dict = {x: xx, keep_prob: 1.0})
+
+# while i < len(data) - kernel_size:
+#     up = tf.nn.softmax(y_fore)
+#     print('Forecast %d : [%.3f, %.3f] -> %s  up/down: %s / %d' % (i, y_fore[0, 0], y_fore[0, 1], up == 1, y_fore[0, 0] > 0, ups[i, 0]))
+#     i = i + 1
