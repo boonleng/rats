@@ -23,7 +23,7 @@ ups[~mask, 1] = 1.0    # Row 1 for up
 
 # Must be multiples of 4!
 kernel_size = 4
-batch_size = 10
+batch_size = 20
 
 def nn(x):
     """
@@ -31,7 +31,7 @@ def nn(x):
     """
     N_conv1 = 16  # Filter features
     N_conv2 = 32
-    N_fc = 16     # Fully connected features
+    N_fc = 2     # Fully connected features
     N_in = 2
 
     with tf.name_scope('reshape'):
@@ -101,7 +101,8 @@ with tf.name_scope('loss'):
 cross_entropy = tf.reduce_mean(cross_entropy)
 
 with tf.name_scope('adam_optimizer'):
-	train_step = tf.train.AdamOptimizer(1.0e-4).minimize(cross_entropy)
+	# train_step = tf.train.AdamOptimizer(1.0e-3).minimize(cross_entropy)
+    train_step = tf.train.GradientDescentOptimizer(1.0e-3).minimize(cross_entropy)
 
 with tf.name_scope('accuracy'):
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_true, 1))
@@ -123,6 +124,7 @@ train_writer.add_graph(sess.graph)
 
 sess.run(tf.global_variables_initializer())
 
+# xx = np.zeros((batch_size, kernel_size, 2))
 xx = np.zeros((batch_size, kernel_size, 2))
 yy = np.zeros((batch_size, 2))
 
@@ -130,22 +132,26 @@ i = 0
 for k in range(batch_size):
     s = i + k
     e = s + kernel_size
-    xx[k, :, 0] = y_open[:, s : e]
-    xx[k, :, 1] = y_close[:, s : e]
+    # xx[k, :, 0] = y_close[:, s : e]
+    # xx[k, :, 1] = -y_open[:, s : e]
+    xx[k, :, 0] = y_close[:, s : e]
+    xx[k, :, 1] =  - y_open[:, s : e]
     yy[k, :] = ups[e - 1 : e, :]
 
+run_options = tf.RunOptions(trace_level = tf.RunOptions.FULL_TRACE)
+run_metadata = tf.RunMetadata()
+
 for i in range(0, len(data) - kernel_size - batch_size):
-    # for k in range(batch_size):
-    #     s = i + k
-    #     e = s + kernel_size
-    #     xx[k, :, 0] = y_open[:, s : e]
-    #     xx[k, :, 1] = y_close[:, s : e]
-    #     #yy[k, :] = ups[e : e + 1, :]
-    #     yy[k, :] = ups[e - 1 : e, :]
+    for k in range(batch_size):
+        s = i + k
+        e = s + kernel_size
+        xx[k, :, 0] = y_open[:, s : e]
+        xx[k, :, 1] = y_close[:, s : e]
+        # xx[k, :, 0] = y_close[:, s : e] - y_open[:, s : e]
+        # xx[k, :, 1] = 0.0
+        yy[k, :] = ups[e - 1 : e, :]
     
     if i % 10 == 0:
-        run_options = tf.RunOptions(trace_level = tf.RunOptions.FULL_TRACE)
-        run_metadata = tf.RunMetadata()
         summ, train_accuracy, y_out = sess.run([merged_summary, accuracy, y_conv], 
             feed_dict = {x: xx, y_true: yy, keep_prob: 1.0},
             run_metadata = run_metadata,
@@ -155,8 +161,8 @@ for i in range(0, len(data) - kernel_size - batch_size):
         train_writer.add_summary(summ, i)
         print('step %4d, training accuracy \033[38;5;120m%.3f\033[0m' % (i, train_accuracy))
         y_ind = np.argmax(y_out, 1)
-        # for m in range(batch_size):
-        #     print('   %6.2f %6.2f -> [%7.3f, %7.3f] -> %2d / %s' % (xx[m, -1, 0], xx[m, -1, 1], y_fore[m, 0], y_fore[m, 1], y_ind[m], yy[m, :]))
+        for m in range(batch_size):
+            print('   %6.2f %6.2f -> [%7.3f, %7.3f] -> %2d / %s' % (xx[m, -1, 0], xx[m, -1, 1], y_out[m, 0], y_out[m, 1], y_ind[m], yy[m, :]))
     
     sess.run(train_step, feed_dict = {x: xx, y_true: yy, keep_prob: 0.5})
 
