@@ -152,29 +152,28 @@ np.set_printoptions(formatter={'float': '{: 0.2f}'.format})
 
 z = 0
 for i in range(0, len(data) - kernel_size - batch_size):
+    for k in range(batch_size):
+        s = i + k
+        e = s + kernel_size
+        xx[k, :, 0] = y_open[:, s : e]
+        xx[k, :, 1] = y_close[:, s : e]
+        yy[k, :] = ups[e - 1 : e, :]
+    if z % 200 == 0:
+        summ, train_accuracy, y_out = sess.run([merged_summary, accuracy, y_conv], 
+            feed_dict = {x: xx, y_true: yy, keep_prob: 1.0},
+            run_metadata = run_metadata,
+            options = run_options
+            )
+        train_writer.add_run_metadata(run_metadata, 'step%03d' % z)
+        train_writer.add_summary(summ, z)
+        print('step %s/%s, training accuracy \033[38;5;120m%.3f\033[0m' % (rep, z, train_accuracy))
+        # y_ind = sess.run(tf.argmax(y_out, 1))
+        # ww, bb = sess.run([tf.reshape(w_fc1, [2, 4]), tf.reshape(b_fc1, [4])])
+        # fc1v = sess.run(tf.matmul(tf.reshape(xx, [-1, 2]), ww) + bb)
+        # for m in range(batch_size):
+        #     print('   OC: %s -> w: %s; %s, b: %s -> FC1: %s -> FC3: %s -> %s -> %2d' % (xx[m, -1], ww[0], ww[1], bb, fc1v[m], yy[m, :], y_out[m], y_ind[m]))
+        
     for rep in range(10):
-        for k in range(batch_size):
-            s = i + k
-            e = s + kernel_size
-            xx[k, :, 0] = y_open[:, s : e]
-            xx[k, :, 1] = y_close[:, s : e]
-            yy[k, :] = ups[e - 1 : e, :]
-        
-        if z % 200 == 0:
-            summ, train_accuracy, y_out = sess.run([merged_summary, accuracy, y_conv], 
-                feed_dict = {x: xx, y_true: yy, keep_prob: 1.0},
-                run_metadata = run_metadata,
-                options = run_options
-                )
-            train_writer.add_run_metadata(run_metadata, 'step%03d' % z)
-            train_writer.add_summary(summ, z)
-            print('step %s/%s, training accuracy \033[38;5;120m%.3f\033[0m' % (rep, z, train_accuracy))
-            # y_ind = sess.run(tf.argmax(y_out, 1))
-            # ww, bb = sess.run([tf.reshape(w_fc1, [2, 4]), tf.reshape(b_fc1, [4])])
-            # fc1v = sess.run(tf.matmul(tf.reshape(xx, [-1, 2]), ww) + bb)
-            # for m in range(batch_size):
-            #     print('   OC: %s -> w: %s; %s, b: %s -> FC1: %s -> FC3: %s -> %s -> %2d' % (xx[m, -1], ww[0], ww[1], bb, fc1v[m], yy[m, :], y_out[m], y_ind[m]))
-        
         sess.run(train_step, feed_dict = {x: xx, y_true: yy, keep_prob: 0.5})
         z = z + 1
 
