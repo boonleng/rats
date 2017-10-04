@@ -21,18 +21,17 @@ ups = np.zeros((len(data), 2), dtype=np.float32)
 ups[mask, 0] = 1.0     # Row 0 for down
 ups[~mask, 1] = 1.0    # Row 1 for up
 
-# Must be multiples of 4!
-kernel_size = 2
-batch_size = 20
+N_fc = 4     # Fully connected features
+N_in = 2
+kernel_size = 1
+batch_size = 50
 
 def nn(x):
     """
         Neural network for analyzing the time series
     """
-    N_conv1 = 16  # Filter features
-    N_conv2 = 32
-    N_fc = 1     # Fully connected features
-    N_in = 2
+    # N_conv1 = 16  # Filter features
+    # N_conv2 = 32
 
     with tf.name_scope('reshape'):
         #x_rect = tf.reshape(x, [-1, kernel_size, N_in, 1])
@@ -63,32 +62,37 @@ def nn(x):
     #     h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
     with tf.name_scope('fc1'):
-        W_fc1 = weight_variable([kernel_size * N_in, N_fc])
-        b_fc1 = bias_variable([N_fc])
-        # h_fc1 = tf.nn.relu(tf.matmul(x_rect, W_fc1) + b_fc1)
+        W_fc1 = weight_variable([kernel_size * N_in, N_fc], name = 'w')
+        b_fc1 = bias_variable([N_fc], name = 'b')
         h_fc1 = tf.matmul(x_rect, W_fc1) + b_fc1
+
+    with tf.name_scope('fc2'):
+        W_fc2 = weight_variable([N_fc, N_fc])
+        b_fc2 = bias_variable([N_fc])
+        h_fc2 = tf.nn.tanh(tf.matmul(h_fc1, W_fc2) + b_fc2)
+        # h_fc2 = tf.matmul(h_fc1, W_fc2) + b_fc2
 
     with tf.name_scope('droptout'):
         keep_prob = tf.placeholder(tf.float32)
-        h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+        h_fc_drop = tf.nn.dropout(h_fc2, keep_prob)
 
-    with tf.name_scope('fc2'):
-        W_fc2 = weight_variable([N_fc, 2])
-        b_fc2 = bias_variable([2])
+    with tf.name_scope('fc_last'):
+        W_fc = weight_variable([N_fc, 2])
+        b_fc = bias_variable([2])
 
-        # y_conv = tf.nn.relu(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
-        y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
+        y_conv = tf.nn.tanh(tf.matmul(h_fc_drop, W_fc) + b_fc)
+        # y_conv = tf.matmul(h_fc_drop, W_fc) + b_fc
     return y_conv, keep_prob
 
-def weight_variable(shape):
-  """weight_variable generates a weight variable of a given shape."""
-  initial = tf.truncated_normal(shape, stddev = 0.1)
-  return tf.Variable(initial)
+def weight_variable(shape, name = 'Variable'):
+    """weight_variable generates a weight variable of a given shape."""
+    initial = tf.truncated_normal(shape, stddev = 0.1)
+    return tf.Variable(initial, name = name)
 
-def bias_variable(shape):
-  """bias_variable generates a bias variable of a given shape."""
-  initial = tf.constant(0.1, shape = shape)
-  return tf.Variable(initial)
+def bias_variable(shape, name = 'Variable'):
+    """bias_variable generates a bias variable of a given shape."""
+    initial = tf.constant(0.1, shape = shape)
+    return tf.Variable(initial, name = name)
 
 print('Setting up \033[38;5;214mTensorflow\033[0m ...')
 
@@ -125,9 +129,8 @@ train_writer.add_graph(sess.graph)
 
 sess.run(tf.global_variables_initializer())
 
-# xx = np.zeros((batch_size, kernel_size, 2))
-xx = np.zeros((batch_size, kernel_size, 2))
-yy = np.zeros((batch_size, 2))
+xx = np.zeros((batch_size, kernel_size, 2), dtype=np.float32)
+yy = np.zeros((batch_size, 2), dtype=np.float32)
 
 # i = 0
 # for k in range(batch_size):
@@ -139,49 +142,57 @@ yy = np.zeros((batch_size, 2))
 #     xx[k, :, 1] =  - y_open[:, s : e]
 #     yy[k, :] = ups[e - 1 : e, :]
 
-run_options = tf.RunOptions(trace_level = tf.RunOptions.FULL_TRACE)
 run_metadata = tf.RunMetadata()
+run_options = tf.RunOptions(trace_level = tf.RunOptions.FULL_TRACE)
 
+b_fc1 = [v for v in tf.trainable_variables() if v.name == 'fc1/b:0']
+w_fc1 = [v for v in tf.trainable_variables() if v.name == 'fc1/w:0']
+
+np.set_printoptions(formatter={'float': '{: 0.2f}'.format})
+
+z = 0
 for i in range(0, len(data) - kernel_size - batch_size):
-    for k in range(batch_size):
-        s = i + k
-        e = s + kernel_size
-        # xx[k, :, 0] = y_open[:, s : e]
-        # xx[k, :, 1] = y_close[:, s : e]
-        xx[k, :, 0] = y_close[:, s : e] - y_open[:, s : e]
-        xx[k, :, 1] = 0.0
-        yy[k, :] = ups[e - 1 : e, :]
-    
-    if i % 10 == 0:
-        summ, train_accuracy, y_out = sess.run([merged_summary, accuracy, y_conv], 
-            feed_dict = {x: xx, y_true: yy, keep_prob: 1.0},
-            run_metadata = run_metadata,
-            options = run_options
-            )
-        train_writer.add_run_metadata(run_metadata, 'step%03d' % i)
-        train_writer.add_summary(summ, i)
-        print('step %4d, training accuracy \033[38;5;120m%.3f\033[0m' % (i, train_accuracy))
-        y_ind = np.argmax(y_out, 1)
-        for m in range(batch_size):
-            print('   %6.2f %6.2f -> [%7.3f, %7.3f] -> %2d / %s' % (xx[m, -1, 0], xx[m, -1, 1], y_out[m, 0], y_out[m, 1], y_ind[m], yy[m, :]))
-    
-    sess.run(train_step, feed_dict = {x: xx, y_true: yy, keep_prob: 0.5})
+    for rep in range(10):
+        for k in range(batch_size):
+            s = i + k
+            e = s + kernel_size
+            xx[k, :, 0] = y_open[:, s : e]
+            xx[k, :, 1] = y_close[:, s : e]
+            yy[k, :] = ups[e - 1 : e, :]
+        
+        if z % 200 == 0:
+            summ, train_accuracy, y_out = sess.run([merged_summary, accuracy, y_conv], 
+                feed_dict = {x: xx, y_true: yy, keep_prob: 1.0},
+                run_metadata = run_metadata,
+                options = run_options
+                )
+            train_writer.add_run_metadata(run_metadata, 'step%03d' % z)
+            train_writer.add_summary(summ, z)
+            print('step %s/%s, training accuracy \033[38;5;120m%.3f\033[0m' % (rep, z, train_accuracy))
+            # y_ind = sess.run(tf.argmax(y_out, 1))
+            # ww, bb = sess.run([tf.reshape(w_fc1, [2, 4]), tf.reshape(b_fc1, [4])])
+            # fc1v = sess.run(tf.matmul(tf.reshape(xx, [-1, 2]), ww) + bb)
+            # for m in range(batch_size):
+            #     print('   OC: %s -> w: %s; %s, b: %s -> FC1: %s -> FC3: %s -> %s -> %2d' % (xx[m, -1], ww[0], ww[1], bb, fc1v[m], yy[m, :], y_out[m], y_ind[m]))
+        
+        sess.run(train_step, feed_dict = {x: xx, y_true: yy, keep_prob: 0.5})
+        z = z + 1
 
 # Test
 N = len(data) - i - kernel_size - 1
-xx = np.zeros((N, kernel_size, 2))
-yy = np.zeros((N, 2))
+xx = np.zeros((N, kernel_size, 2), dtype = np.float32)
+yy = np.zeros((N, 2), dtype = np.float32)
 for k in range(N):
-    xx[k, :, 0] = y_open[:, i + k : i + k + kernel_size]
-    xx[k, :, 1] = y_close[:, i + k : i + k + kernel_size]
-    yy[k, :] = ups[i + k + kernel_size + 1 : i + k + kernel_size + 2, :]
-y_fore = y_conv.eval(session = sess, feed_dict = {x: xx, keep_prob: 1.0})
-print(y_fore)
+    s = i + k
+    e = s + kernel_size
+    xx[k, :, 0] = y_open[:, s : e]
+    xx[k, :, 1] = y_close[:, s : e]
+    yy[k, :] = ups[e - 1 : e, :]
+accuracy, y_out = sess.run([accuracy, y_conv], feed_dict = {x: xx, y_true: yy, keep_prob: 1.0})
+y_ind = sess.run(tf.argmax(y_out, 1))
+print('Test, accuracy \033[38;5;120m%.3f\033[0m' % (accuracy))
 
-y_fore = sess.run(tf.argmax(y_fore, 1))
-print(y_fore)
-
-# while i < len(data) - kernel_size:
-#     up = tf.nn.softmax(y_fore)
-#     print('Forecast %d : [%.3f, %.3f] -> %s  up/down: %s / %d' % (i, y_fore[0, 0], y_fore[0, 1], up == 1, y_fore[0, 0] > 0, ups[i, 0]))
-#     i = i + 1
+ww, bb = sess.run([tf.reshape(w_fc1, [kernel_size * N_in, N_fc]), tf.reshape(b_fc1, [N_fc])])
+fc1v = sess.run(tf.matmul(tf.reshape(xx, [-1, kernel_size * N_in]), ww) + bb)
+for m in range(N):
+    print('   OC: %s -> w: %s; %s, b: %s -> FC1: %s -> FC3: %s -> %s -> %2d' % (xx[m, -1], ww[0], ww[1], bb, fc1v[m], yy[m, :], y_out[m], y_ind[m]))
