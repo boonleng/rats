@@ -12,7 +12,7 @@ import mystyle
 
 quotes = data.get_old_data()
 
-sym = 'NVDA'
+sym = 'AAPL'
 data = quotes[:, :, sym]
 y_close = np.array([data.loc[:, 'Close'].tolist()], dtype = np.float32)
 y_open = np.array([data.loc[:, 'Open'].tolist()], dtype = np.float32)
@@ -24,47 +24,20 @@ ups[~mask, 1] = 1.0    # Row 1 for up
 N_fc = 4     # Fully connected features
 N_in = 2
 kernel_size = 1
-batch_size = 50
+batch_size = 100
 
 def nn(x):
     """
         Neural network for analyzing the time series
     """
-    # N_conv1 = 16  # Filter features
-    # N_conv2 = 32
-
     with tf.name_scope('reshape'):
-        #x_rect = tf.reshape(x, [-1, kernel_size, N_in, 1])
         x_rect = tf.reshape(x, [-1, kernel_size * N_in])
-
-    # with tf.name_scope('conv1'):
-    #     W_conv1 = weight_variable([1, 1, 1, N_conv1])
-    #     b_conv1 = bias_variable([N_conv1])
-    #     h_conv1 = tf.nn.relu(tf.nn.conv2d(x_rect, W_conv1, strides = [1, 1, 1, 1], padding = 'SAME') + b_conv1)
-
-    # with tf.name_scope('pool1'):
-    #     h_pool1 = tf.nn.max_pool(h_conv1, ksize = [1, 2, 1, 1], strides = [1, 2, 1, 1], padding = 'SAME')
-
-    # with tf.name_scope('conv2'):
-    #     W_conv2 = weight_variable([1, 1, N_conv1, N_conv2])
-    #     b_conv2 = bias_variable([N_conv2])
-    #     h_conv2 = tf.nn.relu(tf.nn.conv2d(h_pool1, W_conv2, strides = [1, 1, 1, 1], padding = 'SAME') + b_conv2)
-
-    # with tf.name_scope('pool2'):
-    #     h_pool2 = tf.nn.max_pool(h_conv2, ksize = [1, 2, 1, 1], strides = [1, 2, 1, 1], padding = 'SAME')
-
-    # with tf.name_scope('fc1'):
-    #     # Down-sample by x2 and another x2, reshape both rows into one
-    #     W_fc1 = weight_variable([int(kernel_size / 4) * N_in * N_conv2, N_fc])
-    #     b_fc1 = bias_variable([N_fc])
-
-    #     h_pool2_flat = tf.reshape(h_pool2, [-1, int(kernel_size / 4) * N_in * N_conv2])
-    #     h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
     with tf.name_scope('fc1'):
         W_fc1 = weight_variable([kernel_size * N_in, N_fc], name = 'w')
         b_fc1 = bias_variable([N_fc], name = 'b')
-        h_fc1 = tf.matmul(x_rect, W_fc1) + b_fc1
+        h_fc1 = tf.nn.tanh(tf.matmul(x_rect, W_fc1) + b_fc1)
+        # h_fc1 = tf.matmul(x_rect, W_fc1) + b_fc1
 
     with tf.name_scope('fc2'):
         W_fc2 = weight_variable([N_fc, N_fc])
@@ -132,49 +105,44 @@ sess.run(tf.global_variables_initializer())
 xx = np.zeros((batch_size, kernel_size, 2), dtype=np.float32)
 yy = np.zeros((batch_size, 2), dtype=np.float32)
 
-# i = 0
-# for k in range(batch_size):
-#     s = i + k
-#     e = s + kernel_size
-#     # xx[k, :, 0] = y_close[:, s : e]
-#     # xx[k, :, 1] = -y_open[:, s : e]
-#     xx[k, :, 0] = y_close[:, s : e]
-#     xx[k, :, 1] =  - y_open[:, s : e]
-#     yy[k, :] = ups[e - 1 : e, :]
-
 run_metadata = tf.RunMetadata()
 run_options = tf.RunOptions(trace_level = tf.RunOptions.FULL_TRACE)
 
+# Get the trainables
 b_fc1 = [v for v in tf.trainable_variables() if v.name == 'fc1/b:0']
 w_fc1 = [v for v in tf.trainable_variables() if v.name == 'fc1/w:0']
 
+# Temporarily change the output format
 np.set_printoptions(formatter={'float': '{: 0.2f}'.format})
 
+# Supress / show the data details
+show_data_during_training = False
+
 z = 0
-for i in range(0, len(data) - kernel_size - batch_size):
+for i in range(0, len(data) - kernel_size - batch_size, int(batch_size / 20)):
     for k in range(batch_size):
         s = i + k
         e = s + kernel_size
         xx[k, :, 0] = y_open[:, s : e]
         xx[k, :, 1] = y_close[:, s : e]
         yy[k, :] = ups[e - 1 : e, :]
-    if z % 200 == 0:
-        summ, train_accuracy, y_out = sess.run([merged_summary, accuracy, y_conv], 
-            feed_dict = {x: xx, y_true: yy, keep_prob: 1.0},
-            run_metadata = run_metadata,
-            options = run_options
-            )
-        train_writer.add_run_metadata(run_metadata, 'step%03d' % z)
-        train_writer.add_summary(summ, z)
-        print('step %s/%s, training accuracy \033[38;5;120m%.3f\033[0m' % (rep, z, train_accuracy))
-        # y_ind = sess.run(tf.argmax(y_out, 1))
-        # ww, bb = sess.run([tf.reshape(w_fc1, [2, 4]), tf.reshape(b_fc1, [4])])
-        # fc1v = sess.run(tf.matmul(tf.reshape(xx, [-1, 2]), ww) + bb)
-        # for m in range(batch_size):
-        #     print('   OC: %s -> w: %s; %s, b: %s -> FC1: %s -> FC3: %s -> %s -> %2d' % (xx[m, -1], ww[0], ww[1], bb, fc1v[m], yy[m, :], y_out[m], y_ind[m]))
-        
-    for rep in range(10):
-        sess.run(train_step, feed_dict = {x: xx, y_true: yy, keep_prob: 0.5})
+    for rep in range(50):
+        sess.run(train_step, feed_dict = {x: xx, y_true: yy, keep_prob: 1.0})
+        if z % 50 == 0:
+            summ, train_accuracy, y_out = sess.run([merged_summary, accuracy, y_conv], 
+                feed_dict = {x: xx, y_true: yy, keep_prob: 1.0},
+                run_metadata = run_metadata,
+                options = run_options
+                )
+            train_writer.add_run_metadata(run_metadata, 'step%03d' % z)
+            train_writer.add_summary(summ, z)
+            print('step %s, training accuracy \033[38;5;120m%.3f\033[0m' % (z, train_accuracy))
+            if show_data_during_training:
+                y_ind = sess.run(tf.argmax(y_out, 1))
+                ww, bb = sess.run([tf.reshape(w_fc1, [2, 4]), tf.reshape(b_fc1, [4])])
+                fc1v = sess.run(tf.matmul(tf.reshape(xx, [-1, 2]), ww) + bb)
+                for m in range(batch_size):
+                    print('   OC: %s -> w: %s; %s, b: %s -> FC1: %s -> FC3: %s -> %s -> %2d' % (xx[m, -1], ww[0], ww[1], bb, fc1v[m], yy[m, :], y_out[m], y_ind[m]))
         z = z + 1
 
 # Test
@@ -191,6 +159,7 @@ accuracy, y_out = sess.run([accuracy, y_conv], feed_dict = {x: xx, y_true: yy, k
 y_ind = sess.run(tf.argmax(y_out, 1))
 print('Test, accuracy \033[38;5;120m%.3f\033[0m' % (accuracy))
 
+# Show the data and the weights
 ww, bb = sess.run([tf.reshape(w_fc1, [kernel_size * N_in, N_fc]), tf.reshape(b_fc1, [N_fc])])
 fc1v = sess.run(tf.matmul(tf.reshape(xx, [-1, kernel_size * N_in]), ww) + bb)
 for m in range(N):
