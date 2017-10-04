@@ -22,7 +22,7 @@ ups[mask, 0] = 1.0     # Row 0 for down
 ups[~mask, 1] = 1.0    # Row 1 for up
 
 # Must be multiples of 4!
-kernel_size = 4
+kernel_size = 2
 batch_size = 20
 
 def nn(x):
@@ -31,7 +31,7 @@ def nn(x):
     """
     N_conv1 = 16  # Filter features
     N_conv2 = 32
-    N_fc = 2     # Fully connected features
+    N_fc = 1     # Fully connected features
     N_in = 2
 
     with tf.name_scope('reshape'):
@@ -65,7 +65,8 @@ def nn(x):
     with tf.name_scope('fc1'):
         W_fc1 = weight_variable([kernel_size * N_in, N_fc])
         b_fc1 = bias_variable([N_fc])
-        h_fc1 = tf.nn.relu(tf.matmul(x_rect, W_fc1) + b_fc1)
+        # h_fc1 = tf.nn.relu(tf.matmul(x_rect, W_fc1) + b_fc1)
+        h_fc1 = tf.matmul(x_rect, W_fc1) + b_fc1
 
     with tf.name_scope('droptout'):
         keep_prob = tf.placeholder(tf.float32)
@@ -75,7 +76,7 @@ def nn(x):
         W_fc2 = weight_variable([N_fc, 2])
         b_fc2 = bias_variable([2])
 
-        #y_conv = tf.nn.relu(tf.matmul(h_fc_drop, W_fc2) + b_fc2)
+        # y_conv = tf.nn.relu(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
         y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
     return y_conv, keep_prob
 
@@ -101,8 +102,8 @@ with tf.name_scope('loss'):
 cross_entropy = tf.reduce_mean(cross_entropy)
 
 with tf.name_scope('adam_optimizer'):
-	# train_step = tf.train.AdamOptimizer(1.0e-3).minimize(cross_entropy)
-    train_step = tf.train.GradientDescentOptimizer(1.0e-3).minimize(cross_entropy)
+	train_step = tf.train.AdamOptimizer(1.0e-3).minimize(cross_entropy)
+    # train_step = tf.train.GradientDescentOptimizer(1.0e-3).minimize(cross_entropy)
 
 with tf.name_scope('accuracy'):
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_true, 1))
@@ -128,15 +129,15 @@ sess.run(tf.global_variables_initializer())
 xx = np.zeros((batch_size, kernel_size, 2))
 yy = np.zeros((batch_size, 2))
 
-i = 0
-for k in range(batch_size):
-    s = i + k
-    e = s + kernel_size
-    # xx[k, :, 0] = y_close[:, s : e]
-    # xx[k, :, 1] = -y_open[:, s : e]
-    xx[k, :, 0] = y_close[:, s : e]
-    xx[k, :, 1] =  - y_open[:, s : e]
-    yy[k, :] = ups[e - 1 : e, :]
+# i = 0
+# for k in range(batch_size):
+#     s = i + k
+#     e = s + kernel_size
+#     # xx[k, :, 0] = y_close[:, s : e]
+#     # xx[k, :, 1] = -y_open[:, s : e]
+#     xx[k, :, 0] = y_close[:, s : e]
+#     xx[k, :, 1] =  - y_open[:, s : e]
+#     yy[k, :] = ups[e - 1 : e, :]
 
 run_options = tf.RunOptions(trace_level = tf.RunOptions.FULL_TRACE)
 run_metadata = tf.RunMetadata()
@@ -145,10 +146,10 @@ for i in range(0, len(data) - kernel_size - batch_size):
     for k in range(batch_size):
         s = i + k
         e = s + kernel_size
-        xx[k, :, 0] = y_open[:, s : e]
-        xx[k, :, 1] = y_close[:, s : e]
-        # xx[k, :, 0] = y_close[:, s : e] - y_open[:, s : e]
-        # xx[k, :, 1] = 0.0
+        # xx[k, :, 0] = y_open[:, s : e]
+        # xx[k, :, 1] = y_close[:, s : e]
+        xx[k, :, 0] = y_close[:, s : e] - y_open[:, s : e]
+        xx[k, :, 1] = 0.0
         yy[k, :] = ups[e - 1 : e, :]
     
     if i % 10 == 0:
