@@ -36,18 +36,11 @@ def nn(x):
     with tf.name_scope('fc1'):
         W_fc1 = weight_variable([kernel_size * N_in, N_fc], name = 'w')
         b_fc1 = bias_variable([N_fc], name = 'b')
-        h_fc1 = tf.nn.tanh(tf.matmul(x_rect, W_fc1) + b_fc1)
-        # h_fc1 = tf.matmul(x_rect, W_fc1) + b_fc1
-
-    with tf.name_scope('fc2'):
-        W_fc2 = weight_variable([N_fc, N_fc])
-        b_fc2 = bias_variable([N_fc])
-        h_fc2 = tf.nn.tanh(tf.matmul(h_fc1, W_fc2) + b_fc2)
-        # h_fc2 = tf.matmul(h_fc1, W_fc2) + b_fc2
+        h_fc1 = tf.matmul(x_rect, W_fc1) + b_fc1
 
     with tf.name_scope('droptout'):
         keep_prob = tf.placeholder(tf.float32)
-        h_fc_drop = tf.nn.dropout(h_fc2, keep_prob)
+        h_fc_drop = tf.nn.dropout(h_fc1, keep_prob)
 
     with tf.name_scope('fc_last'):
         W_fc = weight_variable([N_fc, 2])
@@ -69,7 +62,7 @@ def bias_variable(shape, name = 'Variable'):
 
 print('Setting up \033[38;5;214mTensorflow\033[0m ...')
 
-x = tf.placeholder(tf.float32, [None, kernel_size, 2], name = 'x')
+x = tf.placeholder(tf.float32, [None, kernel_size, N_in], name = 'x')
 y_true = tf.placeholder(tf.float32, [None, 2], name = 'y_true')
 y_conv, keep_prob = nn(x)
 
@@ -119,14 +112,14 @@ np.set_printoptions(formatter={'float': '{: 0.2f}'.format})
 show_data_during_training = False
 
 z = 0
-for i in range(0, len(data) - kernel_size - batch_size, int(batch_size / 20)):
+for i in range(0, len(data) - kernel_size - batch_size, batch_size):
     for k in range(batch_size):
         s = i + k
         e = s + kernel_size
         xx[k, :, 0] = y_open[:, s : e]
         xx[k, :, 1] = y_close[:, s : e]
         yy[k, :] = ups[e - 1 : e, :]
-    for rep in range(50):
+    for rep in range(1000):
         sess.run(train_step, feed_dict = {x: xx, y_true: yy, keep_prob: 1.0})
         if z % 50 == 0:
             summ, train_accuracy, y_out = sess.run([merged_summary, accuracy, y_conv], 
@@ -142,7 +135,7 @@ for i in range(0, len(data) - kernel_size - batch_size, int(batch_size / 20)):
                 ww, bb = sess.run([tf.reshape(w_fc1, [2, 4]), tf.reshape(b_fc1, [4])])
                 fc1v = sess.run(tf.matmul(tf.reshape(xx, [-1, 2]), ww) + bb)
                 for m in range(batch_size):
-                    print('   OC: %s -> w: %s; %s, b: %s -> FC1: %s -> FC3: %s -> %s -> %2d' % (xx[m, -1], ww[0], ww[1], bb, fc1v[m], yy[m, :], y_out[m], y_ind[m]))
+                    print('   OC: %s -> w: %s; %s, b: %s -> FC1: %s -> FC: %s -> %s -> %2d' % (xx[m, -1], ww[0], ww[1], bb, fc1v[m], yy[m, :], y_out[m], y_ind[m]))
         z = z + 1
 
 # Test
@@ -163,4 +156,4 @@ print('Test, accuracy \033[38;5;120m%.3f\033[0m' % (accuracy))
 ww, bb = sess.run([tf.reshape(w_fc1, [kernel_size * N_in, N_fc]), tf.reshape(b_fc1, [N_fc])])
 fc1v = sess.run(tf.matmul(tf.reshape(xx, [-1, kernel_size * N_in]), ww) + bb)
 for m in range(N):
-    print('   OC: %s -> w: %s; %s, b: %s -> FC1: %s -> FC3: %s -> %s -> %2d' % (xx[m, -1], ww[0], ww[1], bb, fc1v[m], yy[m, :], y_out[m], y_ind[m]))
+    print('   OC: %s -> w: %s; %s, b: %s -> FC1: %s -> FC: %s -> %s -> %2d' % (xx[m, -1], ww[0], ww[1], bb, fc1v[m], yy[m, :], y_out[m], y_ind[m]))
