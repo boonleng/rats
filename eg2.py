@@ -3,12 +3,14 @@
 """
 
 import data
+import tempfile
 import matplotlib
 import tensorflow as tf
 import numpy as np
 import pandas
 import chart
 import mystyle
+import subprocess
 
 quotes = data.get_old_data()
 
@@ -21,10 +23,10 @@ ups = np.zeros((len(data), 2), dtype=np.float32)
 ups[mask, 0] = 1.0     # Row 0 for down
 ups[~mask, 1] = 1.0    # Row 1 for up
 
-N_fc = 4     # Fully connected features
+N_fc = 2     # Fully connected features
 N_in = 2
 kernel_size = 1
-batch_size = 100
+batch_size = 50
 
 def nn(x):
     """
@@ -66,34 +68,34 @@ x = tf.placeholder(tf.float32, [None, kernel_size, N_in], name = 'x')
 y_true = tf.placeholder(tf.float32, [None, 2], name = 'y_true')
 y_conv, keep_prob = nn(x)
 
-with tf.name_scope('loss'):
-	cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels = y_true, logits = y_conv)
-
-cross_entropy = tf.reduce_mean(cross_entropy)
-
-with tf.name_scope('adam_optimizer'):
-	train_step = tf.train.AdamOptimizer(1.0e-3).minimize(cross_entropy)
-    # train_step = tf.train.GradientDescentOptimizer(1.0e-3).minimize(cross_entropy)
+with tf.name_scope('cost'):
+    cost = tf.nn.softmax_cross_entropy_with_logits(labels = y_true, logits = y_conv)
+    cost = tf.reduce_mean(cost)
 
 with tf.name_scope('accuracy'):
-    correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_true, 1))
-    correct_prediction = tf.cast(correct_prediction, tf.float32)
+    accuracy = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_true, 1))
+    accuracy = tf.cast(accuracy, tf.float32)
+    accuracy = tf.reduce_mean(accuracy)
 
-accuracy = tf.reduce_mean(correct_prediction)
+# Training mode
+cost_label = 'cross-entropy'
+train = tf.train.AdamOptimizer(1.0e-3).minimize(cost)
+# train = tf.train.GradientDescentOptimizer(1.0e-3).minimize(cross_entropy)
+
+# Log the scalars
+tf.summary.scalar('output-accuracy', accuracy)
+tf.summary.scalar(cost_label, cost)
 
 # Initialize a session
 sess = tf.Session()
-
-tf.summary.scalar('accuracy', accuracy)
-
-# Saving the graph
-graph_location = './eg2'
-merged_summary = tf.summary.merge_all()
-print('Saving graph to: %s' % graph_location)
-train_writer = tf.summary.FileWriter(graph_location)
-train_writer.add_graph(sess.graph)
-
 sess.run(tf.global_variables_initializer())
+
+# Save the graph
+tensorboard_location =  tempfile.mkdtemp()
+merged_summary = tf.summary.merge_all()
+print('Saving graph to: \033[38;5;190m%s\033[0m' % tensorboard_location)
+train_writer = tf.summary.FileWriter(tensorboard_location)
+train_writer.add_graph(sess.graph)
 
 xx = np.zeros((batch_size, kernel_size, 2), dtype=np.float32)
 yy = np.zeros((batch_size, 2), dtype=np.float32)
@@ -111,6 +113,13 @@ np.set_printoptions(formatter={'float': '{: 0.2f}'.format})
 # Supress / show the data details
 show_data_during_training = False
 
+def show_values(xx, ww, bb, fc1v, yy, y_out, y_ind):
+    for m in range(xx.shape[0]):
+        print('   OC: %s -> w: %s; %s, b: %s -> FC1: %s -> FC: %s -> %s -> %2d' % (xx[m, -1], ww[0], ww[1], bb, fc1v[m], yy[m, :], y_out[m], y_ind[m]))
+
+def show_summary(step, accuracy, cost):
+    print('step %5d   %s %.4f   accuracy \033[38;5;120m%5.1f %%\033[0m' % (step, cost_label, cost, accuracy * 100.0))
+
 z = 0
 for i in range(0, len(data) - kernel_size - batch_size, batch_size):
     for k in range(batch_size):
@@ -119,23 +128,23 @@ for i in range(0, len(data) - kernel_size - batch_size, batch_size):
         xx[k, :, 0] = y_open[:, s : e]
         xx[k, :, 1] = y_close[:, s : e]
         yy[k, :] = ups[e - 1 : e, :]
-    for rep in range(1000):
-        sess.run(train_step, feed_dict = {x: xx, y_true: yy, keep_prob: 1.0})
-        if z % 50 == 0:
-            summ, train_accuracy, y_out = sess.run([merged_summary, accuracy, y_conv], 
-                feed_dict = {x: xx, y_true: yy, keep_prob: 1.0},
-                run_metadata = run_metadata,
-                options = run_options
-                )
+    for rep in range(2000):
+        sess.run(train, feed_dict = {x: xx, y_true: yy, keep_prob: 1.0})
+        if z % 200 == 0:
+            summ, accuracy_out, cost_out, y_out = sess.run([merged_summary, accuracy, cost, y_conv], 
+                                                           feed_dict = {x: xx, y_true: yy, keep_prob: 1.0},
+                                                           run_metadata = run_metadata,
+                                                           options = run_options
+                                                           )
             train_writer.add_run_metadata(run_metadata, 'step%03d' % z)
             train_writer.add_summary(summ, z)
-            print('step %s, training accuracy \033[38;5;120m%.3f\033[0m' % (z, train_accuracy))
+            show_summary(z, accuracy_out, cost_out)
+
             if show_data_during_training:
                 y_ind = sess.run(tf.argmax(y_out, 1))
                 ww, bb = sess.run([tf.reshape(w_fc1, [2, 4]), tf.reshape(b_fc1, [4])])
                 fc1v = sess.run(tf.matmul(tf.reshape(xx, [-1, 2]), ww) + bb)
-                for m in range(batch_size):
-                    print('   OC: %s -> w: %s; %s, b: %s -> FC1: %s -> FC: %s -> %s -> %2d' % (xx[m, -1], ww[0], ww[1], bb, fc1v[m], yy[m, :], y_out[m], y_ind[m]))
+                show_values(xx, ww, bb, fc1v, yy, y_out, y_ind)
         z = z + 1
 
 # Test
@@ -148,12 +157,16 @@ for k in range(N):
     xx[k, :, 0] = y_open[:, s : e]
     xx[k, :, 1] = y_close[:, s : e]
     yy[k, :] = ups[e - 1 : e, :]
-accuracy, y_out = sess.run([accuracy, y_conv], feed_dict = {x: xx, y_true: yy, keep_prob: 1.0})
+accuracy_out, cost_out, y_out = sess.run([accuracy, cost, y_conv], feed_dict = {x: xx, y_true: yy, keep_prob: 1.0})
+# print('Test, accuracy \033[38;5;120m%.3f\033[0m' % (accuracy))
+show_summary(z + k, accuracy_out, cost_out)
+
 y_ind = sess.run(tf.argmax(y_out, 1))
-print('Test, accuracy \033[38;5;120m%.3f\033[0m' % (accuracy))
 
 # Show the data and the weights
 ww, bb = sess.run([tf.reshape(w_fc1, [kernel_size * N_in, N_fc]), tf.reshape(b_fc1, [N_fc])])
 fc1v = sess.run(tf.matmul(tf.reshape(xx, [-1, kernel_size * N_in]), ww) + bb)
-for m in range(N):
-    print('   OC: %s -> w: %s; %s, b: %s -> FC1: %s -> FC: %s -> %s -> %2d' % (xx[m, -1], ww[0], ww[1], bb, fc1v[m], yy[m, :], y_out[m], y_ind[m]))
+show_values(xx, ww, bb, fc1v, yy, y_out, y_ind)
+
+# Set up Tensorboard
+subprocess.call(['tensorboard', '--logdir=' + tensorboard_location])
