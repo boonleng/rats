@@ -23,3 +23,11 @@ A convenient function to generate chart is included.
 ![chart](images/AAPL.png)
 
 [pandas-datareader]:https://pandas-datareader.readthedocs.io/en/latest/
+
+### Example Scripts
+
+A few trivial example scripts as I was learning how to setup NN through tensorflow.
+
+- eg1.py - Simple linear prediction
+- eg2.py - Simeple 2-layer NN with redundant data for up-down inference
+ 
