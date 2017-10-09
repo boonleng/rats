@@ -28,6 +28,6 @@ A convenient function to generate chart is included.
 
 A few trivial example scripts as I was learning how to setup NN through tensorflow.
 
-- eg1.py - Simple linear prediction
-- eg2.py - Simeple 2-layer NN with redundant data for up-down inference
+- `eg1.py` - Simple linear prediction
+- `eg2.py` - Simple 2-layer FC NN with redundant data for up-down inference
  
