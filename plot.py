@@ -64,7 +64,7 @@ def genfigs(symbols, days = 90, sma_sizes = [10, 50, 100], folder = 'figs',
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog = 'main')
     parser.add_argument('-v', '--verbose', default = 1, action = 'count', help = 'increases verbosity level')
-    parser.add_argument('-s', '--symbols', default = ['^OLD'], nargs = '+', help = 'specify symbols, e.g., -s NVDA TSLA AAPL')
+    parser.add_argument('-s', '--symbols', default = '^OLD', nargs = '+', help = 'specify symbols, e.g., -s NVDA TSLA AAPL')
     parser.add_argument('-c', '--color-scheme', default = 'default', help = 'specify color scheme to use.')
     parser.add_argument('-o', '--open-preview', action = 'store_true', help = 'open Preview (macOS only)')
     parser.add_argument('-p', '--pdf', action = 'store_true', help = 'generate PDF.')
