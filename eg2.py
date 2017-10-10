@@ -49,7 +49,6 @@ def nn(x):
         b_fc = bias_variable([2])
 
         y_conv = tf.nn.tanh(tf.matmul(h_fc_drop, W_fc) + b_fc)
-        # y_conv = tf.matmul(h_fc_drop, W_fc) + b_fc
     return y_conv, keep_prob
 
 def weight_variable(shape, name = 'Variable'):
