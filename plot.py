@@ -4,9 +4,6 @@ import data
 import chart
 import mystyle
 
-def refresh():
-    genfigs('^OLD')
-
 def genfigs(symbols, days = 90, sma_sizes = [10, 50, 100], folder = 'figs',
             color_scheme = 'default', image_format = 'png', verbose = 0,
             open_preview = False):
