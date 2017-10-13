@@ -3,10 +3,12 @@ import matplotlib
 import matplotlib.pyplot
 import colorscheme
 
+DEFAULT_SMA_SIZES = [10, 50, 200]
+
 # The old way
-def showChart(panel, sma_sizes = [10, 50, 100], skip_weekends = True, color_scheme = 'sunrise'):
+def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, skip_weekends = True, color_scheme = 'sunrise'):
     """
-        showChart(dat, sma_size = [10, 20, 50], skip_weekends = True):)
+        showChart(dat, sma_size = [10, 50, 200], skip_weekends = True)
         - dat - Data frame from pandas-datareader
         - sma_sizes - Window sizes for SMA (sliding moving average)
         - skip_weekends - Skip plotting weekends and days with no data
@@ -231,7 +233,7 @@ class Chart:
     """
         A chart class
     """
-    def __init__(self, n, data = None, sma_sizes = [10, 50, 100], color_scheme = 'sunrise', skip_weekends = True, forecast = 0):
+    def __init__(self, n, data = None, sma_sizes = DEFAULT_SMA_SIZES, color_scheme = 'sunrise', skip_weekends = True, forecast = 0):
         linewidth = 1.0
         width = 0.5
         offset = 0.4
@@ -479,8 +481,8 @@ class Chart:
             self.lines[j].set_ydata(self.sma[k])
             # self.axq.draw_artist(self.lines[j])
             if np.sum(np.isfinite(self.sma[k])):
-                qlim[0] = min(qlim[0], np.nanpercentile(self.sma[k], 20))
-                qlim[1] = max(qlim[1], np.nanpercentile(self.sma[k], 80))
+                qlim[0] = min(qlim[0], np.nanpercentile(self.sma[k], 25))
+                qlim[1] = max(qlim[1], np.nanpercentile(self.sma[k], 75))
         if qlim[1] - qlim[0] < 10:
             qlim = [round(qlim[0]) - 0.5, round(qlim[1]) + 0.5]
         else:
