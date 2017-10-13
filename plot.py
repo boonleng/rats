@@ -6,10 +6,12 @@ import mystyle
 
 def genfigs(symbols, days = 90, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = 'figs',
             color_scheme = 'default', image_format = 'png', verbose = 0,
-            open_preview = False):
+            open_preview = False, offline = False):
     # Get the latest data
     if symbols == '^OLD':
         stock = data.get_old_data()
+    elif offline is True:
+        stock = data.get_old_data(symbols = symbols)
     else:
         # Total data length to retrieve to have complete valid SMA
         L = days + max(sma_sizes);
@@ -66,6 +68,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--open-preview', action = 'store_true', help = 'open Preview (macOS only)')
     parser.add_argument('-p', '--pdf', action = 'store_true', help = 'generate PDF.')
     parser.add_argument('-q', '--quiet', action = 'store_true', help = 'quiet mode.')
+    parser.add_argument('-z', '--offline', action = 'store_true', help = 'use offline data')
     args = parser.parse_args()
     if args.quiet:
         args.verbose = 0
@@ -80,6 +83,7 @@ if __name__ == '__main__':
     try:
         genfigs(args.symbols,
                 verbose = args.verbose, image_format = args.format,
-                color_scheme = args.color_scheme, open_preview = args.open_preview)
+                color_scheme = args.color_scheme, open_preview = args.open_preview,
+                offline = args.offline)
     except KeyboardInterrupt:
         print('Exiting ...')
