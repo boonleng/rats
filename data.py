@@ -46,9 +46,9 @@ def get_old_data(folder = 'data', symbols = None, reload = False):
                     local_symbols.append(symbol)
         else:
             local_symbols = symbols
-            # Read the last one for the data dimensions
-            df = pandas.read_pickle(folder + '/' + local_symbols[-1] + '.pkl')
-            print('Loading \033[38;5;198moffline\033[0m data from ' + str(df.index[0].strftime('%Y-%m-%d')) + ' to ' + str(df.index[-1].strftime('%Y-%m-%d')) + ' ...')
+        # Read the last one for the data dimensions
+        df = pandas.read_pickle(folder + '/' + local_symbols[-1] + '.pkl')
+        print('Loading \033[38;5;198moffline\033[0m data from ' + str(df.index[0].strftime('%Y-%m-%d')) + ' to ' + str(df.index[-1].strftime('%Y-%m-%d')) + ' ...')
         dd = np.empty([df.shape[1], df.shape[0], len(local_symbols)])
         # Now we go through the files again and read them this time
         for i, sym in enumerate(local_symbols):
