@@ -70,16 +70,21 @@ if __name__ == '__main__':
     parser.add_argument('-q', '--quiet', action = 'store_true', help = 'quiet mode.')
     parser.add_argument('-z', '--offline', action = 'store_true', help = 'use offline data')
     args = parser.parse_args()
+
     if args.quiet:
         args.verbose = 0
+
     if args.symbols != '^OLD':
         args.symbols = [x.upper() for x in args.symbols]
+
     if args.pdf:
         args.format = 'pdf'
     else:
         args.format = 'png'
 
-    # print('symbols = {}'.format(args.symbols))
+    if args.verbose > 1:
+        print('symbols = {}'.format(args.symbols))
+
     try:
         genfigs(args.symbols,
                 verbose = args.verbose, image_format = args.format,

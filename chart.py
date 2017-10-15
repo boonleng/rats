@@ -5,8 +5,21 @@ import colorscheme
 
 DEFAULT_SMA_SIZES = [10, 50, 200]
 
+def RSI(series, period = 14):
+    delta = series.diff().dropna()
+    u = delta * 0.0
+    d = u.copy()
+    u[delta > 0.0] = delta[delta > 0.0]
+    d[delta < 0.0] = -delta[delta < 0.0]
+    u[u.index[period - 1]] = np.mean(u[:period]) #first value is sum of avg gains
+    u = u.drop(u.index[:(period-1)])
+    d[d.index[period - 1]] = np.mean(d[:period]) #first value is sum of avg losses
+    d = d.drop(d.index[:(period-1)])
+    rs = u.ewm(com = period - 1, adjust = False).mean() / d.ewm(com = period - 1, adjust = False).mean()
+    return 100.0 - 100.0 / (1.0 + rs)
+
 # The old way
-def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, skip_weekends = True, color_scheme = 'sunrise'):
+def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weekends = True, color_scheme = 'sunrise'):
     """
         showChart(dat, sma_size = [10, 50, 200], skip_weekends = True)
         - dat - Data frame from pandas-datareader
@@ -43,12 +56,15 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, skip_weekends = True, color_
     for num in sma.keys():
         n = max(n, num)
 
-    # Prepare the SMA curves
+    # Compute the SMA curves
     N = len(dat) - n - 1
     # print('N = {} - {} - 1 = {}'.format(len(dat), n, N))
     for k in sma.keys():
         sma[k] = np.convolve(quotes[:, 5], np.ones((k, )) / k, mode = 'valid')
         sma[k] = np.pad(sma[k], (0, k - 1), mode = 'constant', constant_values = np.nan)
+
+    # Compute the RSI curve
+    rsi = RSI(dat.loc[:, 'Close'], rsi_period)
 
     # Find the span of colums 2 to 5 (OHLC)
     nums = np.array(quotes[:N, 2:6]).flatten()
