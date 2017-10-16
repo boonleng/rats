@@ -7,7 +7,9 @@ DEFAULT_SMA_SIZES = [10, 50, 200]
 BACK_RECT = [0.075, 0.11, 0.83, 0.82]
 MAIN_RECT = [0.075, 0.11, 0.83, 0.63]
 RSI_RECT = [0.075, 0.74, 0.83, 0.19]
-# RSI_RECT = [0.075, 0.80, 0.83, 0.13]
+
+RSI_OB = 70
+RSI_OS = 30
 
 def RSI(series, period = 14):
     delta = series.diff().dropna()              # Drop the 1st since it is NAN
@@ -37,13 +39,17 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
 
     # Get the first frame
     dat = panel.iloc[:, :, 0]
+    if dat.keys().contains('Adj Close'):
+        close_label = 'Adj Close'
+    else:
+        close_label = 'Close'
     quotes = np.transpose([
         list(range(len(dat))),
         list(matplotlib.dates.date2num(dat.index.tolist())),
         dat.loc[:, 'Open'].tolist(),
         dat.loc[:, 'High'].tolist(),
         dat.loc[:, 'Low'].tolist(),
-        dat.loc[:, 'Close'].tolist(),
+        dat.loc[:, close_label].tolist(),
         np.multiply(dat.loc[:, 'Volume'], 1.0e-6).tolist()
     ])
 
@@ -102,12 +108,16 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
         lines.append(sma_line)
         ax.add_line(sma_line)
         if np.sum(np.isfinite(sma[k][:N])):
-            y = np.nanmin(sma[k][:N])
+            y = np.nanpercentile(sma[k][:N], 25)
             if y < ylim[0]:
                 ylim[0] = y
-            y = np.nanmax(sma[k][:N])
+            y = np.nanpercentile(sma[k][:N], 75)
             if y > ylim[1]:
                 ylim[1] = y
+    if ylim[1] - ylim[0] < 10:
+        ylim = [round(ylim[0]) - 0.5, round(ylim[1]) + 0.5]
+    else:
+        ylim = [round(ylim[0] * 0.2 - 1.0) * 5.0, round(ylim[1] * 0.2 + 1.0) * 5.0]
 
     # RSI line
     x = dat.loc[:, 'Close']
@@ -117,12 +127,9 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
     rsi = rsi[:-N-1:-1]
 
     color = colormap.line[3]
-    # rsi_line_25 = matplotlib.lines.Line2D([quotes[0, 0], quotes[N - 1, 0]], [25.0, 25.0], color = color, linewidth = 0.5, alpha = 0.5)
-    # rsi_line_50 = matplotlib.lines.Line2D([quotes[0, 0], quotes[N - 1, 0]], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.5, linestyle = '-.')
-    # rsi_line_75 = matplotlib.lines.Line2D([quotes[0, 0], quotes[N - 1, 0]], [75.0, 75.0], color = color, linewidth = 0.5, alpha = 0.5)
-    rsi_line_25 = matplotlib.lines.Line2D([-1, N], [25.0, 25.0], color = color, linewidth = 0.5, alpha = 0.5)
-    rsi_line_50 = matplotlib.lines.Line2D([-1, N], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.7, linestyle = '-.')
-    rsi_line_75 = matplotlib.lines.Line2D([-1, N], [75.0, 75.0], color = color, linewidth = 0.5, alpha = 0.5)
+    rsi_line_25 = matplotlib.lines.Line2D([-1, N], [RSI_OS, RSI_OS], color = color, linewidth = 0.5, alpha = 0.33)
+    rsi_line_50 = matplotlib.lines.Line2D([-1, N], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.75, linestyle = '-.')
+    rsi_line_75 = matplotlib.lines.Line2D([-1, N], [RSI_OB, RSI_OB], color = color, linewidth = 0.5, alpha = 0.33)
     axr.add_line(rsi_line_25)
     axr.add_line(rsi_line_50)
     axr.add_line(rsi_line_75)
@@ -133,8 +140,8 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
         rsi_line = matplotlib.lines.Line2D(quotes[:N, 1], rsi, label = 'RSI', color = color)
     axr.add_line(rsi_line)
 
-    axr.fill_between(range(N), rsi, 25.0, where = rsi <= 25.0, interpolate = True, color = color, alpha = 0.5, zorder = 3)
-    axr.fill_between(range(N), rsi, 75.0, where = rsi >= 75.0, interpolate = True, color = color, alpha = 0.5, zorder = 3)
+    axr.fill_between(range(N), rsi, RSI_OS, where = rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
+    axr.fill_between(range(N), rsi, RSI_OB, where = rsi >= RSI_OB, interpolate = True, color = color, alpha = 0.33, zorder = 3)
 
     # Round toward nice numbers
     if ylim[1] < 10:
@@ -193,25 +200,24 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
         ax.add_line(cline)
         axv.add_patch(vrect)
 
-    # ax.set_xlim([-0.5, 10.5])
-    # axv.set_xlim([-0.5, 10.5])
-    # axr.set_xlim([-0.6, 10.4])
-    # ax.set_xlim([10 + 0.5, -1.5])
-    # axv.set_xlim([10 + 0.5, -1.5])
-    # axr.set_xlim([10 + 0.5, -1.5])
     ax.set_xlim([N + 0.5, -1.5])
     axv.set_xlim([N + 0.5, -1.5])
     axr.set_xlim([N + 0.5, -1.5])
-    # ax.set_xlim([-1.5, N + 0.5])
-    # axv.set_xlim([-1.5, N + 0.5])
-    # axr.set_xlim([-1.5, N + 0.5])
+
     axr.set_ylim([-1, 100])
 
-    axr.set_yticks([0, 25, 50, 75, 100])
+    axr.set_yticks([0, RSI_OS, 50, RSI_OB, 100])
 
     L = len(quotes)
 
+    warned_x_tick = [3]
+
     def format_date(x, pos = None):
+        if warned_x_tick[0] > 0 and abs(x - round(x)) > 1.0e-3:
+            warned_x_tick[0] -= 1
+            print('\033[38;5;220mWARNING: x = {} ticks are too far away from day boundaries.\033[0m'.format(x))
+            if warned_x_tick[0] == 0:
+                print('\033[38;5;220mWARNING message repeated 3 times.\033[0m'.format(x))
         index = int(x)
         # print('x = {}'.format(x))
         if x < 0:
@@ -219,11 +225,11 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
             k = 0
             t = quotes[0, 1]
             while (k < -index):
-                t = t + 1.0
+                t += 1.0
                 weekday = matplotlib.dates.num2date(t).weekday()
                 # Only count Mon through Friday
                 if weekday >= 0 and weekday <= 4:
-                    k = k + 1
+                    k += 1
                 # print('index = {}   weekday {}   k = {}'.format(index, weekday, k))
             date = matplotlib.dates.num2date(t)
             #print('date -> {}'.format(date))
@@ -368,13 +374,12 @@ class Chart:
         color = self.colormap.line[3]
         y = np.multiply(range(self.n), 100.0 / self.n)
         self.rsi_line = matplotlib.lines.Line2D(range(self.n), y, label = 'RSI', color = color)
-        self.rsi_fill_25 = self.axr.fill_between(range(self.n), y, 25.0, where = y <= 25.0, facecolor = color, interpolate = True, alpha = 0.5)
-        self.rsi_fill_75 = self.axr.fill_between(range(self.n), y, 75.0, where = y >= 75.0, facecolor = color, interpolate = True, alpha = 0.5)
+        self.rsi_fill_25 = self.axr.fill_between(range(self.n), y, RSI_OS, where = y <= RSI_OS, facecolor = color, interpolate = True, alpha = 0.33)
+        self.rsi_fill_75 = self.axr.fill_between(range(self.n), y, RSI_OB, where = y >= RSI_OB, facecolor = color, interpolate = True, alpha = 0.33)
         self.axr.add_line(self.rsi_line)
-
-        self.rsi_line_25 = matplotlib.lines.Line2D([0, self.n + 1], [25.0, 25.0], color = color, linewidth = 0.5, alpha = 0.5)
-        self.rsi_line_50 = matplotlib.lines.Line2D([0, self.n + 1], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.7, linestyle = '-.')
-        self.rsi_line_75 = matplotlib.lines.Line2D([0, self.n + 1], [75.0, 75.0], color = color, linewidth = 0.5, alpha = 0.5)
+        self.rsi_line_25 = matplotlib.lines.Line2D([0, self.n + 1], [RSI_OS, RSI_OS], color = color, linewidth = 0.5, alpha = 0.5)
+        self.rsi_line_50 = matplotlib.lines.Line2D([0, self.n + 1], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.67, linestyle = '-.')
+        self.rsi_line_75 = matplotlib.lines.Line2D([0, self.n + 1], [RSI_OB, RSI_OB], color = color, linewidth = 0.5, alpha = 0.5)
         self.axr.add_line(self.rsi_line_25)
         self.axr.add_line(self.rsi_line_50)
         self.axr.add_line(self.rsi_line_75)
@@ -433,8 +438,6 @@ class Chart:
         self.axr.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
         self.axr.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
 
-        self.axr.set_yticks([0, 25, 50, 75, 100])
-
         self.axq.set_xlim([-1.5, self.n + 0.5])
         self.axv.set_xlim([-1.5, self.n + 0.5])
         self.axr.set_xlim([-1.5, self.n + 0.5])
@@ -467,7 +470,14 @@ class Chart:
         n = majors[-1]
         #print('DEBUG: {}, ..., {} -> \033[38;5;214m{}\033[0m ({})'.format(majors[0], n, dates[n].strftime('%Y-%m-%d'), dates[n].weekday()))
 
+        self.warned_x_tick = 3
+
         def format_date(x, pos = None):
+            if self.warned_x_tick > 0 and abs(x - round(x)) > 1.0e-3:
+                self.warned_x_tick -= 1
+                print('\033[38;5;220mWARNING: x = {} ticks are too far away from day boundaries.\033[0m'.format(x))
+                if self.warned_x_tick == 0:
+                    print('\033[38;5;220mWARNING message repeated 3 times.\033[0m'.format(x))
             index = int(x)
             # print('x = {}'.format(x))
             if x < 0:
@@ -479,7 +489,7 @@ class Chart:
                     weekday = matplotlib.dates.num2date(t).weekday()
                     # Only count Mon through Friday
                     if weekday >= 0 and weekday <= 4:
-                        k = k + 1
+                        k += 1
                     #print('index = {}   weekday {}   k = {}'.format(index, weekday, k))
                 date = matplotlib.dates.num2date(t)
                 #print('date -> {}'.format(date))
@@ -488,11 +498,11 @@ class Chart:
                 k = 0
                 t = dnums[-1]
                 while (k <= index - self.n):
-                    t = t + 1.0
+                    t += 1.0
                     weekday = matplotlib.dates.num2date(t).weekday()
                     # Only count Mon through Friday
                     if weekday >= 0 and weekday <= 4:
-                        k = k + 1
+                        k += 1
                     #print('index = {}   weekday {}   k = {}'.format(index, weekday, k))
                 date = matplotlib.dates.num2date(t)
             else:
@@ -501,12 +511,10 @@ class Chart:
             return date.strftime('%b %d')
 
         if self.skip_weekends:
-            #print((self.n - majors[-1]) + 1)
             self.axq.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
             self.axq.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
             # self.axq.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(5))
             # self.axq.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
-            # self.axq.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, (self.n - majors[-1]) - 1))  # Use the last Monday
             self.axq.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[-1] % 5 + 1))  # Use the last Monday
             self.axr.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[-1] % 5 + 1))  # Use the last Monday
         else:
@@ -529,11 +537,15 @@ class Chart:
 
         # Get the first frame
         data = panel.loc[:, :, self.symbol]
+        if data.keys().contains('Adj Close'):
+            close_label = 'Adj Close'
+        else:
+            close_label = 'Close'
         quotes = np.transpose([
             data.loc[:, 'Open'].tolist(),
             data.loc[:, 'High'].tolist(),
             data.loc[:, 'Low'].tolist(),
-            data.loc[:, 'Close'].tolist(),
+            data.loc[:, close_label].tolist(),
             np.multiply(data.loc[:, 'Volume'], 1.0e-6).tolist()
         ])
 
@@ -605,13 +617,13 @@ class Chart:
             qlim = [round(qlim[0] * 0.2 - 1.0) * 5.0, round(qlim[1] * 0.2 + 1.0) * 5.0]
 
         # Compute RSI
-        self.rsi = RSI(data.loc[:, 'Close'])[-self.n:]
+        self.rsi = RSI(data.loc[:, close_label])[-self.n:]
         color = self.colormap.line[3]
         self.rsi_line.set_ydata(self.rsi)
         self.rsi_fill_25.remove()
         self.rsi_fill_75.remove()
-        self.rsi_fill_25 = self.axr.fill_between(range(self.n), self.rsi, 25.0, where = self.rsi <= 25.0, interpolate = True, color = color, alpha = 0.5, zorder = 3)
-        self.rsi_fill_75 = self.axr.fill_between(range(self.n), self.rsi, 75.0, where = self.rsi >= 75.0, interpolate = True, color = color, alpha = 0.5, zorder = 3)
+        self.rsi_fill_25 = self.axr.fill_between(range(self.n), self.rsi, RSI_OS, where = self.rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
+        self.rsi_fill_75 = self.axr.fill_between(range(self.n), self.rsi, RSI_OB, where = self.rsi >= RSI_OB, interpolate = True, color = color, alpha = 0.33, zorder = 3)
 
         # Legend position: upper right if SMA-N is increasing, upper left otherwise (Not in public API)
         sma = self.sma[list(self.sma)[-2]]
