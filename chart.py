@@ -6,15 +6,14 @@ import colorscheme
 DEFAULT_SMA_SIZES = [10, 50, 200]
 
 def RSI(series, period = 14):
-    delta = series.diff().dropna()
-    u = delta * 0.0
-    d = u.copy()
-    u[delta > 0.0] = delta[delta > 0.0]
-    d[delta < 0.0] = -delta[delta < 0.0]
-    u[u.index[period - 1]] = np.mean(u[:period]) #first value is sum of avg gains
-    u = u.drop(u.index[:(period-1)])
-    d[d.index[period - 1]] = np.mean(d[:period]) #first value is sum of avg losses
-    d = d.drop(d.index[:(period-1)])
+    delta = series.diff().dropna()              # Drop the 1st since it is NAN
+    u, d = delta.copy(), delta.copy() * -1.0
+    u[delta < 0.0] = 0.0
+    d[delta > 0.0] = 0.0
+    u[period] = np.mean(u[:period])             # First value is sum of avg gains
+    u = u.drop(u.index[:period - 1])
+    d[period] = np.mean(d[:period])             # First value is sum of avg losses
+    d = d.drop(d.index[:period - 1])
     rs = u.ewm(com = period - 1, adjust = False).mean() / d.ewm(com = period - 1, adjust = False).mean()
     return 100.0 - 100.0 / (1.0 + rs)
 
