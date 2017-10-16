@@ -10,7 +10,6 @@ import numpy as np
 import pandas
 import chart
 import mystyle
-import subprocess
 
 quotes = data.get_old_data()
 
