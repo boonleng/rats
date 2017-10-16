@@ -4,9 +4,9 @@ import matplotlib.pyplot
 import colorscheme
 
 DEFAULT_SMA_SIZES = [10, 50, 200]
-BACK_RECT = [0.075, 0.12, 0.83, 0.78]
-MAIN_RECT = [0.075, 0.12, 0.83, 0.58]
-RSI_RECT = [0.075, 0.70, 0.83, 0.20]
+BACK_RECT = [0.075, 0.11, 0.83, 0.82]
+MAIN_RECT = [0.075, 0.11, 0.83, 0.63]
+RSI_RECT = [0.075, 0.74, 0.83, 0.19]
 
 def RSI(series, period = 14):
     delta = series.diff().dropna()              # Drop the 1st since it is NAN
@@ -276,22 +276,28 @@ class Chart:
 
         self.fig = matplotlib.pyplot.figure()
         self.fig.patch.set_alpha(0.0)
-        # dpi = self.fig.dpi
-        # print('dpi = {}'.format(dpi))
-        # self.rect = [(round(x * self.dpi)  + 0.5) / dpi for x in rect]
-        # self.rect = MAIN_RECT
-        self.axb = self.fig.add_axes(BACK_RECT, frameon = False)
+
+        dpi = 144.0
+
+        rect = [(round(x * dpi) + 0.5) / dpi for x in BACK_RECT]       
+        self.axb = self.fig.add_axes(rect, frameon = False)
         self.axb.yaxis.set_visible(False)
         self.axb.xaxis.set_visible(False)
         
-        self.axq = self.fig.add_axes(MAIN_RECT, label = 'Quotes')
+        rect = [(round(x * dpi)  + 0.5) / dpi for x in MAIN_RECT]       
+        self.axq = self.fig.add_axes(rect, label = 'Quotes')
         self.axq.patch.set_visible(False)
         self.axq.yaxis.tick_right()
         
-        self.axv = self.fig.add_axes(MAIN_RECT, frameon = False, sharex = self.axq)
+        self.axv = self.fig.add_axes(rect, frameon = False, sharex = self.axq)
         self.axv.patch.set_visible(False)
         self.axv.xaxis.set_visible(False)
         
+        rect = [(round(x * dpi)  + 0.5) / dpi for x in RSI_RECT]
+        self.axr = self.fig.add_axes(rect, label = 'RSI', sharex = self.axq)
+        self.axr.patch.set_visible(False)
+        self.axr.xaxis.set_visible(False)
+
         # Backdrop gradient
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', self.colormap.backdrop)
         fprop = matplotlib.font_manager.FontProperties(style = 'normal', size = 60, weight = 'bold', stretch = 'normal')
@@ -301,11 +307,15 @@ class Chart:
             color = self.colormap.background_text_color, alpha = self.colormap.background_text_alpha)
 
         # SMA lines
-        self.lines = []
+        self.sma_lines = []
         for j, k in enumerate(self.sma.keys()):
             sma_line = matplotlib.lines.Line2D(range(self.n), np.multiply(range(self.n), k / self.n), label = 'SMA ' + str(k), color = self.colormap.line[j])
             self.axq.add_line(sma_line)
-            self.lines.append(sma_line)
+            self.sma_lines.append(sma_line)
+
+        # RSI line
+        self.rsi_line = matplotlib.lines.Line2D(range(self.n), np.multiply(range(self.n), 100.0 / self.n), label = 'SMA ' + str(k), color = self.colormap.line[j])
+        self.axr.add_line(self.rsi_line)
 
         # Candles and bars
         self.majors = []
@@ -340,39 +350,39 @@ class Chart:
         self.axq.add_line(line)
 
         # Legend
-        self.leg = self.axq.legend(handles = self.lines, loc = 'upper left', facecolor = self.colormap.background, framealpha = 0.85)
+        self.leg = self.axq.legend(handles = self.sma_lines, loc = 'upper left', ncol = 3,
+                                   facecolor = self.colormap.background, framealpha = 0.85)
         for text in self.leg.get_texts():
             text.set_color(self.colormap.text)
 
         # Grid
         self.axq.grid(color = self.colormap.grid, linestyle=':')
-        self.axq.spines['top'].set_visible(False)
-        self.axv.spines['top'].set_visible(False)
+        self.axr.grid(color = self.colormap.grid, linestyle=':')
         for side in ['bottom', 'left', 'right']:
             self.axq.spines[side].set_color(self.colormap.text)
             self.axv.spines[side].set_color(self.colormap.text)
+        self.axq.spines['top'].set_visible(False)
+        self.axv.spines['top'].set_visible(False)
+        self.axr.spines['bottom'].set_visible(False)
         self.axq.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
         self.axq.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
         self.axv.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
         self.axv.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
+        self.axr.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
+        self.axr.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
 
-        self.axq.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
+        self.axr.set_yticks([0, 25, 50, 75, 100])
 
         self.axq.set_xlim([-1.5, self.n + 0.5])
         self.axv.set_xlim([-1.5, self.n + 0.5])
+        self.axr.set_xlim([-1.5, self.n + 0.5])
         self.axq.xaxis.set_data_interval(-1.0, self.n + 10.0)
         self.axv.xaxis.set_data_interval(-1.0, self.n + 10.0)
+        self.axr.xaxis.set_data_interval(-1.0, self.n + 10.0)
 
         self.axq.set_ylim([0, 110])
         self.axv.set_ylim([0, 10])
-        self.axr = self.fig.add_axes(RSI_RECT, label = 'RSI')
-        self.axr.patch.set_visible(False)
-        self.axr.xaxis.set_visible(False)
-
-        # self.axr.spines['bottom'].set_color(self.colormap.grid)
-        self.axr.spines['bottom'].set_visible(False)
-        self.axr.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
-        self.axr.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
+        self.axr.set_ylim([-5, 100])
 
         self.title = self.axr.set_title(self.symbol, color = self.colormap.text)
 
@@ -436,12 +446,18 @@ class Chart:
             # self.axq.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
             # self.axq.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, (self.n - majors[-1]) - 1))  # Use the last Monday
             self.axq.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[-1] % 5 + 1))  # Use the last Monday
+            self.axr.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
+            # self.axr.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
+            self.axr.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
+            # self.axr.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[-1] % 5 + 1))  # Use the last Monday
         else:
             mondays = matplotlib.dates.WeekdayLocator(matplotlib.dates.MONDAY)      # major ticks on the mondays
             alldays = matplotlib.dates.DayLocator()                                 # minor ticks on the days
             self.axq.xaxis.set_major_locator(mondays)
             self.axq.xaxis.set_minor_locator(alldays)
             self.axq.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
+            self.axr.xaxis.set_major_locator(mondays)
+            self.axr.xaxis.set_minor_locator(alldays)
 
         matplotlib.pyplot.setp(self.axq.get_xticklabels(), rotation = 45, horizontalalignment = 'right')
 
@@ -516,8 +532,8 @@ class Chart:
                 self.sma[k] = np.concatenate((np.full(self.n - len(sma), np.nan), sma))
             else:
                 self.sma[k] = sma[-self.n:]
-            self.lines[j].set_ydata(self.sma[k])
-            # self.axq.draw_artist(self.lines[j])
+            self.sma_lines[j].set_ydata(self.sma[k])
+            # self.axq.draw_artist(self.sma_lines[j])
             if np.sum(np.isfinite(self.sma[k])):
                 qlim[0] = min(qlim[0], np.nanpercentile(self.sma[k], 25))
                 qlim[1] = max(qlim[1], np.nanpercentile(self.sma[k], 75))
@@ -580,4 +596,3 @@ class Chart:
 
     def savefig(self, filename):
         self.fig.savefig(filename)
-
