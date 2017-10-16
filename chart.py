@@ -287,8 +287,8 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
     for text in leg.get_texts():
         text.set_color(colormap.text)
     
-    ax.grid(color = colormap.grid, linestyle = ':')
-    axr.grid(color = colormap.grid, linestyle = ':')
+    ax.grid(alpha = colormap.grid_alpha, color = colormap.grid, linestyle = ':')
+    axr.grid(alpha = colormap.grid_alpha, color = colormap.grid, linestyle = ':')
     ax.tick_params(axis = 'x', which = 'both', colors = colormap.text)
     ax.tick_params(axis = 'y', which = 'both', colors = colormap.text)
     axv.tick_params(axis = 'x', which = 'both', colors = colormap.text)
@@ -422,8 +422,8 @@ class Chart:
             text.set_color(self.colormap.text)
 
         # Grid
-        self.axq.grid(color = self.colormap.grid, linestyle=':')
-        self.axr.grid(color = self.colormap.grid, linestyle=':')
+        self.axq.grid(alpha = self.colormap.grid_alpha, color = self.colormap.grid, linestyle=':')
+        self.axr.grid(alpha = self.colormap.grid_alpha, color = self.colormap.grid, linestyle=':')
         for side in ['top', 'bottom', 'left', 'right']:
             self.axq.spines[side].set_color(self.colormap.text)
             self.axv.spines[side].set_color(self.colormap.text)
@@ -441,9 +441,12 @@ class Chart:
         self.axq.set_xlim([-1.5, self.n + 0.5])
         self.axv.set_xlim([-1.5, self.n + 0.5])
         self.axr.set_xlim([-1.5, self.n + 0.5])
+
         self.axq.xaxis.set_data_interval(-1.0, self.n + 2.0)
         self.axv.xaxis.set_data_interval(-1.0, self.n + 2.0)
         self.axr.xaxis.set_data_interval(-1.0, self.n + 2.0)
+
+        self.axr.set_yticks([0, RSI_OS, 50, RSI_OB, 100])
 
         self.axq.set_ylim([0, 110])
         self.axv.set_ylim([0, 10])
