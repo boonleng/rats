@@ -4,8 +4,11 @@ import mystyle
 import time
 
 # Some global variables
-K = 100                       # Number of days to show
 sma_sizes = [10, 50, 200]     # SMA window sizes
+K = 90                        # Number of days to show
+
+# Data length to ensure proper SMA calculation
+L = K + max(sma_sizes)
 
 # Get offline data
 quotes = data.get_old_data()
@@ -22,8 +25,7 @@ for method in [0, 1]:
         view.set_xdata(quotes.major_axis[-K:])
 
     # Make sure we get enough data so that all SMA curves are valid
-    K = K + max(sma_sizes)
-    sss = quotes[:, quotes.axes[1][-K:], :]
+    sss = quotes[:, quotes.axes[1][-L:], :]
 
     t1 = time.time()
 

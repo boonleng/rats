@@ -19,6 +19,7 @@ def RSI(series, period = 14):
     d[period] = np.mean(d[:period])             # First value is sum of avg losses
     d = d.drop(d.index[:period - 1])
     rs = u.ewm(com = period - 1, adjust = False).mean() / d.ewm(com = period - 1, adjust = False).mean()
+    rs = np.nan_to_num(rs)
     return 100.0 - 100.0 / (1.0 + rs)
 
 # The old way
@@ -79,7 +80,7 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
     rect = [(round(x * dpi) + 0.5) / dpi for x in MAIN_RECT]       
     ax = fig.add_axes(rect, label = 'Quotes')
     ax.patch.set_visible(False)
-    
+
     # Volume axis
     axv = fig.add_axes(rect, frameon = False)
     axv.patch.set_visible(False)
@@ -90,6 +91,7 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
     axr = matplotlib.pyplot.axes(rect, facecolor = None)
     axr.patch.set_visible(False)
 
+    # SMA lines
     lines = []
     for k in sma.keys():
         if skip_weekends:
@@ -107,6 +109,33 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
             if y > ylim[1]:
                 ylim[1] = y
 
+    # RSI line
+    x = dat.loc[:, 'Close']
+    if x.index[0] > x.index[1]:
+        x = x[::-1]
+    rsi = RSI(x, rsi_period)
+    rsi = rsi[:-N-1:-1]
+
+    color = colormap.line[3]
+    # rsi_line_25 = matplotlib.lines.Line2D([quotes[0, 0], quotes[N - 1, 0]], [25.0, 25.0], color = color, linewidth = 0.5, alpha = 0.5)
+    # rsi_line_50 = matplotlib.lines.Line2D([quotes[0, 0], quotes[N - 1, 0]], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.5, linestyle = '-.')
+    # rsi_line_75 = matplotlib.lines.Line2D([quotes[0, 0], quotes[N - 1, 0]], [75.0, 75.0], color = color, linewidth = 0.5, alpha = 0.5)
+    rsi_line_25 = matplotlib.lines.Line2D([-1, N], [25.0, 25.0], color = color, linewidth = 0.5, alpha = 0.5)
+    rsi_line_50 = matplotlib.lines.Line2D([-1, N], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.5, linestyle = '-.')
+    rsi_line_75 = matplotlib.lines.Line2D([-1, N], [75.0, 75.0], color = color, linewidth = 0.5, alpha = 0.5)
+    axr.add_line(rsi_line_25)
+    axr.add_line(rsi_line_50)
+    axr.add_line(rsi_line_75)
+
+    if skip_weekends:
+        rsi_line = matplotlib.lines.Line2D(quotes[:N, 0], rsi, label = 'RSI', color = color)
+    else:
+        rsi_line = matplotlib.lines.Line2D(quotes[:N, 1], rsi, label = 'RSI', color = color)
+    axr.add_line(rsi_line)
+
+    axr.fill_between(range(N), rsi, 25.0, where = rsi <= 25.0, interpolate = True, color = color, alpha = 0.5, zorder = 3)
+    axr.fill_between(range(N), rsi, 75.0, where = rsi >= 75.0, interpolate = True, color = color, alpha = 0.5, zorder = 3)
+
     # Round toward nice numbers
     if ylim[1] < 10:
         ylim[0] = np.floor(ylim[0])
@@ -115,98 +144,108 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
         ylim[0] = np.floor(ylim[0] * 0.2) * 5.0
         ylim[1] = np.ceil(ylim[1] * 0.2) * 5.0
 
-    def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, skip_weekends = True, colormap = colorscheme.colorscheme('sunrise')):
-        linewidth = 1.0
-        offset = 0.4;
+    # def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, skip_weekends = True, colormap = colorscheme.colorscheme('sunrise')):
 
-        majors = []
-        vlines = []
-        olines = []
-        clines = []
-        vrects = []
-        for q in quotes:
-            if skip_weekends:
-                i, t, o, h, l, c = q[:6]
-                # Gather the indices of weeday == Monday
-                if matplotlib.dates.num2date(t).weekday() == 0:
-                   majors.append(i)
-            else:
-                k, i, o, h, l, c = q[:6]
-            if c >= o:
-                color = colormap.up
-            else:
-                color = colormap.down
-            vline = matplotlib.lines.Line2D(xdata = (i, i), ydata = (l, h), color = color, linewidth = linewidth)
-            oline = matplotlib.lines.Line2D(xdata = (i + offset, i), ydata = (o, o), color = color, linewidth = linewidth)
-            cline = matplotlib.lines.Line2D(xdata = (i - offset, i), ydata = (c, c), color = color, linewidth = linewidth)
-            vlines.append(vline)
-            olines.append(oline)
-            clines.append(cline)
-            ax.add_line(vline)
-            ax.add_line(oline)
-            ax.add_line(cline)
+    linewidth = 1.0
+    offset = 0.4
 
-        if volume_axis != None:
-            for q in quotes:
-                if skip_weekends:
-                    i, t, o, h, l, c, v = q[:7]
-                else:
-                    k, i, o, h, l, c, v = q[:7]
-                if c >= o:
-                    color = colormap.bar_up
-                else:
-                    color = colormap.bar_down
-                vrect = matplotlib.patches.Rectangle(xy = (i - 0.5, 0.0),
-                    fill = True,
-                    width = 1.0,
-                    height = v,
-                    facecolor = color,
-                    edgecolor = colormap.text,
-                    linewidth = 0.75,
-                    alpha = 0.33)
-                vrects.append(vrect)
-                volume_axis.add_patch(vrect)
+    majors = []
+    vlines = []
+    olines = []
+    clines = []
+    vrects = []
 
-        N = len(quotes)
+    # Add a dummy line at integer to get around tick locations not properly selected
+    vline = matplotlib.lines.Line2D(xdata = (-1, -1), ydata = (0, 0), color = 'k', linewidth = linewidth)
+    ax.add_line(vline)
 
-        def format_date(x, pos = None):
-            index = int(x)
-            if x < 0:
-                #print('Project to {} days from {}.'.format(-index, matplotlib.dates.num2date(quotes[0, 1]).strftime('%b %d')))
-                k = 0
-                t = quotes[0, 1]
-                while (k <= -index):
-                    t = t - 1.0
-                    weekday = matplotlib.dates.num2date(t).weekday()
-                    # Only count Mon through Friday
-                    if weekday >= 0 and weekday <= 4:
-                        k = k + 1
-                    #print('index = {}   weekday {}   k = {}'.format(index, weekday, k))
-                date = matplotlib.dates.num2date(t)
-                #print('date -> {}'.format(date))
-            elif index > N - 1:
-                return ''
-            else:
-                date = matplotlib.dates.num2date(quotes[index, 1])
-            # print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
-            return date.strftime('%b %d')
-
-        print(majors[-1] % 5)
+    for q in quotes[:N]:
         if skip_weekends:
-            ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
-            ax.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
-            # ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
-            ax.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(base = 5.0, offset = majors[-1] % 5 + 1))  # Use the latest Monday
-            axr.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(base = 5.0, offset = majors[-1] % 5 + 1))  # Use the latest Monday
+            i, t, o, h, l, c, v = q[:7]
+            # Gather the indices of weeday == Monday
+            if matplotlib.dates.num2date(t).weekday() == 0:
+               majors.append(i)
         else:
-            mondays = matplotlib.dates.WeekdayLocator(matplotlib.dates.MONDAY)      # major ticks on the mondays
-            alldays = matplotlib.dates.DayLocator()                                 # minor ticks on the days
-            ax.xaxis.set_major_locator(mondays)
-            ax.xaxis.set_minor_locator(alldays)
-            ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
-            axr.xaxis.set_major_locator(mondays)
+            k, i, o, h, l, c, v = q[:7]
+        if c >= o:
+            line_color = colormap.up
+            bar_color = colormap.bar_up
+        else:
+            line_color = colormap.down
+            bar_color = colormap.bar_down
+        vline = matplotlib.lines.Line2D(xdata = (i, i), ydata = (l, h), color = line_color, linewidth = linewidth)
+        oline = matplotlib.lines.Line2D(xdata = (i + offset, i), ydata = (o, o), color = line_color, linewidth = linewidth)
+        cline = matplotlib.lines.Line2D(xdata = (i - offset, i), ydata = (c, c), color = line_color, linewidth = linewidth)
+        vrect = matplotlib.patches.Rectangle(xy = (i - 0.5, 0.0),
+            fill = True,
+            width = 1.0,
+            height = v,
+            facecolor = bar_color,
+            edgecolor = colormap.text,
+            linewidth = 0.75,
+            alpha = 0.33)
+        vlines.append(vline)
+        olines.append(oline)
+        clines.append(cline)
+        vrects.append(vrect)
+        ax.add_line(vline)
+        ax.add_line(oline)
+        ax.add_line(cline)
+        axv.add_patch(vrect)
 
-    candlestick(ax, quotes[:N], volume_axis = axv, skip_weekends = skip_weekends, colormap = colormap)
+    # ax.set_xlim([-0.5, 10.5])
+    # axv.set_xlim([-0.5, 10.5])
+    # axr.set_xlim([-0.6, 10.4])
+    # ax.set_xlim([10 + 0.5, -1.5])
+    # axv.set_xlim([10 + 0.5, -1.5])
+    # axr.set_xlim([10 + 0.5, -1.5])
+    ax.set_xlim([N + 0.5, -1.5])
+    axv.set_xlim([N + 0.5, -1.5])
+    axr.set_xlim([N + 0.5, -1.5])
+    # ax.set_xlim([-1.5, N + 0.5])
+    # axv.set_xlim([-1.5, N + 0.5])
+    # axr.set_xlim([-1.5, N + 0.5])
+    axr.set_ylim([-1, 100])
+
+    axr.set_yticks([0, 25, 50, 75, 100])
+
+    L = len(quotes)
+
+    def format_date(x, pos = None):
+        index = int(x)
+        # print('x = {}'.format(x))
+        if x < 0:
+            #print('Project to {} days from {}.'.format(-index, matplotlib.dates.num2date(quotes[0, 1]).strftime('%b %d')))
+            k = 0
+            t = quotes[0, 1]
+            while (k < -index):
+                t = t + 1.0
+                weekday = matplotlib.dates.num2date(t).weekday()
+                # Only count Mon through Friday
+                if weekday >= 0 and weekday <= 4:
+                    k = k + 1
+                # print('index = {}   weekday {}   k = {}'.format(index, weekday, k))
+            date = matplotlib.dates.num2date(t)
+            #print('date -> {}'.format(date))
+        elif index > L - 1:
+            return ''
+        else:
+            date = matplotlib.dates.num2date(quotes[index, 1])
+        # print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
+        return date.strftime('%b %d')
+
+    if skip_weekends:
+        ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
+        ax.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
+        ax.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[0] % 5 - 4))  # Use the latest Monday
+        axr.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[0] % 5 - 4))  # Use the latest Monday
+    else:
+        mondays = matplotlib.dates.WeekdayLocator(matplotlib.dates.MONDAY)      # major ticks on the mondays
+        alldays = matplotlib.dates.DayLocator()                                 # minor ticks on the days
+        ax.xaxis.set_major_locator(mondays)
+        ax.xaxis.set_minor_locator(alldays)
+        ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
+        axr.xaxis.set_major_locator(mondays)
 
     # Volume bars to have the mean at around 10% of the vertical space
     v = np.nanmean(np.array(quotes[:, 6]))
@@ -227,30 +266,6 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
     axv.set_yticks(new_ticks)
     axv.set_yticklabels(new_labels)
     axv.xaxis.set_visible(False)
-
-    # Compute the RSI curve
-    x = dat.loc[:, 'Close']
-    if x.index[0] > x.index[1]:
-        x = x[::-1]
-    rsi = RSI(x, rsi_period)
-    rsi = rsi[:-N-1:-1]
-
-    color = colormap.line[3]
-    rsi_line_25 = matplotlib.lines.Line2D([-0.5, N + 1.5], [25.0, 25.0], color = color, linewidth = 0.5, alpha = 0.5)
-    rsi_line_50 = matplotlib.lines.Line2D([-0.5, N + 1.5], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.5, linestyle = '-.')
-    rsi_line_75 = matplotlib.lines.Line2D([-0.5, N + 1.5], [75.0, 75.0], color = color, linewidth = 0.5, alpha = 0.5)
-    axr.add_line(rsi_line_25)
-    axr.add_line(rsi_line_50)
-    axr.add_line(rsi_line_75)
-
-    if skip_weekends:
-        rsi_line = matplotlib.lines.Line2D(quotes[:N, 0], rsi, label = 'RSI', color = color)
-    else:
-        rsi_line = matplotlib.lines.Line2D(quotes[:N, 1], rsi, label = 'RSI', color = color)
-    axr.add_line(rsi_line)
-
-    axr.fill_between(range(N), rsi, 25.0, where = rsi <= 25.0, interpolate = True, color = color, alpha = 0.5, zorder = 3)
-    axr.fill_between(range(N), rsi, 75.0, where = rsi >= 75.0, interpolate = True, color = color, alpha = 0.5, zorder = 3)
 
     # Backdrop gradient
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', colormap.backdrop)
@@ -283,21 +298,6 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
     ax.spines['top'].set_visible(False)
     axv.spines['top'].set_visible(False)
     axr.spines['bottom'].set_visible(False)
-    ax.set_xlim([-0.6, 10.5])
-    axv.set_xlim([-0.6, 10.5])
-    axr.set_xlim([-0.6, 10.5])
-    # ax.set_xlim([10 + 0.5, -1.5])
-    # axv.set_xlim([10 + 0.5, -1.5])
-    # axr.set_xlim([10 + 0.5, -1.5])
-    # ax.set_xlim([N + 0.5, -1.5])
-    # axv.set_xlim([N + 0.5, -1.5])
-    # axr.set_xlim([N + 0.5, -1.5])
-    # ax.set_xlim([-1.5, N + 0.5])
-    # axv.set_xlim([-1.5, N + 0.5])
-    # axr.set_xlim([-1.5, N + 0.5])
-    axr.set_ylim([-1, 100])
-
-    axr.set_yticks([0, 25, 50, 75, 100])
 
     axr.set_title(panel.minor_axis[0], color = colormap.text)
 
@@ -316,7 +316,6 @@ class Chart:
     """
     def __init__(self, n, data = None, sma_sizes = DEFAULT_SMA_SIZES, color_scheme = 'sunrise', skip_weekends = True, forecast = 0):
         linewidth = 1.0
-        width = 0.5
         offset = 0.4
 
         self.n = n
