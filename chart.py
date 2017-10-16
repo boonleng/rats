@@ -4,6 +4,9 @@ import matplotlib.pyplot
 import colorscheme
 
 DEFAULT_SMA_SIZES = [10, 50, 200]
+BACK_RECT = [0.075, 0.12, 0.83, 0.78]
+MAIN_RECT = [0.075, 0.12, 0.83, 0.58]
+RSI_RECT = [0.075, 0.70, 0.83, 0.20]
 
 def RSI(series, period = 14):
     delta = series.diff().dropna()              # Drop the 1st since it is NAN
@@ -27,8 +30,6 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
     """
     fig = matplotlib.pyplot.figure()
     fig.patch.set_alpha(0.0)
-    rect = [0.075, 0.12, 0.83, 0.78]
-    rect = [round(x * 72.0) / 72.0 + 0.5 / 72.0 for x in rect]
 
     colormap = colorscheme.colorscheme(color_scheme)
 
@@ -62,14 +63,13 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
         sma[k] = np.convolve(quotes[:, 5], np.ones((k, )) / k, mode = 'valid')
         sma[k] = np.pad(sma[k], (0, k - 1), mode = 'constant', constant_values = np.nan)
 
-    # Compute the RSI curve
-    rsi = RSI(dat.loc[:, 'Close'], rsi_period)
-
     # Find the span of colums 2 to 5 (OHLC)
     nums = np.array(quotes[:N, 2:6]).flatten()
     ylim = [np.nanmin(nums), np.nanmax(nums)]
 
     # Main axis and volume axis
+    rect = MAIN_RECT
+    rect = [round(x * 72.0) / 72.0 + 0.5 / 72.0 for x in rect]
     ax = matplotlib.pyplot.axes(rect)
     axv = matplotlib.pyplot.axes(rect, facecolor = None, frameon = False, sharex = ax)
 
@@ -239,7 +239,21 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
     axv.set_yticklabels(new_labels)
     axv.xaxis.set_visible(False)
 
-    dic = {'figure':fig, 'axes':ax, 'lines':lines, 'volume_axis':axv, 'close':matplotlib.pyplot.close}
+    # Compute the RSI curve
+    rsi = RSI(dat.loc[:, 'Close'], rsi_period)
+
+    # RSI axis and volume axis
+    rect = RSI_RECT
+    rect = [round(x * 72.0) / 72.0 + 0.5 / 72.0 for x in rect]
+    axr = matplotlib.pyplot.axes(rect)
+    rsi_line = matplotlib.lines.Line2D(xdata = (i, i), ydata = (l, h), color = color, linewidth = linewidth)
+    if skip_weekends:
+        # Plot the lines in indices; will replace the tics with custom label later
+        rsi_line = matplotlib.lines.Line2D(quotes[:N, 0], rsi[-N:], label = 'RSI ' + str(rsi_period))
+    else:
+        rsi_line = matplotlib.lines.Line2D(quotes[:N, 1], rsi[-N:], label = 'RSI ' + str(rsi_period))
+
+    dic = {'figure':fig, 'axes':ax, 'lines':lines, 'volume_axis':axv, 'rsi_axis':axr, 'close':matplotlib.pyplot.close}
     return dic
 
 # def update(obj, quotes):
@@ -252,7 +266,6 @@ class Chart:
         linewidth = 1.0
         width = 0.5
         offset = 0.4
-        rect = [0.075, 0.14, 0.83, 0.78]
 
         self.n = n
         self.sma = dict.fromkeys(sma_sizes)
@@ -266,16 +279,16 @@ class Chart:
         # dpi = self.fig.dpi
         # print('dpi = {}'.format(dpi))
         # self.rect = [(round(x * self.dpi)  + 0.5) / dpi for x in rect]
-        self.rect = rect
-        self.axb = self.fig.add_axes(self.rect, frameon = False)
+        # self.rect = MAIN_RECT
+        self.axb = self.fig.add_axes(BACK_RECT, frameon = False)
         self.axb.yaxis.set_visible(False)
         self.axb.xaxis.set_visible(False)
         
-        self.axq = self.fig.add_axes(self.rect, label = 'Quotes')
+        self.axq = self.fig.add_axes(MAIN_RECT, label = 'Quotes')
         self.axq.patch.set_visible(False)
         self.axq.yaxis.tick_right()
         
-        self.axv = self.fig.add_axes(self.rect, frameon = False, sharex = self.axq)
+        self.axv = self.fig.add_axes(MAIN_RECT, frameon = False, sharex = self.axq)
         self.axv.patch.set_visible(False)
         self.axv.xaxis.set_visible(False)
         
@@ -333,7 +346,9 @@ class Chart:
 
         # Grid
         self.axq.grid(color = self.colormap.grid, linestyle=':')
-        for side in ['top', 'bottom', 'left', 'right']:
+        self.axq.spines['top'].set_visible(False)
+        self.axv.spines['top'].set_visible(False)
+        for side in ['bottom', 'left', 'right']:
             self.axq.spines[side].set_color(self.colormap.text)
             self.axv.spines[side].set_color(self.colormap.text)
         self.axq.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
@@ -350,8 +365,16 @@ class Chart:
 
         self.axq.set_ylim([0, 110])
         self.axv.set_ylim([0, 10])
+        self.axr = self.fig.add_axes(RSI_RECT, label = 'RSI')
+        self.axr.patch.set_visible(False)
+        self.axr.xaxis.set_visible(False)
 
-        self.title = self.axq.set_title(self.symbol, color = self.colormap.text)
+        # self.axr.spines['bottom'].set_color(self.colormap.grid)
+        self.axr.spines['bottom'].set_visible(False)
+        self.axr.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
+        self.axr.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
+
+        self.title = self.axr.set_title(self.symbol, color = self.colormap.text)
 
         if data is not None:
             self.set_xdata(data.major_axis)
