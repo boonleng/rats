@@ -121,7 +121,7 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
     # rsi_line_50 = matplotlib.lines.Line2D([quotes[0, 0], quotes[N - 1, 0]], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.5, linestyle = '-.')
     # rsi_line_75 = matplotlib.lines.Line2D([quotes[0, 0], quotes[N - 1, 0]], [75.0, 75.0], color = color, linewidth = 0.5, alpha = 0.5)
     rsi_line_25 = matplotlib.lines.Line2D([-1, N], [25.0, 25.0], color = color, linewidth = 0.5, alpha = 0.5)
-    rsi_line_50 = matplotlib.lines.Line2D([-1, N], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.5, linestyle = '-.')
+    rsi_line_50 = matplotlib.lines.Line2D([-1, N], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.7, linestyle = '-.')
     rsi_line_75 = matplotlib.lines.Line2D([-1, N], [75.0, 75.0], color = color, linewidth = 0.5, alpha = 0.5)
     axr.add_line(rsi_line_25)
     axr.add_line(rsi_line_50)
@@ -351,7 +351,7 @@ class Chart:
 
         # Backdrop gradient
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', self.colormap.backdrop)
-        fprop = matplotlib.font_manager.FontProperties(style = 'normal', size = 60, weight = 'bold', stretch = 'normal')
+        fprop = matplotlib.font_manager.FontProperties(style = 'normal', size = 80, weight = 'bold', stretch = 'normal')
         self.im = self.axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, extent = (-1, 1, -1, 1), aspect = 'auto')
         self.st = self.axb.text(0, 0, self.symbol,
             fontproperties = fprop, horizontalalignment = 'center', verticalalignment = 'center',
@@ -373,7 +373,7 @@ class Chart:
         self.axr.add_line(self.rsi_line)
 
         self.rsi_line_25 = matplotlib.lines.Line2D([0, self.n + 1], [25.0, 25.0], color = color, linewidth = 0.5, alpha = 0.5)
-        self.rsi_line_50 = matplotlib.lines.Line2D([0, self.n + 1], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.5, linestyle = '-.')
+        self.rsi_line_50 = matplotlib.lines.Line2D([0, self.n + 1], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.7, linestyle = '-.')
         self.rsi_line_75 = matplotlib.lines.Line2D([0, self.n + 1], [75.0, 75.0], color = color, linewidth = 0.5, alpha = 0.5)
         self.axr.add_line(self.rsi_line_25)
         self.axr.add_line(self.rsi_line_50)

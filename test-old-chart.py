@@ -13,4 +13,4 @@ s = stock[:, stock.axes[1][-K:], :]
 
 view = chart.showChart(s)
 
-view['figure'].savefig('figs/NVDA.png')
+view['figure'].savefig('figs/NVDA_test.png')
