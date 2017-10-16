@@ -5,7 +5,7 @@ import time
 
 # Some global variables
 K = 100                       # Number of days to show
-sma_sizes = [10, 50, 100]     # SMA window sizes
+sma_sizes = [10, 50, 200]     # SMA window sizes
 
 # Get offline data
 quotes = data.get_old_data()

@@ -7,6 +7,7 @@ DEFAULT_SMA_SIZES = [10, 50, 200]
 BACK_RECT = [0.075, 0.11, 0.83, 0.82]
 MAIN_RECT = [0.075, 0.11, 0.83, 0.63]
 RSI_RECT = [0.075, 0.74, 0.83, 0.19]
+# RSI_RECT = [0.075, 0.80, 0.83, 0.13]
 
 def RSI(series, period = 14):
     delta = series.diff().dropna()              # Drop the 1st since it is NAN
@@ -67,11 +68,27 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
     nums = np.array(quotes[:N, 2:6]).flatten()
     ylim = [np.nanmin(nums), np.nanmax(nums)]
 
+    dpi = 144.0
+
+    rect = [(round(x * dpi) + 0.5) / dpi for x in BACK_RECT]       
+    axb = fig.add_axes(rect, frameon = False)
+    axb.yaxis.set_visible(False)
+    axb.xaxis.set_visible(False)
+
     # Main axis and volume axis
-    rect = MAIN_RECT
-    rect = [round(x * 72.0) / 72.0 + 0.5 / 72.0 for x in rect]
-    ax = matplotlib.pyplot.axes(rect)
-    axv = matplotlib.pyplot.axes(rect, facecolor = None, frameon = False, sharex = ax)
+    rect = [(round(x * dpi) + 0.5) / dpi for x in MAIN_RECT]       
+    ax = fig.add_axes(rect, label = 'Quotes')
+    ax.patch.set_visible(False)
+    
+    # Volume axis
+    axv = fig.add_axes(rect, frameon = False)
+    axv.patch.set_visible(False)
+    axv.xaxis.set_visible(False)
+
+    # RSI axis
+    rect = [(round(x * dpi) + 0.5) / dpi for x in RSI_RECT]       
+    axr = matplotlib.pyplot.axes(rect, facecolor = None)
+    axr.patch.set_visible(False)
 
     lines = []
     for k in sma.keys():
@@ -100,7 +117,7 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
 
     def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, skip_weekends = True, colormap = colorscheme.colorscheme('sunrise')):
         linewidth = 1.0
-        offset = 0.7 * width;
+        offset = 0.4;
 
         majors = []
         vlines = []
@@ -174,50 +191,22 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
             # print('x = {}   index = {} --> {} ({})'.format(x, index, date.strftime('%b %d'), date.weekday()))
             return date.strftime('%b %d')
 
+        print(majors[-1] % 5)
         if skip_weekends:
             ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
-            ax.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(1.0))
+            ax.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
             # ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
-            ax.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(base = 5.0, offset = majors[0]))  # Use the latest Monday
+            ax.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(base = 5.0, offset = majors[-1] % 5 + 1))  # Use the latest Monday
+            axr.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(base = 5.0, offset = majors[-1] % 5 + 1))  # Use the latest Monday
         else:
             mondays = matplotlib.dates.WeekdayLocator(matplotlib.dates.MONDAY)      # major ticks on the mondays
             alldays = matplotlib.dates.DayLocator()                                 # minor ticks on the days
             ax.xaxis.set_major_locator(mondays)
             ax.xaxis.set_minor_locator(alldays)
             ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
+            axr.xaxis.set_major_locator(mondays)
 
     candlestick(ax, quotes[:N], volume_axis = axv, skip_weekends = skip_weekends, colormap = colormap)
-
-    # Backdrop gradient
-    cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', colormap.backdrop)
-    if skip_weekends:
-        extent = [N, -1, ylim[0], ylim[1]]
-    else:
-        extent = [tt[N], tt[0] + 1, ylim[0], ylim[1]]
-    ax.imshow(np.linspace(0, 1, 100).reshape(-1, 1), extent = extent, aspect = 'auto', cmap = cmap)
-
-    matplotlib.pyplot.setp(ax.get_xticklabels(), rotation = 45, horizontalalignment = 'right')
-
-    lines[0].set_color(colormap.line[0])
-    lines[1].set_color(colormap.line[1])
-    lines[2].set_color(colormap.line[2])
-
-    leg = ax.legend(handles = lines, loc = 'best', facecolor = colormap.background, framealpha = 0.9)
-    for text in leg.get_texts():
-        text.set_color(colormap.text)
-    ax.grid(color = colormap.grid, linestyle=':')
-    ax.set_ylim(ylim)
-    ax.yaxis.tick_right()
-    ax.spines['top'].set_color(colormap.text)
-    ax.spines['bottom'].set_color(colormap.text)
-    ax.spines['left'].set_color(colormap.text)
-    ax.spines['right'].set_color(colormap.text)
-    ax.tick_params(axis = 'x', which = 'both', colors = colormap.text)
-    ax.tick_params(axis = 'y', which = 'both', colors = colormap.text)
-    axv.tick_params(axis = 'x', which = 'both', colors = colormap.text)
-    axv.tick_params(axis = 'y', which = 'both', colors = colormap.text)
-
-    ax.set_title('', color = colormap.text)
 
     # Volume bars to have the mean at around 10% of the vertical space
     v = np.nanmean(np.array(quotes[:, 6]))
@@ -240,18 +229,81 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
     axv.xaxis.set_visible(False)
 
     # Compute the RSI curve
-    rsi = RSI(dat.loc[:, 'Close'], rsi_period)
+    x = dat.loc[:, 'Close']
+    if x.index[0] > x.index[1]:
+        x = x[::-1]
+    rsi = RSI(x, rsi_period)
+    rsi = rsi[:-N-1:-1]
 
-    # RSI axis and volume axis
-    rect = RSI_RECT
-    rect = [round(x * 72.0) / 72.0 + 0.5 / 72.0 for x in rect]
-    axr = matplotlib.pyplot.axes(rect)
-    rsi_line = matplotlib.lines.Line2D(xdata = (i, i), ydata = (l, h), color = color, linewidth = linewidth)
+    color = colormap.line[3]
+    rsi_line_25 = matplotlib.lines.Line2D([-0.5, N + 1.5], [25.0, 25.0], color = color, linewidth = 0.5, alpha = 0.5)
+    rsi_line_50 = matplotlib.lines.Line2D([-0.5, N + 1.5], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.5, linestyle = '-.')
+    rsi_line_75 = matplotlib.lines.Line2D([-0.5, N + 1.5], [75.0, 75.0], color = color, linewidth = 0.5, alpha = 0.5)
+    axr.add_line(rsi_line_25)
+    axr.add_line(rsi_line_50)
+    axr.add_line(rsi_line_75)
+
     if skip_weekends:
-        # Plot the lines in indices; will replace the tics with custom label later
-        rsi_line = matplotlib.lines.Line2D(quotes[:N, 0], rsi[-N:], label = 'RSI ' + str(rsi_period))
+        rsi_line = matplotlib.lines.Line2D(quotes[:N, 0], rsi, label = 'RSI', color = color)
     else:
-        rsi_line = matplotlib.lines.Line2D(quotes[:N, 1], rsi[-N:], label = 'RSI ' + str(rsi_period))
+        rsi_line = matplotlib.lines.Line2D(quotes[:N, 1], rsi, label = 'RSI', color = color)
+    axr.add_line(rsi_line)
+
+    axr.fill_between(range(N), rsi, 25.0, where = rsi <= 25.0, interpolate = True, color = color, alpha = 0.5, zorder = 3)
+    axr.fill_between(range(N), rsi, 75.0, where = rsi >= 75.0, interpolate = True, color = color, alpha = 0.5, zorder = 3)
+
+    # Backdrop gradient
+    cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', colormap.backdrop)
+    axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, extent = (-1, 1, -1, 1), aspect = 'auto')
+
+    matplotlib.pyplot.setp(ax.get_xticklabels(), rotation = 45, horizontalalignment = 'right')
+
+    lines[0].set_color(colormap.line[0])
+    lines[1].set_color(colormap.line[1])
+    lines[2].set_color(colormap.line[2])
+
+    leg = ax.legend(handles = lines, loc = 'best', ncol = 3, facecolor = colormap.background, frameon = False)
+    for text in leg.get_texts():
+        text.set_color(colormap.text)
+    
+    ax.grid(color = colormap.grid, linestyle = ':')
+    axr.grid(color = colormap.grid, linestyle = ':')
+    ax.tick_params(axis = 'x', which = 'both', colors = colormap.text)
+    ax.tick_params(axis = 'y', which = 'both', colors = colormap.text)
+    axv.tick_params(axis = 'x', which = 'both', colors = colormap.text)
+    axv.tick_params(axis = 'y', which = 'both', colors = colormap.text)
+    axr.tick_params(axis = 'x', which = 'both', colors = colormap.text)
+    axr.tick_params(axis = 'y', which = 'both', colors = colormap.text)
+    ax.set_ylim(ylim)
+    ax.yaxis.tick_right()
+    for side in ['top', 'bottom', 'left', 'right']:
+        ax.spines[side].set_color(colormap.text)
+        axv.spines[side].set_color(colormap.text)
+        axr.spines[side].set_color(colormap.text)
+    ax.spines['top'].set_visible(False)
+    axv.spines['top'].set_visible(False)
+    axr.spines['bottom'].set_visible(False)
+    ax.set_xlim([-0.6, 10.5])
+    axv.set_xlim([-0.6, 10.5])
+    axr.set_xlim([-0.6, 10.5])
+    # ax.set_xlim([10 + 0.5, -1.5])
+    # axv.set_xlim([10 + 0.5, -1.5])
+    # axr.set_xlim([10 + 0.5, -1.5])
+    # ax.set_xlim([N + 0.5, -1.5])
+    # axv.set_xlim([N + 0.5, -1.5])
+    # axr.set_xlim([N + 0.5, -1.5])
+    # ax.set_xlim([-1.5, N + 0.5])
+    # axv.set_xlim([-1.5, N + 0.5])
+    # axr.set_xlim([-1.5, N + 0.5])
+    axr.set_ylim([-1, 100])
+
+    axr.set_yticks([0, 25, 50, 75, 100])
+
+    axr.set_title(panel.minor_axis[0], color = colormap.text)
+
+    for tic in axr.xaxis.get_major_ticks():
+        tic.tick1On = tic.tick2On = False
+        tic.label1On = tic.label2On = False
 
     dic = {'figure':fig, 'axes':ax, 'lines':lines, 'volume_axis':axv, 'rsi_axis':axr, 'close':matplotlib.pyplot.close}
     return dic
@@ -293,10 +345,10 @@ class Chart:
         self.axv.patch.set_visible(False)
         self.axv.xaxis.set_visible(False)
         
-        rect = [(round(x * dpi)  + 0.5) / dpi for x in RSI_RECT]
-        self.axr = self.fig.add_axes(rect, label = 'RSI', sharex = self.axq)
+        rect = [(round(x * dpi) + 0.5) / dpi for x in RSI_RECT]
+        # self.axr = self.fig.add_axes(rect, label = 'RSI', sharex = self.axq)
+        self.axr = self.fig.add_axes(rect, label = 'RSI')
         self.axr.patch.set_visible(False)
-        self.axr.xaxis.set_visible(False)
 
         # Backdrop gradient
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', self.colormap.backdrop)
@@ -314,8 +366,19 @@ class Chart:
             self.sma_lines.append(sma_line)
 
         # RSI line
-        self.rsi_line = matplotlib.lines.Line2D(range(self.n), np.multiply(range(self.n), 100.0 / self.n), label = 'SMA ' + str(k), color = self.colormap.line[j])
+        color = self.colormap.line[3]
+        y = np.multiply(range(self.n), 100.0 / self.n)
+        self.rsi_line = matplotlib.lines.Line2D(range(self.n), y, label = 'RSI', color = color)
+        self.rsi_fill_25 = self.axr.fill_between(range(self.n), y, 25.0, where = y <= 25.0, facecolor = color, interpolate = True, alpha = 0.5)
+        self.rsi_fill_75 = self.axr.fill_between(range(self.n), y, 75.0, where = y >= 75.0, facecolor = color, interpolate = True, alpha = 0.5)
         self.axr.add_line(self.rsi_line)
+
+        self.rsi_line_25 = matplotlib.lines.Line2D([0, self.n + 1], [25.0, 25.0], color = color, linewidth = 0.5, alpha = 0.5)
+        self.rsi_line_50 = matplotlib.lines.Line2D([0, self.n + 1], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.5, linestyle = '-.')
+        self.rsi_line_75 = matplotlib.lines.Line2D([0, self.n + 1], [75.0, 75.0], color = color, linewidth = 0.5, alpha = 0.5)
+        self.axr.add_line(self.rsi_line_25)
+        self.axr.add_line(self.rsi_line_50)
+        self.axr.add_line(self.rsi_line_75)
 
         # Candles and bars
         self.majors = []
@@ -350,17 +413,17 @@ class Chart:
         self.axq.add_line(line)
 
         # Legend
-        self.leg = self.axq.legend(handles = self.sma_lines, loc = 'upper left', ncol = 3,
-                                   facecolor = self.colormap.background, framealpha = 0.85)
+        self.leg = self.axq.legend(handles = self.sma_lines, loc = 'upper left', ncol = 3, frameon = False)
         for text in self.leg.get_texts():
             text.set_color(self.colormap.text)
 
         # Grid
         self.axq.grid(color = self.colormap.grid, linestyle=':')
         self.axr.grid(color = self.colormap.grid, linestyle=':')
-        for side in ['bottom', 'left', 'right']:
+        for side in ['top', 'bottom', 'left', 'right']:
             self.axq.spines[side].set_color(self.colormap.text)
             self.axv.spines[side].set_color(self.colormap.text)
+            self.axr.spines[side].set_color(self.colormap.text)
         self.axq.spines['top'].set_visible(False)
         self.axv.spines['top'].set_visible(False)
         self.axr.spines['bottom'].set_visible(False)
@@ -376,13 +439,13 @@ class Chart:
         self.axq.set_xlim([-1.5, self.n + 0.5])
         self.axv.set_xlim([-1.5, self.n + 0.5])
         self.axr.set_xlim([-1.5, self.n + 0.5])
-        self.axq.xaxis.set_data_interval(-1.0, self.n + 10.0)
-        self.axv.xaxis.set_data_interval(-1.0, self.n + 10.0)
-        self.axr.xaxis.set_data_interval(-1.0, self.n + 10.0)
+        self.axq.xaxis.set_data_interval(-1.0, self.n + 2.0)
+        self.axv.xaxis.set_data_interval(-1.0, self.n + 2.0)
+        self.axr.xaxis.set_data_interval(-1.0, self.n + 2.0)
 
         self.axq.set_ylim([0, 110])
         self.axv.set_ylim([0, 10])
-        self.axr.set_ylim([-5, 100])
+        self.axr.set_ylim([-1, 100])
 
         self.title = self.axr.set_title(self.symbol, color = self.colormap.text)
 
@@ -446,10 +509,7 @@ class Chart:
             # self.axq.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
             # self.axq.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, (self.n - majors[-1]) - 1))  # Use the last Monday
             self.axq.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[-1] % 5 + 1))  # Use the last Monday
-            self.axr.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
-            # self.axr.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
-            self.axr.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
-            # self.axr.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[-1] % 5 + 1))  # Use the last Monday
+            self.axr.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[-1] % 5 + 1))  # Use the last Monday
         else:
             mondays = matplotlib.dates.WeekdayLocator(matplotlib.dates.MONDAY)      # major ticks on the mondays
             alldays = matplotlib.dates.DayLocator()                                 # minor ticks on the days
@@ -457,7 +517,10 @@ class Chart:
             self.axq.xaxis.set_minor_locator(alldays)
             self.axq.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
             self.axr.xaxis.set_major_locator(mondays)
-            self.axr.xaxis.set_minor_locator(alldays)
+
+        for tic in self.axr.xaxis.get_major_ticks():
+            tic.tick1On = tic.tick2On = False
+            tic.label1On = tic.label2On = False
 
         matplotlib.pyplot.setp(self.axq.get_xticklabels(), rotation = 45, horizontalalignment = 'right')
 
@@ -541,6 +604,15 @@ class Chart:
             qlim = [round(qlim[0]) - 0.5, round(qlim[1]) + 0.5]
         else:
             qlim = [round(qlim[0] * 0.2 - 1.0) * 5.0, round(qlim[1] * 0.2 + 1.0) * 5.0]
+
+        # Compute RSI
+        self.rsi = RSI(data.loc[:, 'Close'])[-self.n:]
+        color = self.colormap.line[3]
+        self.rsi_line.set_ydata(self.rsi)
+        self.rsi_fill_25.remove()
+        self.rsi_fill_75.remove()
+        self.rsi_fill_25 = self.axr.fill_between(range(self.n), self.rsi, 25.0, where = self.rsi <= 25.0, interpolate = True, color = color, alpha = 0.5, zorder = 3)
+        self.rsi_fill_75 = self.axr.fill_between(range(self.n), self.rsi, 75.0, where = self.rsi >= 75.0, interpolate = True, color = color, alpha = 0.5, zorder = 3)
 
         # Legend position: upper right if SMA-N is increasing, upper left otherwise (Not in public API)
         sma = self.sma[list(self.sma)[-2]]
