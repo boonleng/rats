@@ -25,7 +25,7 @@ SYMBOLS = [
 ]
 LATEST_DATE = datetime.date(2017, 9, 23)
 
-def get_old_data(folder = 'data', symbols = None, reload = False):
+def get_old_data(symbols = None, folder = 'data', reload = False):
     """
         Get a set of 5-year stock data on the selected symbols
         NOTE: If the offline folder is present, data will be loaded
@@ -44,8 +44,10 @@ def get_old_data(folder = 'data', symbols = None, reload = False):
                 if m:
                     symbol = m.group(1)
                     local_symbols.append(symbol)
-        else:
+        elif isinstance(symbols, list):
             local_symbols = symbols
+        else:
+            local_symbols = [symbols]
         # Read the last one for the data dimensions
         df = pandas.read_pickle(folder + '/' + local_symbols[-1] + '.pkl')
         print('Loading \033[38;5;198moffline\033[0m data from ' + str(df.index[0].strftime('%Y-%m-%d')) + ' to ' + str(df.index[-1].strftime('%Y-%m-%d')) + ' ...')
