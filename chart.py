@@ -39,10 +39,11 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
 
     # Get the first frame
     dat = panel.iloc[:, :, 0]
-    if dat.keys().contains('Adj Close'):
-        close_label = 'Adj Close'
-    else:
-        close_label = 'Close'
+    # if dat.keys().contains('Adj Close'):
+    #     close_label = 'Adj Close'
+    # else:
+    #     close_label = 'Close'
+    close_label = 'Close'
     quotes = np.transpose([
         list(range(len(dat))),
         list(matplotlib.dates.date2num(dat.index.tolist())),
@@ -120,7 +121,7 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
         ylim = [round(ylim[0] * 0.2 - 1.0) * 5.0, round(ylim[1] * 0.2 + 1.0) * 5.0]
 
     # RSI line
-    x = dat.loc[:, 'Close']
+    x = dat.loc[:, close_label]
     if x.index[0] > x.index[1]:
         x = x[::-1]
     rsi = RSI(x, rsi_period)
@@ -135,9 +136,9 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
     axr.add_line(rsi_line_75)
 
     if skip_weekends:
-        rsi_line = matplotlib.lines.Line2D(quotes[:N, 0], rsi, label = 'RSI', color = color)
+        rsi_line = matplotlib.lines.Line2D(quotes[:N, 0], rsi, label = 'RSI ({})'.format(rsi_period), color = color)
     else:
-        rsi_line = matplotlib.lines.Line2D(quotes[:N, 1], rsi, label = 'RSI', color = color)
+        rsi_line = matplotlib.lines.Line2D(quotes[:N, 1], rsi, label = 'RSI ({})'.format(rsi_period), color = color)
     axr.add_line(rsi_line)
 
     axr.fill_between(range(N), rsi, RSI_OS, where = rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
@@ -206,7 +207,8 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
 
     axr.set_ylim([-1, 100])
 
-    axr.set_yticks([0, RSI_OS, 50, RSI_OB, 100])
+    dr = RSI_OB - 50.0
+    axr.set_yticks([RSI_OS - dr, RSI_OS, 50, RSI_OB, RSI_OB + dr])
 
     L = len(quotes)
 
@@ -283,10 +285,17 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
     lines[1].set_color(colormap.line[1])
     lines[2].set_color(colormap.line[2])
 
-    leg = ax.legend(handles = lines, loc = 'best', ncol = 3, facecolor = colormap.background, frameon = False)
+    leg = ax.legend(handles = lines, loc = 'upper left', ncol = 3, frameon = False, fontsize = 9)
     for text in leg.get_texts():
         text.set_color(colormap.text)
-    
+    # if rsi[0] > 50:
+    #     loc = 'lower left'
+    # else:
+    #     loc = 'upper left'
+    leg_rsi = axr.legend(handles = [rsi_line], loc = 'upper left', frameon = False, fontsize = 9)
+    for text in leg_rsi.get_texts():
+        text.set_color(colormap.text)
+
     ax.grid(alpha = colormap.grid_alpha, color = colormap.grid, linestyle = ':')
     axr.grid(alpha = colormap.grid_alpha, color = colormap.grid, linestyle = ':')
     ax.tick_params(axis = 'x', which = 'both', colors = colormap.text)
@@ -320,7 +329,7 @@ class Chart:
     """
         A chart class
     """
-    def __init__(self, n, data = None, sma_sizes = DEFAULT_SMA_SIZES, color_scheme = 'sunrise', skip_weekends = True, forecast = 0):
+    def __init__(self, n, data = None, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, color_scheme = 'sunrise', skip_weekends = True, forecast = 0):
         linewidth = 1.0
         offset = 0.4
 
@@ -330,6 +339,7 @@ class Chart:
         self.colormap = colorscheme.colorscheme(color_scheme)
         self.skip_weekends = skip_weekends
         self.forecast = forecast
+        self.rsi_period = rsi_period
 
         self.fig = matplotlib.pyplot.figure()
         self.fig.patch.set_alpha(0.0)
@@ -373,7 +383,7 @@ class Chart:
         # RSI line
         color = self.colormap.line[3]
         y = np.multiply(range(self.n), 100.0 / self.n)
-        self.rsi_line = matplotlib.lines.Line2D(range(self.n), y, label = 'RSI', color = color)
+        self.rsi_line = matplotlib.lines.Line2D(range(self.n), y, label = 'RSI ({})'.format(self.rsi_period), color = color)
         self.rsi_fill_25 = self.axr.fill_between(range(self.n), y, RSI_OS, where = y <= RSI_OS, facecolor = color, interpolate = True, alpha = 0.33)
         self.rsi_fill_75 = self.axr.fill_between(range(self.n), y, RSI_OB, where = y >= RSI_OB, facecolor = color, interpolate = True, alpha = 0.33)
         self.axr.add_line(self.rsi_line)
@@ -417,8 +427,11 @@ class Chart:
         self.axq.add_line(line)
 
         # Legend
-        self.leg = self.axq.legend(handles = self.sma_lines, loc = 'upper left', ncol = 3, frameon = False)
+        self.leg = self.axq.legend(handles = self.sma_lines, loc = 'upper left', ncol = 3, frameon = False, fontsize = 9)
         for text in self.leg.get_texts():
+            text.set_color(self.colormap.text)
+        self.leg_rsi = self.axr.legend(handles = [self.rsi_line], loc = 'upper left', frameon = False, fontsize = 9)
+        for text in self.leg_rsi.get_texts():
             text.set_color(self.colormap.text)
 
         # Grid
@@ -446,11 +459,12 @@ class Chart:
         self.axv.xaxis.set_data_interval(-1.0, self.n + 2.0)
         self.axr.xaxis.set_data_interval(-1.0, self.n + 2.0)
 
-        self.axr.set_yticks([0, RSI_OS, 50, RSI_OB, 100])
+        dr = RSI_OB - 50.0
+        self.axr.set_yticks([RSI_OS - dr, RSI_OS, 50, RSI_OB, RSI_OB + dr])
 
         self.axq.set_ylim([0, 110])
         self.axv.set_ylim([0, 10])
-        self.axr.set_ylim([-1, 100])
+        self.axr.set_ylim([0, 100])
 
         self.title = self.axr.set_title(self.symbol, color = self.colormap.text)
 
@@ -540,10 +554,11 @@ class Chart:
 
         # Get the first frame
         data = panel.loc[:, :, self.symbol]
-        if data.keys().contains('Adj Close'):
-            close_label = 'Adj Close'
-        else:
-            close_label = 'Close'
+        # if data.keys().contains('Adj Close'):
+        #     close_label = 'Adj Close'
+        # else:
+        #     close_label = 'Close'
+        close_label = 'Close'
         quotes = np.transpose([
             data.loc[:, 'Open'].tolist(),
             data.loc[:, 'High'].tolist(),
@@ -620,7 +635,7 @@ class Chart:
             qlim = [round(qlim[0] * 0.2 - 1.0) * 5.0, round(qlim[1] * 0.2 + 1.0) * 5.0]
 
         # Compute RSI
-        self.rsi = RSI(data.loc[:, close_label])[-self.n:]
+        self.rsi = RSI(data.loc[:, close_label], self.rsi_period)[-self.n:]
         color = self.colormap.line[3]
         self.rsi_line.set_ydata(self.rsi)
         self.rsi_fill_25.remove()
@@ -632,8 +647,10 @@ class Chart:
         sma = self.sma[list(self.sma)[-2]]
         if sma[-10] > sma[0]:
             self.leg._loc = 2
+            self.leg_rsi._loc = 2
         else:
             self.leg._loc = 1
+            self.leg_rsi._loc = 1
 
         # Volume bars to have the mean at around 10% of the vertical space
         v = np.nanmean(quotes[-self.n:, 4])
