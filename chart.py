@@ -2,28 +2,15 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot
 import colorscheme
+import stock
 
 DEFAULT_SMA_SIZES = [10, 50, 200]
 DEFAULT_RSI_PERIOD = 14
 BACK_RECT = [0.075, 0.11, 0.83, 0.82]
 MAIN_RECT = [0.075, 0.11, 0.83, 0.63]
 RSI_RECT = [0.075, 0.74, 0.83, 0.19]
-
 RSI_OB = 70
 RSI_OS = 30
-
-def RSI(series, period = 14):
-    delta = series.diff().dropna()              # Drop the 1st since it is NAN
-    u, d = delta.copy(), delta.copy() * -1.0
-    u[delta < 0.0] = 0.0
-    d[delta > 0.0] = 0.0
-    u[period] = np.mean(u[:period])             # First value is sum of avg gains
-    u = u.drop(u.index[:period - 1])
-    d[period] = np.mean(d[:period])             # First value is sum of avg losses
-    d = d.drop(d.index[:period - 1])
-    rs = u.ewm(com = period - 1, adjust = False).mean() / d.ewm(com = period - 1, adjust = False).mean()
-    rs = np.nan_to_num(rs)
-    return 100.0 - 100.0 / (1.0 + rs)
 
 # The old way
 def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIOD,
@@ -34,6 +21,9 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
         - sma_sizes - Window sizes for SMA (sliding moving average)
         - skip_weekends - Skip plotting weekends and days with no data
     """
+    linewidth = 1.0
+    offset = 0.4
+
     fig = matplotlib.pyplot.figure()
     fig.patch.set_alpha(0.0)
 
@@ -46,13 +36,13 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
     else:
         close_label = 'Close'
     quotes = np.transpose([
-        list(range(len(dat))),
-        list(matplotlib.dates.date2num(dat.index.tolist())),
-        dat.loc[:, 'Open'].tolist(),
-        dat.loc[:, 'High'].tolist(),
-        dat.loc[:, 'Low'].tolist(),
-        dat.loc[:, close_label].tolist(),
-        np.multiply(dat.loc[:, 'Volume'], 1.0e-6).tolist()
+        list(range(len(dat))),                                    # 0 - index
+        list(matplotlib.dates.date2num(dat.index.tolist())),      # 1 - datenum
+        dat.loc[:, 'Open'].tolist(),                              # 2 - Open
+        dat.loc[:, 'High'].tolist(),                              # 3 - High
+        dat.loc[:, 'Low'].tolist(),                               # 4 - Low
+        dat.loc[:, close_label].tolist(),                         # 5 - Close
+        np.multiply(dat.loc[:, 'Volume'], 1.0e-6).tolist()        # 6 - Volume in millions
     ])
 
     # Sort the data  (colums 1 ... 6) so that it is newest first
@@ -62,16 +52,13 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
 
     # Initialize an empty dictionary from keys based on sma size
     sma = dict.fromkeys(sma_sizes)
-    n = 0
-    for num in sma.keys():
-        n = max(n, num)
+    n = max(sma_sizes)
 
     # Compute the SMA curves
     N = len(dat) - n - 1
     # print('N = {} - {} - 1 = {}'.format(len(dat), n, N))
     for k in sma.keys():
-        sma[k] = np.convolve(quotes[:, 5], np.ones((k, )) / k, mode = 'valid')
-        sma[k] = np.pad(sma[k], (0, k - 1), mode = 'constant', constant_values = np.nan)
+        sma[k] = stock.sma(quotes[:, 5], period = k)
 
     # Find the span of colums 2 to 5 (OHLC)
     nums = np.array(quotes[:N, 2:6]).flatten()
@@ -125,7 +112,7 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
     x = dat.loc[:, close_label]
     if x.index[0] > x.index[1]:
         x = x[::-1]
-    rsi = RSI(x, rsi_period)
+    rsi = stock.rsi(x, rsi_period)
     rsi = rsi[:-N-1:-1]
 
     color = colormap.line[3]
@@ -152,11 +139,6 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
     else:
         ylim[0] = np.floor(ylim[0] * 0.2) * 5.0
         ylim[1] = np.ceil(ylim[1] * 0.2) * 5.0
-
-    # def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, skip_weekends = True, colormap = colorscheme.colorscheme('sunrise')):
-
-    linewidth = 1.0
-    offset = 0.4
 
     majors = []
     vlines = []
@@ -289,10 +271,6 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
     leg = ax.legend(handles = lines, loc = 'upper left', ncol = 3, frameon = False, fontsize = 9)
     for text in leg.get_texts():
         text.set_color(colormap.text)
-    # if rsi[0] > 50:
-    #     loc = 'lower left'
-    # else:
-    #     loc = 'upper left'
     leg_rsi = axr.legend(handles = [rsi_line], loc = 'upper left', frameon = False, fontsize = 9)
     for text in leg_rsi.get_texts():
         text.set_color(colormap.text)
@@ -324,8 +302,7 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
     dic = {'figure':fig, 'axes':ax, 'lines':lines, 'volume_axis':axv, 'rsi_axis':axr, 'close':matplotlib.pyplot.close}
     return dic
 
-# def update(obj, quotes):
-
+# The new way
 class Chart:
     """
         A chart class
@@ -364,35 +341,35 @@ class Chart:
         self.axv.xaxis.set_visible(False)
         
         rect = [(round(x * dpi) + 0.5) / dpi for x in RSI_RECT]
-        # self.axr = self.fig.add_axes(rect, label = 'RSI', sharex = self.axq)
         self.axr = self.fig.add_axes(rect, label = 'RSI')
         self.axr.patch.set_visible(False)
 
         # Backdrop gradient
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', self.colormap.backdrop)
-        fprop = matplotlib.font_manager.FontProperties(style = 'normal', size = 80, weight = 'bold', stretch = 'normal')
         self.im = self.axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, extent = (-1, 1, -1, 1), aspect = 'auto')
         self.st = self.axb.text(0, 0, self.symbol,
-            fontproperties = fprop, horizontalalignment = 'center', verticalalignment = 'center',
-            color = self.colormap.background_text_color, alpha = self.colormap.background_text_alpha)
+                                fontproperties = matplotlib.font_manager.FontProperties(style = 'normal', size = 80, weight = 'bold'),
+                                color = self.colormap.background_text_color, alpha = self.colormap.background_text_alpha,
+                                horizontalalignment = 'center', verticalalignment = 'center')
 
         # SMA lines
         self.sma_lines = []
         for j, k in enumerate(self.sma.keys()):
-            sma_line = matplotlib.lines.Line2D(range(self.n), np.multiply(range(self.n), k / self.n), label = 'SMA ' + str(k), color = self.colormap.line[j])
+            sma_line = matplotlib.lines.Line2D(range(self.n), np.multiply(range(self.n), k / self.n), label = 'SMA ' + str(k),
+                                               color = self.colormap.line[j], linewidth = linewidth)
             self.axq.add_line(sma_line)
             self.sma_lines.append(sma_line)
 
         # RSI line
         color = self.colormap.line[3]
         y = np.multiply(range(self.n), 100.0 / self.n)
-        self.rsi_line = matplotlib.lines.Line2D(range(self.n), y, label = 'RSI {}'.format(self.rsi_period), color = color)
+        self.rsi_line = matplotlib.lines.Line2D(range(self.n), y, label = 'RSI {}'.format(self.rsi_period), color = color, linewidth = linewidth)
         self.rsi_fill_25 = self.axr.fill_between(range(self.n), y, RSI_OS, where = y <= RSI_OS, facecolor = color, interpolate = True, alpha = 0.33)
         self.rsi_fill_75 = self.axr.fill_between(range(self.n), y, RSI_OB, where = y >= RSI_OB, facecolor = color, interpolate = True, alpha = 0.33)
         self.axr.add_line(self.rsi_line)
-        self.rsi_line_25 = matplotlib.lines.Line2D([0, self.n + 1], [RSI_OS, RSI_OS], color = color, linewidth = 0.5, alpha = 0.5)
-        self.rsi_line_50 = matplotlib.lines.Line2D([0, self.n + 1], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.67, linestyle = '-.')
-        self.rsi_line_75 = matplotlib.lines.Line2D([0, self.n + 1], [RSI_OB, RSI_OB], color = color, linewidth = 0.5, alpha = 0.5)
+        self.rsi_line_25 = matplotlib.lines.Line2D([0, self.n + 1], [RSI_OS, RSI_OS], color = color, linewidth = 0.5 * linewidth, alpha = 0.5)
+        self.rsi_line_50 = matplotlib.lines.Line2D([0, self.n + 1], [50.0, 50.0], color = color, linewidth = linewidth, alpha = 0.67, linestyle = '-.')
+        self.rsi_line_75 = matplotlib.lines.Line2D([0, self.n + 1], [RSI_OB, RSI_OB], color = color, linewidth = 0.5 * linewidth, alpha = 0.5)
         self.axr.add_line(self.rsi_line_25)
         self.axr.add_line(self.rsi_line_50)
         self.axr.add_line(self.rsi_line_75)
@@ -414,7 +391,7 @@ class Chart:
                 height = 10.0,
                 facecolor = '#0000ff',
                 edgecolor = self.colormap.text,
-                linewidth = 0.75,
+                linewidth = 0.75 * linewidth,
                 alpha = 0.33)
             self.vlines.append(vline)
             self.olines.append(oline)
@@ -426,12 +403,12 @@ class Chart:
             self.axv.add_patch(vrect)            
 
         # A forecast point
-        line = matplotlib.lines.Line2D(xdata = (self.n + 10.0, self.n + 10.0), ydata = (100.0, 100.0), color = 'r')
+        line = matplotlib.lines.Line2D(xdata = (self.n + 10.0, self.n + 10.0), ydata = (100.0, 100.0), color = 'r', linewidth = linewidth)
         self.axq.add_line(line)
 
         # Legend
-        self.leg = self.axq.legend(handles = self.sma_lines, loc = 'upper left', ncol = 3, frameon = False, fontsize = 9)
-        for text in self.leg.get_texts():
+        self.leg_sma = self.axq.legend(handles = self.sma_lines, loc = 'upper left', ncol = 3, frameon = False, fontsize = 9)
+        for text in self.leg_sma.get_texts():
             text.set_color(self.colormap.text)
         self.leg_rsi = self.axr.legend(handles = [self.rsi_line], loc = 'upper left', frameon = False, fontsize = 9)
         for text in self.leg_rsi.get_texts():
@@ -454,17 +431,15 @@ class Chart:
         self.axr.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
         self.axr.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
 
-        self.axq.set_xlim([-1.5, self.n + 0.5])
-        self.axv.set_xlim([-1.5, self.n + 0.5])
-        self.axr.set_xlim([-1.5, self.n + 0.5])
-
+        # Set the search limit here for x-tick lookup in matplotlib
         self.axq.xaxis.set_data_interval(-1.0, self.n + 2.0)
         self.axv.xaxis.set_data_interval(-1.0, self.n + 2.0)
         self.axr.xaxis.set_data_interval(-1.0, self.n + 2.0)
-
         dr = RSI_OB - 50.0
         self.axr.set_yticks([RSI_OS - dr, RSI_OS, 50, RSI_OB, RSI_OB + dr])
-
+        self.axq.set_xlim([-1.5, self.n + 0.5])
+        self.axv.set_xlim([-1.5, self.n + 0.5])
+        self.axr.set_xlim([-1.5, self.n + 0.5])
         self.axq.set_ylim([0, 110])
         self.axv.set_ylim([0, 10])
         self.axr.set_ylim([0, 100])
@@ -562,11 +537,11 @@ class Chart:
         else:
             close_label = 'Close'
         quotes = np.transpose([
-            data.loc[:, 'Open'].tolist(),
-            data.loc[:, 'High'].tolist(),
-            data.loc[:, 'Low'].tolist(),
-            data.loc[:, close_label].tolist(),
-            np.multiply(data.loc[:, 'Volume'], 1.0e-6).tolist()
+            data.loc[:, 'Open'].tolist(),                              # 0 - Open
+            data.loc[:, 'High'].tolist(),                              # 1 - High
+            data.loc[:, 'Low'].tolist(),                               # 2 - Low
+            data.loc[:, close_label].tolist(),                         # 3 - Close
+            np.multiply(data.loc[:, 'Volume'], 1.0e-6).tolist()        # 4 - Volume in millions
         ])
 
         if data.shape[0] < self.n:
@@ -621,11 +596,12 @@ class Chart:
 
         # Compute SMA and update qlim
         for j, k in enumerate(self.sma.keys()):
-            sma = np.convolve(quotes[:, 3], np.ones((k, )) / k, mode = 'valid')
-            if len(sma) < self.n:
-                self.sma[k] = np.concatenate((np.full(self.n - len(sma), np.nan), sma))
-            else:
-                self.sma[k] = sma[-self.n:]
+            # sma = np.convolve(quotes[:, 3], np.ones((k, )) / k, mode = 'valid')
+            # if len(sma) < self.n:
+            #     self.sma[k] = np.concatenate((np.full(self.n - len(sma), np.nan), sma))
+            # else:
+            #     self.sma[k] = sma[-self.n:]
+            self.sma[k] = stock.sma(quotes[:, 3], period = k, length = self.n)
             self.sma_lines[j].set_ydata(self.sma[k])
             # self.axq.draw_artist(self.sma_lines[j])
             if np.sum(np.isfinite(self.sma[k])):
@@ -637,7 +613,7 @@ class Chart:
             qlim = [round(qlim[0] * 0.2 - 1.0) * 5.0, round(qlim[1] * 0.2 + 1.0) * 5.0]
 
         # Compute RSI
-        self.rsi = RSI(data.loc[:, close_label], self.rsi_period)[-self.n:]
+        self.rsi = stock.rsi(data.loc[:, close_label], self.rsi_period)[-self.n:]
         color = self.colormap.line[3]
         self.rsi_line.set_ydata(self.rsi)
         self.rsi_fill_25.remove()
@@ -648,10 +624,10 @@ class Chart:
         # Legend position: upper right if SMA-N is increasing, upper left otherwise (Not in public API)
         sma = self.sma[list(self.sma)[-2]]
         if sma[-10] > sma[0]:
-            self.leg._loc = 2
+            self.leg_sma._loc = 2
             self.leg_rsi._loc = 2
         else:
-            self.leg._loc = 1
+            self.leg_sma._loc = 1
             self.leg_rsi._loc = 1
 
         # Volume bars to have the mean at around 10% of the vertical space
