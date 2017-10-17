@@ -4,6 +4,7 @@ import matplotlib.pyplot
 import colorscheme
 
 DEFAULT_SMA_SIZES = [10, 50, 200]
+DEFAULT_RSI_PERIOD = 14
 BACK_RECT = [0.075, 0.11, 0.83, 0.82]
 MAIN_RECT = [0.075, 0.11, 0.83, 0.63]
 RSI_RECT = [0.075, 0.74, 0.83, 0.19]
@@ -25,7 +26,8 @@ def RSI(series, period = 14):
     return 100.0 - 100.0 / (1.0 + rs)
 
 # The old way
-def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weekends = True, color_scheme = 'sunrise'):
+def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIOD,
+              use_adj_close = False, skip_weekends = True, color_scheme = 'sunrise'):
     """
         showChart(dat, sma_size = [10, 50, 200], skip_weekends = True)
         - dat - Data frame from pandas-datareader
@@ -39,11 +41,10 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
 
     # Get the first frame
     dat = panel.iloc[:, :, 0]
-    # if dat.keys().contains('Adj Close'):
-    #     close_label = 'Adj Close'
-    # else:
-    #     close_label = 'Close'
-    close_label = 'Close'
+    if use_adj_close and dat.keys().contains('Adj Close'):
+        close_label = 'Adj Close'
+    else:
+        close_label = 'Close'
     quotes = np.transpose([
         list(range(len(dat))),
         list(matplotlib.dates.date2num(dat.index.tolist())),
@@ -136,9 +137,9 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, skip_weeken
     axr.add_line(rsi_line_75)
 
     if skip_weekends:
-        rsi_line = matplotlib.lines.Line2D(quotes[:N, 0], rsi, label = 'RSI ({})'.format(rsi_period), color = color)
+        rsi_line = matplotlib.lines.Line2D(quotes[:N, 0], rsi, label = 'RSI {}'.format(rsi_period), color = color)
     else:
-        rsi_line = matplotlib.lines.Line2D(quotes[:N, 1], rsi, label = 'RSI ({})'.format(rsi_period), color = color)
+        rsi_line = matplotlib.lines.Line2D(quotes[:N, 1], rsi, label = 'RSI {}'.format(rsi_period), color = color)
     axr.add_line(rsi_line)
 
     axr.fill_between(range(N), rsi, RSI_OS, where = rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
@@ -329,7 +330,8 @@ class Chart:
     """
         A chart class
     """
-    def __init__(self, n, data = None, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = 14, color_scheme = 'sunrise', skip_weekends = True, forecast = 0):
+    def __init__(self, n, data = None, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIOD,
+                 use_adj_close = False, skip_weekends = True, forecast = 0, color_scheme = 'sunrise'):
         linewidth = 1.0
         offset = 0.4
 
@@ -340,6 +342,7 @@ class Chart:
         self.skip_weekends = skip_weekends
         self.forecast = forecast
         self.rsi_period = rsi_period
+        self.use_adj_close = use_adj_close
 
         self.fig = matplotlib.pyplot.figure()
         self.fig.patch.set_alpha(0.0)
@@ -383,7 +386,7 @@ class Chart:
         # RSI line
         color = self.colormap.line[3]
         y = np.multiply(range(self.n), 100.0 / self.n)
-        self.rsi_line = matplotlib.lines.Line2D(range(self.n), y, label = 'RSI ({})'.format(self.rsi_period), color = color)
+        self.rsi_line = matplotlib.lines.Line2D(range(self.n), y, label = 'RSI {}'.format(self.rsi_period), color = color)
         self.rsi_fill_25 = self.axr.fill_between(range(self.n), y, RSI_OS, where = y <= RSI_OS, facecolor = color, interpolate = True, alpha = 0.33)
         self.rsi_fill_75 = self.axr.fill_between(range(self.n), y, RSI_OB, where = y >= RSI_OB, facecolor = color, interpolate = True, alpha = 0.33)
         self.axr.add_line(self.rsi_line)
@@ -554,11 +557,10 @@ class Chart:
 
         # Get the first frame
         data = panel.loc[:, :, self.symbol]
-        # if data.keys().contains('Adj Close'):
-        #     close_label = 'Adj Close'
-        # else:
-        #     close_label = 'Close'
-        close_label = 'Close'
+        if data.keys().contains('Adj Close'):
+            close_label = 'Adj Close'
+        else:
+            close_label = 'Close'
         quotes = np.transpose([
             data.loc[:, 'Open'].tolist(),
             data.loc[:, 'High'].tolist(),
