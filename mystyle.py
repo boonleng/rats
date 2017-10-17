@@ -7,3 +7,4 @@ matplotlib.rcParams['font.sans-serif'] = ['System Font', 'Verdana', 'Arial']
 matplotlib.rcParams['figure.figsize'] = (7, 5)   # Change the size of plots
 matplotlib.rcParams['figure.dpi'] = 108
 # matplotlib.rcParams['grid.alpha'] = 0.15
+# matplotlib.rcParams['text.color'] = gray

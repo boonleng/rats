@@ -1,6 +1,5 @@
-import chart
 import pandas as pd
-import numpy as np
+import stock
 
 #sample data from StockCharts
 data = pd.Series([
@@ -39,4 +38,4 @@ data = pd.Series([
     43.1314
     ])
 
-print(chart.RSI(data, 14))
+print(stock.rsi(data, 14))
