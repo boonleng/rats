@@ -21,6 +21,9 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
         - sma_sizes - Window sizes for SMA (sliding moving average)
         - skip_weekends - Skip plotting weekends and days with no data
     """
+    linewidth = 1.0
+    offset = 0.4
+
     fig = matplotlib.pyplot.figure()
     fig.patch.set_alpha(0.0)
 
@@ -136,11 +139,6 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
     else:
         ylim[0] = np.floor(ylim[0] * 0.2) * 5.0
         ylim[1] = np.ceil(ylim[1] * 0.2) * 5.0
-
-    # def candlestick(ax, quotes, width = 0.5, linewidth = 1.0, volume_axis = None, skip_weekends = True, colormap = colorscheme.colorscheme('sunrise')):
-
-    linewidth = 1.0
-    offset = 0.4
 
     majors = []
     vlines = []
@@ -273,10 +271,6 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
     leg = ax.legend(handles = lines, loc = 'upper left', ncol = 3, frameon = False, fontsize = 9)
     for text in leg.get_texts():
         text.set_color(colormap.text)
-    # if rsi[0] > 50:
-    #     loc = 'lower left'
-    # else:
-    #     loc = 'upper left'
     leg_rsi = axr.legend(handles = [rsi_line], loc = 'upper left', frameon = False, fontsize = 9)
     for text in leg_rsi.get_texts():
         text.set_color(colormap.text)
@@ -308,8 +302,7 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
     dic = {'figure':fig, 'axes':ax, 'lines':lines, 'volume_axis':axv, 'rsi_axis':axr, 'close':matplotlib.pyplot.close}
     return dic
 
-# def update(obj, quotes):
-
+# The new way
 class Chart:
     """
         A chart class
@@ -348,35 +341,35 @@ class Chart:
         self.axv.xaxis.set_visible(False)
         
         rect = [(round(x * dpi) + 0.5) / dpi for x in RSI_RECT]
-        # self.axr = self.fig.add_axes(rect, label = 'RSI', sharex = self.axq)
         self.axr = self.fig.add_axes(rect, label = 'RSI')
         self.axr.patch.set_visible(False)
 
         # Backdrop gradient
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', self.colormap.backdrop)
-        fprop = matplotlib.font_manager.FontProperties(style = 'normal', size = 80, weight = 'bold', stretch = 'normal')
         self.im = self.axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, extent = (-1, 1, -1, 1), aspect = 'auto')
         self.st = self.axb.text(0, 0, self.symbol,
-            fontproperties = fprop, horizontalalignment = 'center', verticalalignment = 'center',
-            color = self.colormap.background_text_color, alpha = self.colormap.background_text_alpha)
+                                fontproperties = matplotlib.font_manager.FontProperties(style = 'normal', size = 80, weight = 'bold'),
+                                color = self.colormap.background_text_color, alpha = self.colormap.background_text_alpha,
+                                horizontalalignment = 'center', verticalalignment = 'center')
 
         # SMA lines
         self.sma_lines = []
         for j, k in enumerate(self.sma.keys()):
-            sma_line = matplotlib.lines.Line2D(range(self.n), np.multiply(range(self.n), k / self.n), label = 'SMA ' + str(k), color = self.colormap.line[j])
+            sma_line = matplotlib.lines.Line2D(range(self.n), np.multiply(range(self.n), k / self.n), label = 'SMA ' + str(k),
+                                               color = self.colormap.line[j], linewidth = linewidth)
             self.axq.add_line(sma_line)
             self.sma_lines.append(sma_line)
 
         # RSI line
         color = self.colormap.line[3]
         y = np.multiply(range(self.n), 100.0 / self.n)
-        self.rsi_line = matplotlib.lines.Line2D(range(self.n), y, label = 'RSI {}'.format(self.rsi_period), color = color)
+        self.rsi_line = matplotlib.lines.Line2D(range(self.n), y, label = 'RSI {}'.format(self.rsi_period), color = color, linewidth = linewidth)
         self.rsi_fill_25 = self.axr.fill_between(range(self.n), y, RSI_OS, where = y <= RSI_OS, facecolor = color, interpolate = True, alpha = 0.33)
         self.rsi_fill_75 = self.axr.fill_between(range(self.n), y, RSI_OB, where = y >= RSI_OB, facecolor = color, interpolate = True, alpha = 0.33)
         self.axr.add_line(self.rsi_line)
-        self.rsi_line_25 = matplotlib.lines.Line2D([0, self.n + 1], [RSI_OS, RSI_OS], color = color, linewidth = 0.5, alpha = 0.5)
-        self.rsi_line_50 = matplotlib.lines.Line2D([0, self.n + 1], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.67, linestyle = '-.')
-        self.rsi_line_75 = matplotlib.lines.Line2D([0, self.n + 1], [RSI_OB, RSI_OB], color = color, linewidth = 0.5, alpha = 0.5)
+        self.rsi_line_25 = matplotlib.lines.Line2D([0, self.n + 1], [RSI_OS, RSI_OS], color = color, linewidth = 0.5 * linewidth, alpha = 0.5)
+        self.rsi_line_50 = matplotlib.lines.Line2D([0, self.n + 1], [50.0, 50.0], color = color, linewidth = linewidth, alpha = 0.67, linestyle = '-.')
+        self.rsi_line_75 = matplotlib.lines.Line2D([0, self.n + 1], [RSI_OB, RSI_OB], color = color, linewidth = 0.5 * linewidth, alpha = 0.5)
         self.axr.add_line(self.rsi_line_25)
         self.axr.add_line(self.rsi_line_50)
         self.axr.add_line(self.rsi_line_75)
@@ -398,7 +391,7 @@ class Chart:
                 height = 10.0,
                 facecolor = '#0000ff',
                 edgecolor = self.colormap.text,
-                linewidth = 0.75,
+                linewidth = 0.75 * linewidth,
                 alpha = 0.33)
             self.vlines.append(vline)
             self.olines.append(oline)
@@ -410,12 +403,12 @@ class Chart:
             self.axv.add_patch(vrect)            
 
         # A forecast point
-        line = matplotlib.lines.Line2D(xdata = (self.n + 10.0, self.n + 10.0), ydata = (100.0, 100.0), color = 'r')
+        line = matplotlib.lines.Line2D(xdata = (self.n + 10.0, self.n + 10.0), ydata = (100.0, 100.0), color = 'r', linewidth = linewidth)
         self.axq.add_line(line)
 
         # Legend
-        self.leg = self.axq.legend(handles = self.sma_lines, loc = 'upper left', ncol = 3, frameon = False, fontsize = 9)
-        for text in self.leg.get_texts():
+        self.leg_sma = self.axq.legend(handles = self.sma_lines, loc = 'upper left', ncol = 3, frameon = False, fontsize = 9)
+        for text in self.leg_sma.get_texts():
             text.set_color(self.colormap.text)
         self.leg_rsi = self.axr.legend(handles = [self.rsi_line], loc = 'upper left', frameon = False, fontsize = 9)
         for text in self.leg_rsi.get_texts():
@@ -438,17 +431,15 @@ class Chart:
         self.axr.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
         self.axr.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
 
-        self.axq.set_xlim([-1.5, self.n + 0.5])
-        self.axv.set_xlim([-1.5, self.n + 0.5])
-        self.axr.set_xlim([-1.5, self.n + 0.5])
-
+        # Set the search limit here for x-tick lookup in matplotlib
         self.axq.xaxis.set_data_interval(-1.0, self.n + 2.0)
         self.axv.xaxis.set_data_interval(-1.0, self.n + 2.0)
         self.axr.xaxis.set_data_interval(-1.0, self.n + 2.0)
-
         dr = RSI_OB - 50.0
         self.axr.set_yticks([RSI_OS - dr, RSI_OS, 50, RSI_OB, RSI_OB + dr])
-
+        self.axq.set_xlim([-1.5, self.n + 0.5])
+        self.axv.set_xlim([-1.5, self.n + 0.5])
+        self.axr.set_xlim([-1.5, self.n + 0.5])
         self.axq.set_ylim([0, 110])
         self.axv.set_ylim([0, 10])
         self.axr.set_ylim([0, 100])
@@ -633,10 +624,10 @@ class Chart:
         # Legend position: upper right if SMA-N is increasing, upper left otherwise (Not in public API)
         sma = self.sma[list(self.sma)[-2]]
         if sma[-10] > sma[0]:
-            self.leg._loc = 2
+            self.leg_sma._loc = 2
             self.leg_rsi._loc = 2
         else:
-            self.leg._loc = 1
+            self.leg_sma._loc = 1
             self.leg_rsi._loc = 1
 
         # Volume bars to have the mean at around 10% of the vertical space
