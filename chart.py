@@ -14,7 +14,7 @@ RSI_OS = 30
 
 # The old way
 def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIOD,
-              use_adj_close = False, skip_weekends = True, color_scheme = 'sunrise'):
+              use_adj_close = False, use_ema = False, skip_weekends = True, color_scheme = 'sunrise'):
     """
         showChart(dat, sma_size = [10, 50, 200], skip_weekends = True)
         - dat - Data frame from pandas-datareader
@@ -88,12 +88,16 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
 
     # SMA lines
     lines = []
+    if use_ema:
+        ma_label = 'EMA'
+    else:
+        ma_label = 'SMA'
     for k in sma.keys():
         if skip_weekends:
             # Plot the lines in indices; will replace the tics with custom label later
-            sma_line = matplotlib.lines.Line2D(quotes[:N, 0], sma[k][:N], label = 'SMA ' + str(k))
+            sma_line = matplotlib.lines.Line2D(quotes[:N, 0], sma[k][:N], label = ma_label + ' ' + str(k))
         else:
-            sma_line = matplotlib.lines.Line2D(quotes[:N, 1], sma[k][:N], label = 'SMA ' + str(k))
+            sma_line = matplotlib.lines.Line2D(quotes[:N, 1], sma[k][:N], label = ma_label + ' ' + str(k))
         lines.append(sma_line)
         ax.add_line(sma_line)
         if np.sum(np.isfinite(sma[k][:N])):
@@ -308,7 +312,7 @@ class Chart:
         A chart class
     """
     def __init__(self, n, data = None, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIOD,
-                 use_adj_close = False, skip_weekends = True, forecast = 0, color_scheme = 'sunrise'):
+                 use_adj_close = False, use_ema = True, skip_weekends = True, forecast = 0, color_scheme = 'sunrise'):
         linewidth = 1.0
         offset = 0.4
 
@@ -320,6 +324,7 @@ class Chart:
         self.forecast = forecast
         self.rsi_period = rsi_period
         self.use_adj_close = use_adj_close
+        self.use_ema = use_ema
 
         self.fig = matplotlib.pyplot.figure()
         self.fig.patch.set_alpha(0.0)
@@ -354,8 +359,13 @@ class Chart:
 
         # SMA lines
         self.sma_lines = []
+        if self.use_ema:
+            ma_label = 'EMA'
+        else:
+            ma_label = 'SMA'
         for j, k in enumerate(self.sma.keys()):
-            sma_line = matplotlib.lines.Line2D(range(self.n), np.multiply(range(self.n), k / self.n), label = 'SMA ' + str(k),
+            sma_line = matplotlib.lines.Line2D(range(self.n), np.multiply(range(self.n), k / self.n),
+                                               label = ma_label + ' ' + str(k),
                                                color = self.colormap.line[j], linewidth = linewidth)
             self.axq.add_line(sma_line)
             self.sma_lines.append(sma_line)
@@ -596,12 +606,10 @@ class Chart:
 
         # Compute SMA and update qlim
         for j, k in enumerate(self.sma.keys()):
-            # sma = np.convolve(quotes[:, 3], np.ones((k, )) / k, mode = 'valid')
-            # if len(sma) < self.n:
-            #     self.sma[k] = np.concatenate((np.full(self.n - len(sma), np.nan), sma))
-            # else:
-            #     self.sma[k] = sma[-self.n:]
-            self.sma[k] = stock.sma(quotes[:, 3], period = k, length = self.n)
+            if self.use_ema:
+                self.sma[k] = stock.ema(quotes[:, 3], period = k, length = self.n)
+            else:
+                self.sma[k] = stock.sma(quotes[:, 3], period = k, length = self.n)
             self.sma_lines[j].set_ydata(self.sma[k])
             # self.axq.draw_artist(self.sma_lines[j])
             if np.sum(np.isfinite(self.sma[k])):
