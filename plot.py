@@ -9,9 +9,9 @@ def genfigs(symbols, days = 90, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = 'f
             open_preview = False, offline = False):
     # Get the latest data
     if symbols == '^OLD':
-        stock = data.get_old_data()
+        stock = data.get_from_files()
     elif offline is True:
-        stock = data.get_old_data(symbols = symbols)
+        stock = data.get_from_files(symbols = symbols)
     else:
         # Total data length to retrieve to have complete valid SMA
         L = days + max(sma_sizes);

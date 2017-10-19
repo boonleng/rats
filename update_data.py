@@ -1,7 +1,7 @@
 import data
 
 # Available offline datasets
-stocks = data.get_old_data()
+stocks = data.get_from_files()
 stocks = stocks[:, :, data.SYMBOLS]
 
 # Get the latest day and offset by 1

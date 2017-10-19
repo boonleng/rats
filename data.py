@@ -25,9 +25,9 @@ SYMBOLS = [
 ]
 LATEST_DATE = datetime.date(2017, 9, 23)
 
-def get_old_data(symbols = None, folder = 'data', reload = False):
+def get_from_files(symbols = None, folder = 'data', reload = False):
     """
-        Get a set of 5-year stock data on the selected symbols
+        Get a set of stock data on the selected symbols
         NOTE: If the offline folder is present, data will be loaded
         from that folder. Newly added symbols to the script do not
         mean they will be available
