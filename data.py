@@ -25,14 +25,14 @@ SYMBOLS = [
 ]
 LATEST_DATE = datetime.date(2017, 9, 23)
 
-def get_from_files(symbols = None, folder = 'data', reload = False):
+def get_from_files(symbols = None, folder = 'data', force_net = False):
     """
         Get a set of stock data on the selected symbols
         NOTE: If the offline folder is present, data will be loaded
         from that folder. Newly added symbols to the script do not
         mean they will be available
     """
-    if os.path.exists(folder) and not reload:
+    if os.path.exists(folder) and not force_net:
         import re
         import glob
         import numpy as np
@@ -58,7 +58,6 @@ def get_from_files(symbols = None, folder = 'data', reload = False):
             df = pandas.read_pickle(file)
             dd[:, :, i] = np.transpose(df.values, (1, 0))
         quotes = pandas.Panel(data = dd, items = df.keys().tolist(), minor_axis = local_symbols, major_axis = df.index.tolist())
-        quotes = quotes[:, :, SYMBOLS]
     else:
         quotes = get_from_net(SYMBOLS, end = LATEST_DATE, days = 5 * 365, cache = True)
         save_to_folder(quotes)
