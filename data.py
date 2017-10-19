@@ -25,9 +25,9 @@ SYMBOLS = [
 ]
 LATEST_DATE = datetime.date(2017, 9, 23)
 
-def get_old_data(symbols = None, folder = 'data', reload = False):
+def get_from_files(symbols = None, folder = 'data', reload = False):
     """
-        Get a set of 5-year stock data on the selected symbols
+        Get a set of stock data on the selected symbols
         NOTE: If the offline folder is present, data will be loaded
         from that folder. Newly added symbols to the script do not
         mean they will be available
@@ -58,6 +58,7 @@ def get_old_data(symbols = None, folder = 'data', reload = False):
             df = pandas.read_pickle(file)
             dd[:, :, i] = np.transpose(df.values, (1, 0))
         quotes = pandas.Panel(data = dd, items = df.keys().tolist(), minor_axis = local_symbols, major_axis = df.index.tolist())
+        quotes = quotes[:, :, SYMBOLS]
     else:
         quotes = get_from_net(SYMBOLS, end = LATEST_DATE, days = 5 * 365, cache = True)
         save_to_folder(quotes)
@@ -71,10 +72,14 @@ def get_old_indices():
     quotes = pandas_datareader.DataReader(indices, 'yahoo', start, end, session = session)
     return quotes
 
-def get_from_net(symbols, end = datetime.date.today(), days = 150, engine = 'yahoo', cache = False):
+def get_from_net(symbols, end = datetime.date.today(), days = None, start = None, engine = 'yahoo', cache = False):
     if not isinstance(symbols, list):
         symbols = [symbols]
-    start = end - datetime.timedelta(days = int(days * 1.6))
+    if start is None and days is None:
+        print('ERROR: Either start or days must be specified.')
+        return None
+    elif start is None and days is not None:
+        start = end - datetime.timedelta(days = int(days * 1.6))
     print('Loading \033[38;5;46mlive\033[0m data from ' + str(start) + ' to ' + str(end) + ' ...')
     if cache:
         session = requests_cache.CachedSession(cache_name = 'data-' + engine + '-cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 5))
@@ -84,7 +89,8 @@ def get_from_net(symbols, end = datetime.date.today(), days = 150, engine = 'yah
     # Make sure time is ascending; Panel dimensions: 5/6 (items) x days (major_axis) x symbols (minor_axis)
     if quotes.major_axis[1] < quotes.major_axis[0]:
         quotes = quotes.sort_index(axis = 1, ascending = True)
-    quotes = quotes[:, quotes.major_axis[-days:], :]
+    if days is not None:
+        quotes = quotes[:, quotes.major_axis[-days:], :]
     return quotes
 
 def save_to_folder(quotes, folder = 'data'):

@@ -11,7 +11,7 @@ K = 90                        # Number of days to show
 L = K + max(sma_sizes)
 
 # Get offline data
-quotes = data.get_old_data()
+quotes = data.get_from_files()
 
 # Method 0 or 1: 0 - recreate the chart everytime; 1 - update only the data portion
 delta = [0, 0]

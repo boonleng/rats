@@ -542,7 +542,7 @@ class Chart:
 
         # Get the first frame
         data = panel.loc[:, :, self.symbol]
-        if data.keys().contains('Adj Close'):
+        if self.use_adj_close and data.keys().contains('Adj Close'):
             close_label = 'Adj Close'
         else:
             close_label = 'Close'

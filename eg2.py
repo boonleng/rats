@@ -12,7 +12,7 @@ import chart
 import mystyle
 import subprocess
 
-quotes = data.get_old_data()
+quotes = data.get_from_files()
 
 sym = 'AAPL'
 data = quotes[:, :, sym]
