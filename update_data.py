@@ -2,10 +2,9 @@ import data
 
 # Available offline datasets
 stocks = data.get_from_files()
-stocks = stocks[:, :, data.SYMBOLS]
 
-# Get the latest day and offset by 1
-start = stocks.iloc[:, :, 0].index[-1] + data.pandas.tseries.offsets.DateOffset(days = 1)
+# Get the latest day. Will replace this day
+start = stocks.iloc[:, :, 0].index[-1]
 
 print('Checking for data since {} ...'.format(start))
 
@@ -20,6 +19,9 @@ elif start > data.pandas.to_datetime('today'):
 
 # Retrieve the newer
 stocks_new = data.get_from_net(data.SYMBOLS, start = start)
+
+# Sort the data symbols and discard the last day of offline data
+stocks = stocks[:, :, data.SYMBOLS].iloc[:, :-1, :]
 stocks_new = stocks_new[:, :, data.SYMBOLS]
 
 # Concatenate the datasets and save them
