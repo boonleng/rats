@@ -80,7 +80,8 @@ def genfigs(symbols, days = 90, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = 'f
 
     t0 = time.time()
     
-    print('Elapsed time: {0:.3f} s'.format(t0 - t1))
+    if verbose > 1:
+        print('Elapsed time: {0:.3f} s'.format(t0 - t1))
 
     if open_preview:
         os.system(command)
