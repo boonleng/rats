@@ -95,7 +95,7 @@ if __name__ == '__main__':
     python plot.py NVDA TSLA -z -o'''
     parser = argparse.ArgumentParser(prog = 'plot',
                                      usage = examples)
-    parser.add_argument('symbols', default = '^OLD', nargs = '+', help = 'specify symbols, e.g., NVDA TSLA AAPL')
+    parser.add_argument('symbols', default = '^OLD', nargs = '*', help = 'specify symbols, e.g., NVDA TSLA AAPL')
     parser.add_argument('-v', '--verbose', default = 1, action = 'count', help = 'increases verbosity level')
     parser.add_argument('-c', '--color-scheme', default = 'default', help = 'specify color scheme to use (sunrise, sunset, night).')
     parser.add_argument('-o', '--open-preview', action = 'store_true', help = 'open Preview (macOS only)')
