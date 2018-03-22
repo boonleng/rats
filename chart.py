@@ -66,13 +66,13 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
 
     dpi = 144.0
 
-    rect = [(round(x * dpi) + 0.5) / dpi for x in BACK_RECT]       
+    rect = [(round(x * dpi) + 0.5) / dpi for x in BACK_RECT]
     axb = fig.add_axes(rect, frameon = False)
     axb.yaxis.set_visible(False)
     axb.xaxis.set_visible(False)
 
     # Main axis and volume axis
-    rect = [(round(x * dpi) + 0.5) / dpi for x in MAIN_RECT]       
+    rect = [(round(x * dpi) + 0.5) / dpi for x in MAIN_RECT]
     ax = fig.add_axes(rect, label = 'Quotes')
     ax.patch.set_visible(False)
 
@@ -82,7 +82,7 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
     axv.xaxis.set_visible(False)
 
     # RSI axis
-    rect = [(round(x * dpi) + 0.5) / dpi for x in RSI_RECT]       
+    rect = [(round(x * dpi) + 0.5) / dpi for x in RSI_RECT]
     axr = matplotlib.pyplot.axes(rect, facecolor = None)
     axr.patch.set_visible(False)
 
@@ -331,12 +331,12 @@ class Chart:
 
         dpi = 144.0
 
-        rect = [(round(x * dpi) + 0.5) / dpi for x in BACK_RECT]       
+        rect = [(round(x * dpi) + 0.5) / dpi for x in BACK_RECT]
         self.axb = self.fig.add_axes(rect, frameon = False)
         self.axb.yaxis.set_visible(False)
         self.axb.xaxis.set_visible(False)
         
-        rect = [(round(x * dpi)  + 0.5) / dpi for x in MAIN_RECT]       
+        rect = [(round(x * dpi)  + 0.5) / dpi for x in MAIN_RECT]
         self.axq = self.fig.add_axes(rect, label = 'Quotes')
         self.axq.patch.set_visible(False)
         self.axq.yaxis.tick_right()
@@ -410,7 +410,7 @@ class Chart:
             self.axq.add_line(vline)
             self.axq.add_line(oline)
             self.axq.add_line(cline)
-            self.axv.add_patch(vrect)            
+            self.axv.add_patch(vrect)
 
         # A forecast point
         line = matplotlib.lines.Line2D(xdata = (self.n + 10.0, self.n + 10.0), ydata = (100.0, 100.0), color = 'r', linewidth = linewidth)
