@@ -30,4 +30,11 @@ A few trivial example scripts as I was learning how to setup NN through tensorfl
 
 - `eg1.py` - Simple linear prediction
 - `eg2.py` - Simple 2-layer FC NN with redundant data for up-down inference
- 
+
+### Retrieving Data
+
+```python
+import data
+quotes = data.get_old_indices()
+data.save_to_folder(quotes)
+```

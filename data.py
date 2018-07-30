@@ -65,13 +65,14 @@ def get_from_files(symbols = None, folder = 'data', force_net = False):
 
 def get_old_indices():
     end = LATEST_DATE
-    start = end - datetime.timedelta(days = 5 * 365)
+    #start = end - datetime.timedelta(days = 5 * 365)
+    start = end - datetime.timedelta(days = 365)
     print('Loading indices from ' + str(start) + ' to ' + str(end) + ' ...')
     session = requests_cache.CachedSession(cache_name = '.data-idx-cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 5))
-    quotes = pandas_datareader.DataReader(indices, 'yahoo', start, end, session = session)
+    quotes = pandas_datareader.DataReader(indices, 'morningstar', start, end, session = session)
     return quotes
 
-def get_from_net(symbols, end = datetime.date.today(), days = None, start = None, engine = 'yahoo', cache = False):
+def get_from_net(symbols, end = datetime.date.today(), days = None, start = None, engine = 'morningstar', cache = False):
     if not isinstance(symbols, list):
         symbols = [symbols]
     if start is None and days is None:
