@@ -72,7 +72,7 @@ def get_old_indices():
     quotes = pandas_datareader.DataReader(indices, 'morningstar', start, end, session = session)
     return quotes
 
-def get_from_net(symbols, end = datetime.date.today(), days = None, start = None, engine = 'morningstar', cache = False):
+def get_from_net(symbols, end = datetime.date.today(), days = None, start = None, engine = 'iex', cache = False):
     if not isinstance(symbols, list):
         symbols = [symbols]
     if start is None and days is None:
@@ -87,10 +87,10 @@ def get_from_net(symbols, end = datetime.date.today(), days = None, start = None
     else:
         quotes = pandas_datareader.DataReader(symbols, engine, start, end)
     # Make sure time is ascending; Panel dimensions: 5/6 (items) x days (major_axis) x symbols (minor_axis)
-    if quotes.major_axis[1] < quotes.major_axis[0]:
-        quotes = quotes.sort_index(axis = 1, ascending = True)
+    if quotes.axes[0][1] < quotes.axes[0][0]:
+        quotes = quotes.sort_index(axis = 0, ascending = True)
     if days is not None:
-        quotes = quotes[:, quotes.major_axis[-days:], :]
+        quotes = quotes.iloc[-days:]
     return quotes
 
 def save_to_folder(quotes, folder = 'data'):

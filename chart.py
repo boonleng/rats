@@ -457,7 +457,8 @@ class Chart:
         self.title = self.axr.set_title(self.symbol, color = self.colormap.text)
 
         if data is not None:
-            self.set_xdata(data.major_axis)
+            #self.set_xdata(data.major_axis)
+            self.set_xdata(data.index.get_values())
             self.set_data(data)
 
     def set_xdata(self, xdata):
