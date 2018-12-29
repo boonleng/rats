@@ -51,14 +51,20 @@ def get_from_files(symbols = None, folder = 'data', force_net = False):
         # Read the last one for the data dimensions
         df = pandas.read_pickle(folder + '/' + local_symbols[-1] + '.pkl')
 #        print('Loading \033[38;5;198moffline\033[0m data from ' + str(df.index[0].strftime('%Y-%m-%d')) + ' to ' + str(df.index[-1].strftime('%Y-%m-%d')) + ' ...')
+        index = df.index
+        names = list(df.columns.names)
+        params = df.columns.levels[0].tolist()
         print('Loading \033[38;5;198moffline\033[0m data from ' + df.index[0] + ' to ' + df.index[-1] + ' ...')
-        dd = np.empty([df.shape[1], df.shape[0], len(local_symbols)])
+        dd = np.empty([df.shape[0], df.shape[1], len(local_symbols)])
         # Now we go through the files again and read them this time
         for i, sym in enumerate(local_symbols):
             file = folder + '/' + sym + '.pkl'
             df = pandas.read_pickle(file)
-            dd[:, :, i] = np.transpose(df.values, (1, 0))
-        quotes = pandas.Panel(data = dd, items = df.keys().tolist(), minor_axis = local_symbols, major_axis = df.index.tolist())
+            dd[:, :, i] = df.values;
+        print(dd.shape)
+        iterables = [params, local_symbols]
+        dd = np.reshape(dd, (df.shape[0], -1))
+        quotes = pandas.DataFrame(dd, index = index, columns = pandas.MultiIndex.from_product(iterables, names = names))
     else:
         quotes = get_from_net(SYMBOLS, end = LATEST_DATE, days = 5 * 365, cache = True)
         save_to_folder(quotes)
@@ -101,10 +107,15 @@ def save_to_folder(quotes, folder = 'data'):
     if not os.path.exists(folder):
         os.makedirs(folder)
     #symbols = quotes.minor_axis.tolist()
+    names = list(df.columns.names)
+    params = quotes.columns.levels[0].tolist()
     symbols = quotes.columns.levels[1].tolist()
     for sym in symbols:
         #df = quotes[:, :, sym]
-        df = quotes.loc[pandas.IndexSlice[:], (slice(None), sym)]
+        values = quotes.loc[pandas.IndexSlice[:], (slice(None), sym)].values
+        iterables = [params, sym]
+        df = pandas.DataFrame(df.values, index = df.index, columns = pandas.MultiIndex.from_product(iterables, names = names))
+        df.head()
         df.to_pickle(folder + '/' + sym + '.pkl')
 
 def add_offline(symbols):
