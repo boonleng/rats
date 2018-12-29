@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib
 import matplotlib.pyplot
 import colorscheme
@@ -458,7 +459,7 @@ class Chart:
 
         if data is not None:
             #self.set_xdata(data.major_axis)
-            self.set_xdata(data.index.get_values())
+            self.set_xdata(pd.to_datetime(data.index))
             self.set_data(data)
 
     def set_xdata(self, xdata):
@@ -537,22 +538,25 @@ class Chart:
 
         matplotlib.pyplot.setp(self.axq.get_xticklabels(), rotation = 45, horizontalalignment = 'right')
 
-    def set_data(self, panel):
+    def set_data(self, data):
         # Get the symbol from minor axis
-        self.symbol = panel.minor_axis[0]
+        self.symbol = data.columns[0][1]                               # Get it from column index ('open', 'AAPL')
 
-        # Get the first frame
-        data = panel.loc[:, :, self.symbol]
-        if self.use_adj_close and data.keys().contains('Adj Close'):
-            close_label = 'Adj Close'
-        else:
-            close_label = 'Close'
+        # Get the string description of open, high, low, close, volume
+        desc = [x.lower() for x in data.columns.get_level_values(0).tolist()]
+        o_index = desc.index('open')
+        h_index = desc.index('high')
+        l_index = desc.index('low')
+        c_index = desc.index('close')
+        v_index = desc.index('volume')
+
+        # Build a flat array of OHLC and V data
         quotes = np.transpose([
-            data.loc[:, 'Open'].tolist(),                              # 0 - Open
-            data.loc[:, 'High'].tolist(),                              # 1 - High
-            data.loc[:, 'Low'].tolist(),                               # 2 - Low
-            data.loc[:, close_label].tolist(),                         # 3 - Close
-            np.multiply(data.loc[:, 'Volume'], 1.0e-6).tolist()        # 4 - Volume in millions
+            data.iloc[:, o_index].squeeze().tolist(),                            # 0 - Open
+            data.iloc[:, h_index].squeeze().tolist(),                            # 1 - High
+            data.iloc[:, l_index].squeeze().tolist(),                            # 2 - Low
+            data.iloc[:, c_index].squeeze().tolist(),                            # 3 - Close
+            np.multiply(data.iloc[:, v_index].squeeze(), 1.0e-6).tolist()        # 4 - Volume in millions
         ])
 
         if data.shape[0] < self.n:
@@ -622,7 +626,7 @@ class Chart:
             qlim = [round(qlim[0] * 0.2 - 1.0) * 5.0, round(qlim[1] * 0.2 + 1.0) * 5.0]
 
         # Compute RSI
-        self.rsi = stock.rsi(data.loc[:, close_label], self.rsi_period)[-self.n:]
+        self.rsi = stock.rsi(data.iloc[:, c_index].squeeze(), self.rsi_period)[-self.n:]
         color = self.colormap.line[3]
         self.rsi_line.set_ydata(self.rsi)
         self.rsi_fill_25.remove()

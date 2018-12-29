@@ -50,7 +50,8 @@ def get_from_files(symbols = None, folder = 'data', force_net = False):
             local_symbols = [symbols]
         # Read the last one for the data dimensions
         df = pandas.read_pickle(folder + '/' + local_symbols[-1] + '.pkl')
-        print('Loading \033[38;5;198moffline\033[0m data from ' + str(df.index[0].strftime('%Y-%m-%d')) + ' to ' + str(df.index[-1].strftime('%Y-%m-%d')) + ' ...')
+#        print('Loading \033[38;5;198moffline\033[0m data from ' + str(df.index[0].strftime('%Y-%m-%d')) + ' to ' + str(df.index[-1].strftime('%Y-%m-%d')) + ' ...')
+        print('Loading \033[38;5;198moffline\033[0m data from ' + df.index[0] + ' to ' + df.index[-1] + ' ...')
         dd = np.empty([df.shape[1], df.shape[0], len(local_symbols)])
         # Now we go through the files again and read them this time
         for i, sym in enumerate(local_symbols):
@@ -99,9 +100,11 @@ def save_to_folder(quotes, folder = 'data'):
     """
     if not os.path.exists(folder):
         os.makedirs(folder)
-    symbols = quotes.minor_axis.tolist()
+    #symbols = quotes.minor_axis.tolist()
+    symbols = quotes.columns.levels[1].tolist()
     for sym in symbols:
-        df = quotes[:, :, sym]
+        #df = quotes[:, :, sym]
+        df = quotes.loc[pandas.IndexSlice[:], (slice(None), sym)]
         df.to_pickle(folder + '/' + sym + '.pkl')
 
 def add_offline(symbols):
