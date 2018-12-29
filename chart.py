@@ -540,7 +540,8 @@ class Chart:
 
     def set_data(self, data):
         # Get the symbol from minor axis
-        self.symbol = data.columns[0][1]                               # Get it from column index ('open', 'AAPL')
+        self.symbol = data.columns[0][1]                                         # Get it from column index ('open', 'AAPL')
+        self.set_xdata(pd.to_datetime(data.index))                               # Populate the x-axis with datetime
 
         # Get the string description of open, high, low, close, volume
         desc = [x.lower() for x in data.columns.get_level_values(0).tolist()]

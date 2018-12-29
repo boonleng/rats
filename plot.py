@@ -28,10 +28,9 @@ def genfigs(symbols, days = 90, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = 'f
     # Show parts of the data if we are in verbose mode
     if verbose > 1:
         print(stock)
-        print(stock.iloc[:, ::-1, 0].head())
 
     # Get the core count
-    batch_size = min(multiprocessing.cpu_count(), len(stock.minor_axis))
+    batch_size = min(multiprocessing.cpu_count(), len(stock.columns.levels[1]))
     
     # Set up the chart
     if verbose:
@@ -39,7 +38,6 @@ def genfigs(symbols, days = 90, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = 'f
     views = []
     for _ in range(batch_size):
         view = chart.Chart(days, color_scheme = color_scheme)
-        view.set_xdata(stock.major_axis)
         views.append(view)
 
     # Create the output folder if it doesn't exist
@@ -50,13 +48,16 @@ def genfigs(symbols, days = 90, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = 'f
     t1 = time.time()
     procs = []
     command = 'open'
-    for i, symbol in enumerate(stock.minor_axis):
-        data_frame = stock[:, :, [(symbol)]]
+    symbols = stock.columns.levels[1].tolist()
+    for i, symbol in enumerate(symbols):
+        data_frame = data.get_symbol_frame(stock, symbol)
         if verbose > 1:
             print(data_frame)
         # Derive the filename
         filename = folder + '/' + symbol + '.' + image_format
-        delta = data_frame[['Open', 'Close'], :, :].iloc[:, -1, 0].diff().tolist()[-1]
+        oc = data_frame.loc[:, (['open', 'close'])].values[-1]
+        delta = oc[1] - oc[0]
+        #delta = data_frame[['Open', 'Close'], :, :].iloc[:, -1, 0].diff().tolist()[-1]
         if delta > 0:
             print('\033[38;5;46m{}\033[0m -> \033[38;5;206m{}\033[0m'.format(symbol.rjust(5), filename))
         else:
@@ -97,7 +98,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog = 'plot',
                                      usage = examples)
     parser.add_argument('symbols', default = '^OLD', nargs = '*', help = 'specify symbols, e.g., NVDA TSLA AAPL')
-    parser.add_argument('-v', '--verbose', default = 1, action = 'count', help = 'increases verbosity level')
+    parser.add_argument('-v', '--verbose', default = 0, action = 'count', help = 'increases verbosity level')
     parser.add_argument('-c', '--color-scheme', default = 'default', help = 'specify color scheme to use (sunrise, sunset, night).')
     parser.add_argument('-o', '--open-preview', action = 'store_true', help = 'open Preview (macOS only)')
     parser.add_argument('-p', '--pdf', action = 'store_true', help = 'generate PDF.')
