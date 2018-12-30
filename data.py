@@ -96,7 +96,7 @@ def get_from_net(symbols, end = datetime.date.today(), days = None, start = None
     else:
         quotes = pandas_datareader.DataReader(symbols, engine, start, end)
     # Make sure time is ascending; Panel dimensions: 5/6 (items) x days (major_axis) x symbols (minor_axis)
-    if quotes.axes[0][1] < quotes.axes[0][0]:
+    if quotes.shape[0] > 1 and quotes.index[1] < quotes.index[0]:
         quotes = quotes.sort_index(axis = 0, ascending = True)
     if days is not None:
         quotes = quotes.iloc[-days:]
@@ -127,7 +127,7 @@ def get_symbol_frame(quotes, symbol):
 def add_offline(symbols):
     quotes = get_from_net(symbols, end = LATEST_DATE, days = 5 * 365)
     # Get around: Somehow pandas Panel data comes in descending order when only one symbol is requested
-    if quotes.axes[0][1] < quotes.axes[0][0]:
+    if quotes.shape[0] > 1 and quotes.axes[0][1] < quotes.axes[0][0]:
         quotes = quotes.sort_index(axis = 0, ascending = True)
     print(quotes)
     save_to_folder(quotes)

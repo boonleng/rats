@@ -458,7 +458,6 @@ class Chart:
         self.title = self.axr.set_title(self.symbol, color = self.colormap.text)
 
         if data is not None:
-            #self.set_xdata(data.major_axis)
             self.set_xdata(pd.to_datetime(data.index))
             self.set_data(data)
 
