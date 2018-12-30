@@ -18,6 +18,8 @@
 		B5379C721F7D5FE2003D3F0D /* plot.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = plot.py; sourceTree = "<group>"; };
 		B554D8301F981CD10086CAC6 /* update_data.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = update_data.py; sourceTree = "<group>"; };
 		B554D8311F981FE20086CAC6 /* stock.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = stock.py; sourceTree = "<group>"; };
+		B5C5016121D92FFB000A34DC /* plot.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = plot.py; sourceTree = "<group>"; };
+		B5C5016221D932C6000A34DC /* eg3.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = eg3.py; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -31,6 +33,7 @@
 				B5379C6E1F7D5FE2003D3F0D /* colorscheme.py */,
 				B5379C6D1F7D5FE2003D3F0D /* chart.py */,
 				B554D8301F981CD10086CAC6 /* update_data.py */,
+				B5C5016121D92FFB000A34DC /* plot.py */,
 				B5379C761F7D6201003D3F0D /* Example Usage */,
 			);
 			sourceTree = "<group>";
@@ -42,6 +45,7 @@
 				B5379C721F7D5FE2003D3F0D /* plot.py */,
 				B52BC8FD1F7EB89600480208 /* eg1.py */,
 				B52BC8FE1F7EB89900480208 /* eg2.py */,
+				B5C5016221D932C6000A34DC /* eg3.py */,
 			);
 			name = "Example Usage";
 			sourceTree = "<group>";

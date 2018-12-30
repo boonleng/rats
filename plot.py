@@ -33,8 +33,7 @@ def genfigs(symbols, days = 120, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = '
     batch_size = min(multiprocessing.cpu_count(), len(stock.columns.levels[1]))
     
     # Set up the chart
-    if verbose:
-        print('Preparing background (batch size = {}) ...'.format(batch_size))
+    print('Preparing background (batch size = {}) ...'.format(batch_size))
     views = []
     for _ in range(batch_size):
         view = chart.Chart(days, color_scheme = color_scheme)
