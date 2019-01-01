@@ -24,20 +24,6 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, rando
 # Build a simple model
 
 #
-# Using Tensorflow
-#
-
-import tensorflow as tf
-model = tf.keras.Sequential([
-    tf.keras.layers.Dense(2, kernel_initializer='uniform'),
-    tf.keras.layers.Dense(2, kernel_initializer='uniform'),
-    tf.keras.layers.Dense(1, kernel_initializer='uniform', activation='sigmoid')
-])
-model.compile(optimizer=tf.train.AdamOptimizer(0.005),
-              loss='binary_crossentropy',
-              metrics=['accuracy'])
-
-#
 # Using Keras directly
 #
 
@@ -50,4 +36,17 @@ model.compile(optimizer=tf.train.AdamOptimizer(0.005),
 #               loss='binary_crossentropy',
 #               metrics=['accuracy'])
 
-model.fit(X_train, y_train, batch_size=10, epochs=100)
+#
+# Using Tensorflow
+#
+
+import tensorflow as tf
+model = tf.keras.Sequential([
+    tf.keras.layers.Dense(2, kernel_initializer='uniform'),
+    tf.keras.layers.Dense(1, kernel_initializer='uniform', activation='sigmoid')
+])
+model.compile(optimizer=tf.train.AdamOptimizer(0.003),
+              loss='binary_crossentropy',
+              metrics=['accuracy'])
+
+model.fit(X_train, y_train, batch_size=100, epochs=500)
