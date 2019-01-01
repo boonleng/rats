@@ -21,7 +21,6 @@ y = (c >= o).astype(np.float32)
 # Split data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 0)
 
-
 # Build a simple model
 
 #
@@ -30,11 +29,11 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, rando
 
 import tensorflow as tf
 model = tf.keras.Sequential([
-    tf.keras.layers.Dense(4, kernel_initializer='uniform'),
-    tf.keras.layers.Dense(4, kernel_initializer='uniform'),
+    tf.keras.layers.Dense(2, kernel_initializer='uniform'),
+    tf.keras.layers.Dense(2, kernel_initializer='uniform'),
     tf.keras.layers.Dense(1, kernel_initializer='uniform', activation='sigmoid')
 ])
-model.compile(optimizer=tf.train.AdamOptimizer(0.001),
+model.compile(optimizer=tf.train.AdamOptimizer(0.005),
               loss='binary_crossentropy',
               metrics=['accuracy'])
 
@@ -51,4 +50,4 @@ model.compile(optimizer=tf.train.AdamOptimizer(0.001),
 #               loss='binary_crossentropy',
 #               metrics=['accuracy'])
 
-model.fit(X_train, y_train, batch_size=20, epochs=100)
+model.fit(X_train, y_train, batch_size=10, epochs=100)
