@@ -1,51 +1,44 @@
-"""
-    Simple one-day forecast
-"""
-
-import data
-import tempfile
-import matplotlib
-import tensorflow as tf
 import numpy as np
-import pandas
-import chart
-import mystyle
 
-quotes = data.get_from_files()
+Xr = np.array([['France', 44.0, 72000.0],
+              ['Spain', 27.0, 48000.0],
+              ['Germany', 30.0, 54000.0],
+              ['Spain', 38.0, 61000.0],
+              ['Germany', 40.0, np.nan],
+              ['France', 35.0, 58000.0],
+              ['Spain', np.nan, 52000.0],
+              ['France', 48.0, 79000.0],
+              ['Germany', 50.0, 83000.0],
+              ['France', 37.0, 67000.0]], dtype=object)
+yr = np.array(['no', 'yes', 'no', 'no', 'yes', 'yes', 'no', 'yes', 'no', 'yes'])
 
-sym = 'AAPL'
-data = quotes[:, :, sym]
-y_close = np.array([data.loc[:, 'Close'].tolist()], dtype = np.float32)
-y_open = np.array([data.loc[:, 'Open'].tolist()], dtype = np.float32)
-mask = y_close[0] < y_open[0]
-ups = np.zeros((len(data), 2), dtype=np.float32)
-ups[mask, 0] = 1.0     # Row 0 for down
-ups[~mask, 1] = 1.0    # Row 1 for up
+# Replace NaN with the column mean
+from sklearn.impute import SimpleImputer
+imputer = SimpleImputer(missing_values=np.nan, strategy='mean')
+age_income = imputer.fit(Xr[:, 1:3]).transform(Xr[:, 1:3])
+age_income = age_income.astype(np.float32)
 
-N_fc = 2     # Fully connected features
-N_in = 2
-kernel_size = 1
-batch_size = 50
+# Encode categorical data as numerical label
+from sklearn.preprocessing import LabelEncoder
+labelencoder = LabelEncoder()
+c1 = labelencoder.fit_transform(Xr[:, 0])
 
-def nn(x):
-    """
-        Neural network for analyzing the time series
-    """
-    with tf.name_scope('reshape'):
-        x_rect = tf.reshape(x, [-1, kernel_size * N_in])
+# Encode categorical data as one hot vector
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+onehotencoder = ColumnTransformer([("dummy", OneHotEncoder(categories='auto'), [0])])
+c2 = onehotencoder.fit_transform(Xr)
 
-    with tf.name_scope('fc1'):
-        W_fc1 = weight_variable([kernel_size * N_in, N_fc], name = 'w')
-        b_fc1 = bias_variable([N_fc], name = 'b')
-        h_fc1 = tf.matmul(x_rect, W_fc1) + b_fc1
+X = np.hstack((c2[:, 1:], age_income))
 
-    with tf.name_scope('droptout'):
-        keep_prob = tf.placeholder(tf.float32)
-        h_fc_drop = tf.nn.dropout(h_fc1, keep_prob)
+y = labelencoder.fit_transform(yr)
 
-    with tf.name_scope('fc_last'):
-        W_fc = weight_variable([N_fc, 2])
-        b_fc = bias_variable([2])
+# Splitting a dataset into training and test sets
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 0)
 
-        y_conv = tf.nn.tanh(tf.matmul(h_fc_drop, W_fc) + b_fc)
-    return y_conv, keep_prob
+# Feature Scaling
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+X_train = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)

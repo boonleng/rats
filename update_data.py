@@ -1,10 +1,10 @@
 import data
 
 # Available offline datasets
-stocks = data.get_from_files()
+old = data.get_from_files()
 
 # Get the latest day. Will replace this day
-start = stocks.iloc[:, :, 0].index[-1]
+start = data.pandas.to_datetime(old.index[-1])
 
 print('Checking for data since {} ...'.format(start))
 
@@ -17,13 +17,18 @@ elif start > data.pandas.to_datetime('today'):
     print('Data is already at latest.')
     quit()
 
-# Retrieve the newer
-stocks_new = data.get_from_net(data.SYMBOLS, start = start)
+# Retrieve the newer set using the same symbol set
+symbols = old.columns.levels[1].tolist()
+new = data.get_from_net(symbols, start = start)
 
-# Sort the data symbols and discard the last day of offline data
-stocks = stocks[:, :, data.SYMBOLS].iloc[:, :-1, :]
-stocks_new = stocks_new[:, :, data.SYMBOLS]
+# Verify if new row is different
+u = old.iloc[-1]
+v = new.iloc[0]
+if new.shape[0] is 1 and all(u.sub(v).values < 1.0e-3):
+    print('No change in data')
+    quit()
 
-# Concatenate the datasets and save them
-big = data.pandas.concat([stocks, stocks_new], axis = 1)
+# Concatenate the datasets and discard the last day of the offline data
+print('Saving new data ...')
+big = data.pandas.concat([old.iloc[:-1], new])
 data.save_to_folder(big)

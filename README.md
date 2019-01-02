@@ -6,8 +6,27 @@ Example analyses using various regression techniques, filtering, preditions and 
 
 ## Requirements
 
+Install the required packages
 ```shell
-pip3 install pandas_datareader requests_cache joblib
+sudo -H pip3 install pandas_datareader requests_cache joblib
+```
+```shell
+sudo -H pip3 install https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.12.0-py3-none-any.whl
+```
+
+### Create a Virtual Environment (Recommended)
+
+Create a new virtual environment by choosing a Python interpreter and making a `./venv` directory to hold it:
+```shell
+virtualenv --system-site-packages -p python3 ./env
+```
+Activate the virtual environment using a shell-specific command:
+```shell
+source ./venv/bin/activate
+```
+And to exit virtualenv later:
+```shell
+deactivate
 ```
 
 ### Stock Market Time Series
@@ -24,6 +43,8 @@ A convenient function to generate chart is included.
 
 [pandas-datareader]:https://pandas-datareader.readthedocs.io/en/latest/
 
+[TensorFlow]: https://www.tensorflow.org/install/pip
+
 ### Example Scripts
 
 A few trivial example scripts as I was learning how to setup NN through tensorflow.
@@ -38,3 +59,5 @@ import data
 quotes = data.get_old_indices()
 data.save_to_folder(quotes)
 ```
+### Install Tensorflow
+
