@@ -48,6 +48,9 @@ install_requires = [
     'enum',
     'numpy',
     'scipy',
+    'pandas',
+    'pandas_datareader',
+    'requests_cache',
     'matplotlib'
 ]
 
