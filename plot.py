@@ -10,7 +10,7 @@ def savefig(chart, data_frame, filename):
     chart.set_data(data_frame)
     chart.savefig(filename)
 
-def genfigs(symbols, days = 120, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = 'figs',
+def genfigs(symbols, days = 130, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = 'figs',
             color_scheme = 'default', image_format = 'png', verbose = 0,
             open_preview = False, offline = False):
     # Get the latest data

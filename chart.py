@@ -337,7 +337,7 @@ class Chart:
         self.axb.yaxis.set_visible(False)
         self.axb.xaxis.set_visible(False)
         
-        rect = [(round(x * dpi)  + 0.5) / dpi for x in MAIN_RECT]
+        rect = [(round(x * dpi) + 0.5) / dpi for x in MAIN_RECT]
         self.axq = self.fig.add_axes(rect, label = 'Quotes')
         self.axq.patch.set_visible(False)
         self.axq.yaxis.tick_right()
@@ -354,7 +354,7 @@ class Chart:
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', self.colormap.backdrop)
         self.im = self.axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, extent = (-1, 1, -1, 1), aspect = 'auto')
         self.st = self.axb.text(0, 0, self.symbol,
-                                fontproperties = matplotlib.font_manager.FontProperties(style = 'normal', size = 80, weight = 'bold'),
+                                fontproperties = matplotlib.font_manager.FontProperties(style = 'normal', size = 100, weight = 'bold'),
                                 color = self.colormap.background_text_color, alpha = self.colormap.background_text_alpha,
                                 horizontalalignment = 'center', verticalalignment = 'center')
 
@@ -398,12 +398,15 @@ class Chart:
             cline = matplotlib.lines.Line2D(xdata = (i + offset, i), ydata = (i + 2.0, i + 2.0), color = 'k', linewidth = linewidth)
             vrect = matplotlib.patches.Rectangle(xy = (i - 0.5, 0.0),
                 fill = True,
+                snap = True,
+                capstyle = 'butt',
                 width = 1.0,
                 height = 10.0,
+                joinstyle = 'miter',
                 facecolor = '#0000ff',
                 edgecolor = self.colormap.text,
-                linewidth = 0.75 * linewidth,
-                alpha = 0.33)
+                linewidth = linewidth,
+                alpha = 0.35)
             self.vlines.append(vline)
             self.olines.append(oline)
             self.clines.append(cline)
@@ -455,7 +458,7 @@ class Chart:
         self.axv.set_ylim([0, 10])
         self.axr.set_ylim([0, 100])
 
-        self.title = self.axr.set_title(self.symbol, color = self.colormap.text)
+        self.title = self.axr.set_title(self.symbol, color = self.colormap.text, weight = 'bold')
 
         if data is not None:
             self.set_xdata(pd.to_datetime(data.index))
