@@ -10,14 +10,14 @@ def savefig(chart, data_frame, filename):
     chart.set_data(data_frame)
     chart.savefig(filename)
 
-def genfigs(symbols, days = 130, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = 'figs',
+def genfigs(symbols, days = 130, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = 'figs',
             color_scheme = 'default', image_format = 'png', verbose = 0,
-            open_preview = False, offline = False):
+            open_preview = False, force_net = False):
     # Get the latest data
     if symbols == '^OLD':
-        stock = data.get_from_files()
-    elif offline is True:
-        stock = data.get_from_files(symbols = symbols)
+        stock = data.get_from_files(end = end)
+    elif force_net is False:
+        stock = data.get_from_files(symbols = symbols, end = end)
     else:
         # Total data length to retrieve to have complete valid SMA
         L = days + max(sma_sizes);
@@ -30,7 +30,8 @@ def genfigs(symbols, days = 130, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = '
         print(stock)
 
     # Get the core count
-    batch_size = min(multiprocessing.cpu_count(), len(stock.columns.levels[1]))
+    #print('symbols = {}'.format(symbols))
+    batch_size = min(multiprocessing.cpu_count(), len(symbols))
     
     # Set up the chart
     print('Preparing background (batch size = {}) ...'.format(batch_size))
@@ -47,9 +48,13 @@ def genfigs(symbols, days = 130, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = '
     t1 = time.time()
     procs = []
     command = 'open'
-    symbols = stock.columns.levels[1].tolist()
+    if len(symbols) > 1:
+        symbols = stock.columns.levels[1].tolist()
     for i, symbol in enumerate(symbols):
-        data_frame = data.get_symbol_frame(stock, symbol)
+        if len(symbols) > 1:
+            data_frame = data.get_symbol_frame(stock, symbol)
+        else:
+            data_frame = stock
         if verbose > 1:
             print(data_frame)
         # Derive the filename
@@ -93,16 +98,18 @@ def genfigs(symbols, days = 130, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = '
 if __name__ == '__main__':
     examples = '''
     python plot.py AAPL BIDU
-    python plot.py NVDA TSLA -z -o'''
+    python plot.py NVDA TSLA -n -o'''
     parser = argparse.ArgumentParser(prog = 'plot',
                                      usage = examples)
     parser.add_argument('symbols', default = '^OLD', nargs = '*', help = 'specify symbols, e.g., NVDA TSLA AAPL')
     parser.add_argument('-v', '--verbose', default = 0, action = 'count', help = 'increases verbosity level')
     parser.add_argument('-c', '--color-scheme', default = 'default', help = 'specify color scheme to use (sunrise, sunset, night).')
-    parser.add_argument('-o', '--open-preview', action = 'store_true', help = 'open Preview (macOS only)')
+    parser.add_argument('-d', '--days', default = 130, help = 'specify the number of days')
+    parser.add_argument('-e', '--end', default = None, help = 'specify the end date')
+    parser.add_argument('-n', '--new', action = 'store_true', help = 'retrieve new data')
+    parser.add_argument('-o', '--open', action = 'store_true', help = 'open the file with default application (macOS only)')
     parser.add_argument('-p', '--pdf', action = 'store_true', help = 'generate PDF.')
     parser.add_argument('-q', '--quiet', action = 'store_true', help = 'quiet mode.')
-    parser.add_argument('-z', '--offline', action = 'store_true', help = 'use offline data only')
     args = parser.parse_args()
 
     if args.quiet:
@@ -116,13 +123,16 @@ if __name__ == '__main__':
     else:
         args.format = 'png'
 
-    if args.verbose > 1:
+    if args.verbose:
         print('symbols = {}'.format(args.symbols))
+
+    print('days = {}   end = {}   new = {}'.format(args.days, args.end, args.new))
 
     try:
         genfigs(args.symbols,
+                days = args.days, end = args.end,
                 verbose = args.verbose, image_format = args.format,
-                color_scheme = args.color_scheme, open_preview = args.open_preview,
-                offline = args.offline)
+                color_scheme = args.color_scheme, open_preview = args.open,
+                force_net = args.new)
     except KeyboardInterrupt:
         print('Exiting ...')

@@ -26,7 +26,7 @@ SYMBOLS = [
 #LATEST_DATE = datetime.date(2017, 9, 23)
 LATEST_DATE = datetime.date(2018, 12, 28)
 
-def get_from_files(symbols = None, folder = 'data', force_net = False):
+def get_from_files(symbols = None, folder = 'data', force_net = False, end = None):
     """
         Get a set of stock data on the selected symbols
         NOTE: If the offline folder is present, data will be loaded
@@ -99,6 +99,8 @@ def get_from_net(symbols, end = datetime.date.today(), days = None, start = None
         session = requests_cache.CachedSession(cache_name = '.data-' + engine + '-cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 5))
         quotes = pandas_datareader.DataReader(symbols, engine, start, end, session = session)
     else:
+        if len(symbols) == 1:
+            symbols = symbols[0]
         quotes = pandas_datareader.DataReader(symbols, engine, start, end)
     # Make sure time is ascending; Panel dimensions: 5/6 (items) x days (major_axis) x symbols (minor_axis)
     if quotes.shape[0] > 1 and quotes.index[1] < quotes.index[0]:
