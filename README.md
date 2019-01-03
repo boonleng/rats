@@ -1,4 +1,4 @@
-Various Analyses on Time Series
+Regression Analysis with Tensorflow System
 ===
 
 Example analysis techniques using deep-learning techniques, filtering, and preditions. These are just simple illustrative scripts that either I put together from scratch to help me learn or something that I modified from a tutorial somewhere in the internet.
