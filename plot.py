@@ -1,3 +1,9 @@
+import sys
+
+MIN_PYTHON = (3, 4)
+if sys.version_info < MIN_PYTHON:
+    sys.exit('Python %s or later is required.\n' % '.'.join("%s" % n for n in MIN_PYTHON))
+
 import os
 import multiprocessing
 import argparse
@@ -125,8 +131,7 @@ if __name__ == '__main__':
 
     if args.verbose:
         print('symbols = {}'.format(args.symbols))
-
-    print('days = {}   end = {}   new = {}'.format(args.days, args.end, args.new))
+        print('days = {}   end = {}   new = {}'.format(args.days, args.end, args.new))
 
     try:
         genfigs(args.symbols,

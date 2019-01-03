@@ -57,9 +57,19 @@ def get_from_files(symbols = None, folder = 'data', force_net = False, end = Non
             local_symbols = [symbols]
         # Read the first one for the data dimensions
         df = pandas.read_pickle(folder + '/' + local_symbols[0] + '.pkl')
+        index = pandas.to_datetime(df.index)
         if end is not None:
-            index = df.index.get_loc(end)
-            df = df.iloc[:index + 1]
+            end_datetime = pandas.to_datetime(end)
+            k = 5
+            while k > 0 and not index.contains(end_datetime):
+                print('Data set does not contain {} (k = {})'.format(end_datetime.strftime('%Y-%m-%d'), k))
+                end_datetime -= pandas.to_timedelta('1 day')
+                k -= 1
+            if not index.contains(end_datetime):
+                print('Unable to continue')
+                return None
+            pos = index.get_loc(end_datetime)
+            df = df.iloc[:pos + 1]
         print('Loading \033[38;5;198moffline\033[0m data from ' + df.index[0] + ' to ' + df.index[-1] + ' ...')
         # Now we go through the files again and read them this time
         quotes = df.copy()
