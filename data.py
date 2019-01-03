@@ -36,7 +36,6 @@ def get_from_files(symbols = None, folder = 'data', force_net = False, end = Non
     if os.path.exists(folder) and not force_net:
         import re
         import glob
-        import numpy as np
         if symbols is None:
             # Gather all the symbols from filenames
             local_symbols = []
@@ -117,7 +116,7 @@ def save_to_folder(quotes, folder = 'data'):
         values = quotes.loc[pandas.IndexSlice[:], (slice(None), sym)].values
         iterables = [params, [sym]]
         df = pandas.DataFrame(values, index = quotes.index, columns = pandas.MultiIndex.from_product(iterables, names = names))
-        df.to_pickle(folder + '/' + sym + '.pkl')
+        df.to_pickle(folder + '/' + sym + '.pkl', protocol = 2)
 
 def get_symbol_frame(quotes, symbol):
     """

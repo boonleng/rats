@@ -19,7 +19,7 @@ elif start > data.pandas.to_datetime('today'):
 
 # Retrieve the newer set using the same symbol set
 symbols = old.columns.levels[1].tolist()
-new = data.get_from_net(symbols, start = start)
+new = data.get_from_net(symbols, start=start)
 
 # Verify if new row is different
 u = old.iloc[-1]
