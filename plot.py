@@ -102,13 +102,17 @@ def genfigs(symbols, days = 130, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES
 #  M A I N
 #
 if __name__ == '__main__':
-    examples = '''
+    usage = '''
+    python plot.py [options] SYMBOLS
+
+    examples:
+    
     python plot.py AAPL BIDU
-    python plot.py NVDA TSLA -n -o'''
-    parser = argparse.ArgumentParser(prog = 'plot',
-                                     usage = examples)
+    python plot.py -n -o NVDA TSLA
+    python plot.py -e 2017-12-31 NVDA TSLA
+    '''
+    parser = argparse.ArgumentParser(prog = 'plot', usage = usage)
     parser.add_argument('symbols', default = '^OLD', nargs = '*', help = 'specify symbols, e.g., NVDA TSLA AAPL')
-    parser.add_argument('-v', '--verbose', default = 0, action = 'count', help = 'increases verbosity level')
     parser.add_argument('-c', '--color-scheme', default = 'default', help = 'specify color scheme to use (sunrise, sunset, night).')
     parser.add_argument('-d', '--days', default = 130, help = 'specify the number of days')
     parser.add_argument('-e', '--end', default = None, help = 'specify the end date')
@@ -116,6 +120,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--open', action = 'store_true', help = 'open the file with default application (macOS only)')
     parser.add_argument('-p', '--pdf', action = 'store_true', help = 'generate PDF.')
     parser.add_argument('-q', '--quiet', action = 'store_true', help = 'quiet mode.')
+    parser.add_argument('-v', '--verbose', default = 0, action = 'count', help = 'increases verbosity level')
     args = parser.parse_args()
 
     if args.quiet:

@@ -78,8 +78,8 @@ def get_from_files(symbols = None, folder = 'data', force_net = False, end = Non
             df = pandas.read_pickle(file)
             if i > 0:
                 if end is not None:
-                    index = df.index.get_loc(end)
-                    df = df.iloc[:index + 1]
+                    pos = index.get_loc(end_datetime)
+                    df = df.iloc[:pos + 1]
                 quotes = pandas.concat([quotes, df], axis=1)
     else:
         quotes = get_from_net(SYMBOLS, end = LATEST_DATE, days = 5 * 365, cache = True)
