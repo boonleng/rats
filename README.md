@@ -17,7 +17,7 @@ Visit [Tensorflow] installation page for the Tensorflow installation instruction
 ### Python Packages
 
 For some macOS scenarios, Python packages that are installed may not be detected correctly by the `pip` tool. In that case, the following script may help. Create a script named `kernel.json` under the project folder and copy and paste the following lines to and adopt the actual path of where your Python library is installed to the text file.
-```
+```json
 {
  "argv": [
   "/usr/local/bin/python3",
@@ -32,6 +32,11 @@ For some macOS scenarios, Python packages that are installed may not be detected
      "PYTHONPATH": "/usr/local/Cellar/python/3.7.2/Frameworks/Python.framework/Versions/3.7/lib/python3.7/"
  }
 }
+```
+
+If you encountered an error 'ImportError: Python is not installed as a framework.' due to `matplotlib`. You may need to create a file `~/.matplotlib/matplotlibrc` and add the following code:
+```
+backend: TkAgg
 ```
 
 ## Create a Virtual Environment (Recommended)
