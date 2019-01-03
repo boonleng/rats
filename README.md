@@ -1,7 +1,7 @@
 Various Analyses on Time Series
 ===
 
-Example analyses using various deep-learning techniques, filtering, preditions. These are just example scripts that either I put together from scratch to help me learn or some that are modified from a tutorial somewhere in the cyberspace.
+Example analysis techniques using deep-learning techniques, filtering, and preditions. These are just simple illustrative scripts that either I put together from scratch to help me learn or something that I modified from a tutorial somewhere in the internet.
 
 ## Requirements
 
@@ -10,9 +10,9 @@ Install the required packages
 sudo -H python -m pip install -r requirements.txt
 ```
 
-### Install Tensorflow
+### Installing Tensorflow
 
-Visit [Tensorflow] installation page for instructions
+Visit [Tensorflow] installation page for the Tensorflow installation instructions
 
 ### Python Packages
 
@@ -49,11 +49,11 @@ And to exit virtualenv later:
 deactivate
 ```
 
-## Stock Market Time Series
+## US Stock Market Time Series
 
 The stock market is arguably one of the most interesting time-series data, right? So, that's what we will start with.
 
-The data can be retrieved live using the Yahoo or Google API through [pandas-datareader]. While the Google API is yet to be stable, a cache copy can be stored locally for repetitive experimentation.
+The data can be retrieved live using the [pandas-datareader]. There are several back-end engines to choose from depending on the package is updated. While the some API may yet to be stable, a local copy can be stored for repetitive experimentation.
 
 ## Chart
 
