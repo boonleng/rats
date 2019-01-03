@@ -22,21 +22,21 @@ for method in [0, 1]:
     # Set up the chart in method 1
     if method is 1:
         view = chart.Chart(K)
-        view.set_xdata(quotes.major_axis[-K:])
 
     # Make sure we get enough data so that all SMA curves are valid
-    sss = quotes[:, quotes.axes[1][-L:], :]
+    sss = quotes.iloc[-L:]
 
     t1 = time.time()
 
     # Go through the symbols
-    for symbol in quotes.minor_axis:
+    for symbol in sss.columns.levels[1].tolist():
+        ss = data.get_symbol_frame(sss, symbol)
         if method is 0:
             # Recreate the chart everytime in method 0
-            view = chart.showChart(sss[:, :, [symbol]])
+            view = chart.showChart(ss)
         else:
-            view.set_data(sss[:, :, [symbol]])
-        print('-> \033[38;5;46m{}\033[0m'.format(symbol.rjust(4)))
+            view.set_data(ss)
+        print('-> \033[38;5;51m{}\033[0m'.format(symbol.rjust(4)))
         # view.savefig('figs/_speed.png')
         # Destroy the chart everytime in method 0
         if method is 0:

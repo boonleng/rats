@@ -14,7 +14,7 @@ RSI_OB = 70
 RSI_OS = 30
 
 # The old way
-def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIOD,
+def showChart(dat, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIOD,
               use_adj_close = False, use_ema = False, skip_weekends = True, color_scheme = 'sunrise'):
     """
         showChart(dat, sma_size = [10, 50, 200], skip_weekends = True)
@@ -30,26 +30,43 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
 
     colormap = colorscheme.colorscheme(color_scheme)
 
-    # Get the first frame
-    dat = panel.iloc[:, :, 0]
-    if use_adj_close and dat.keys().contains('Adj Close'):
-        close_label = 'Adj Close'
-    else:
-        close_label = 'Close'
+    # Get the string description of open, high, low, close, volume
+    desc = [x.lower() for x in dat.columns.get_level_values(0).tolist()]
+    o_index = desc.index('open')
+    h_index = desc.index('high')
+    l_index = desc.index('low')
+    c_index = desc.index('close')
+    v_index = desc.index('volume')
+
+    # if use_adj_close and dat.keys().contains('Adj Close'):
+    #     close_label = 'Adj Close'
+    # else:
+    #     close_label = 'Close'
+    # quotes = np.transpose([
+    #     list(range(len(dat))),                                    # 0 - index
+    #     list(matplotlib.dates.date2num(dat.index.tolist())),      # 1 - datenum
+    #     dat.loc[:, 'Open'].tolist(),                              # 2 - Open
+    #     dat.loc[:, 'High'].tolist(),                              # 3 - High
+    #     dat.loc[:, 'Low'].tolist(),                               # 4 - Low
+    #     dat.loc[:, close_label].tolist(),                         # 5 - Close
+    #     np.multiply(dat.loc[:, 'Volume'], 1.0e-6).tolist()        # 6 - Volume in millions
+    # ])
+
+    # Build a flat array of OHLC and V data
     quotes = np.transpose([
-        list(range(len(dat))),                                    # 0 - index
-        list(matplotlib.dates.date2num(dat.index.tolist())),      # 1 - datenum
-        dat.loc[:, 'Open'].tolist(),                              # 2 - Open
-        dat.loc[:, 'High'].tolist(),                              # 3 - High
-        dat.loc[:, 'Low'].tolist(),                               # 4 - Low
-        dat.loc[:, close_label].tolist(),                         # 5 - Close
-        np.multiply(dat.loc[:, 'Volume'], 1.0e-6).tolist()        # 6 - Volume in millions
+        range(len(dat)),                                                     # index
+        matplotlib.dates.date2num(pd.to_datetime(dat.index)),                # datenum
+        dat.iloc[:, o_index].squeeze().tolist(),                             # Open
+        dat.iloc[:, h_index].squeeze().tolist(),                             # High
+        dat.iloc[:, l_index].squeeze().tolist(),                             # Low
+        dat.iloc[:, c_index].squeeze().tolist(),                             # Close
+        np.multiply(dat.iloc[:, v_index].squeeze(), 1.0e-6).tolist()         # Volume in millions
     ])
 
     # Sort the data  (colums 1 ... 6) so that it is newest first
-    if quotes[1, 1] > quotes[1, 0]:
-        # print('Resorting ... {}  {}'.format(quotes.shape, sma_sizes))
-        quotes[:, 1:8] = quotes[::-1, 1:8]
+    # if quotes[1, 1] > quotes[1, 0]:
+    #     # print('Resorting ... {}  {}'.format(quotes.shape, sma_sizes))
+    #     quotes[:, 1:8] = quotes[::-1, 1:8]
 
     # Initialize an empty dictionary from keys based on sma size
     sma = dict.fromkeys(sma_sizes)
@@ -114,7 +131,7 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
         ylim = [round(ylim[0] * 0.2 - 1.0) * 5.0, round(ylim[1] * 0.2 + 1.0) * 5.0]
 
     # RSI line
-    x = dat.loc[:, close_label]
+    x = dat.iloc[:, c_index]
     if x.index[0] > x.index[1]:
         x = x[::-1]
     rsi = stock.rsi(x, rsi_period)
@@ -298,7 +315,7 @@ def showChart(panel, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PER
     axv.spines['top'].set_visible(False)
     axr.spines['bottom'].set_visible(False)
 
-    axr.set_title(panel.minor_axis[0], color = colormap.text)
+    axr.set_title(dat.columns[0][1], color = colormap.text, weight = 'bold')
 
     for tic in axr.xaxis.get_major_ticks():
         tic.tick1On = tic.tick2On = False
@@ -476,7 +493,7 @@ class Chart:
         for i, t in enumerate(dates):
             if t.weekday() == 0:
                majors.append(i)
-        n = majors[-1]
+        #n = majors[-1]
         #print('DEBUG: {}, ..., {} -> \033[38;5;214m{}\033[0m ({})'.format(majors[0], n, dates[n].strftime('%Y-%m-%d'), dates[n].weekday()))
 
         self.warned_x_tick = 3

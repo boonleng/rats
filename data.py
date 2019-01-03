@@ -120,6 +120,9 @@ def save_to_folder(quotes, folder = 'data'):
         df.to_pickle(folder + '/' + sym + '.pkl')
 
 def get_symbol_frame(quotes, symbol):
+    """
+        get_symbol_frame(quotes, symbol)
+    """
     names = list(quotes.columns.names)
     params = quotes.columns.levels[0].tolist()
     iterables = [params, [symbol]]
