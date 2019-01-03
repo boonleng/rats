@@ -60,15 +60,18 @@ def showChart(dat, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIO
     n = max(sma_sizes)
 
     # Compute the SMA curves (data is in descending order, so we flip, compute, then flip again)
-    N = len(dat) - n - 1
-    # print('N = {} - {} - 1 = {}'.format(len(dat), n, N))
     for k in sma.keys():
-        d = stock.sma(quotes[::-1, 5], period = k, length = N)
+        d = stock.sma(quotes[::-1, 5], period = k, length = len(dat))
         sma[k] = d[::-1]
 
     # Find the span of colums 2 to 5 (OHLC)
+    N = max(min(30, len(dat) - rsi_period), len(dat) - n - 1)
+    #print('N = {} - {} - 1 = {} --> {}'.format(len(dat), n, len(dat) - n - 1, N))
     nums = np.array(quotes[:N, 2:6]).flatten()
-    ylim = [np.nanmin(nums), np.nanmax(nums)]
+    if all(np.isnan(nums)):
+        ylim = [0.0, 1.0]
+    else:
+        ylim = [np.nanmin(nums), np.nanmax(nums)]
 
     dpi = 144.0
 
@@ -317,7 +320,7 @@ class Chart:
     """
         A chart class
     """
-    def __init__(self, n, data = None, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIOD,
+    def __init__(self, n = 130, data = None, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIOD,
                  use_adj_close = False, use_ema = True, skip_weekends = True, forecast = 0, color_scheme = 'sunrise'):
         linewidth = 1.0
         offset = 0.4
@@ -463,7 +466,7 @@ class Chart:
 
         self.title = self.axr.set_title(self.symbol, color = self.colormap.text, weight = 'bold')
 
-        if data is not None:
+        if not data is None:
             self.set_data(data)
 
     def set_xdata(self, xdata):

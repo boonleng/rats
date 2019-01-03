@@ -14,7 +14,7 @@ import requests_cache
 # FAANG - FB, AAPL, AMZN, NFLX, GOOG
 # Chip - MU, AMAT, MRVL, NVDA
 # '^DJI', '^GSPC', '^IXIC',
-indices = ['^DJI', '^GSPC', '^IXIC']
+# indices = ['$DJI', '$GSPC', '^IXIC']
 SYMBOLS = [
     'AAPL', 'TSLA',
     'GOOG', 'BIDU', 'MSFT', 'AABA',
@@ -89,14 +89,14 @@ def get_from_files(symbols = None, folder = 'data', force_net = False, end = Non
     quotes.index = pandas.to_datetime(quotes.index)
     return quotes
 
-def get_old_indices():
-    end = LATEST_DATE
-    #start = end - datetime.timedelta(days = 5 * 365)
-    start = end - datetime.timedelta(days = 365)
-    print('Loading indices from ' + str(start) + ' to ' + str(end) + ' ...')
-    session = requests_cache.CachedSession(cache_name = '.data-idx-cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 5))
-    quotes = pandas_datareader.DataReader(indices, 'iex', start, end, session = session)
-    return quotes
+# def get_old_indices():
+#     end = LATEST_DATE
+#     #start = end - datetime.timedelta(days = 5 * 365)
+#     start = end - datetime.timedelta(days = 365)
+#     print('Loading indices from {} to {} ...'.format(start, end))
+#     session = requests_cache.CachedSession(cache_name = '.data-idx-cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 5))
+#     quotes = pandas_datareader.DataReader(indices, 'iex', start, end, session = session)
+#     return quotes
 
 def get_from_net(symbols, end = datetime.date.today(), days = 30, start = None, engine = 'iex', cache = False):
     if symbols is None:
@@ -119,6 +119,11 @@ def get_from_net(symbols, end = datetime.date.today(), days = 30, start = None, 
     if days is not None:
         quotes = quotes.iloc[-days:]
     quotes.index = pandas.to_datetime(quotes.index)
+    if not isinstance(quotes.columns, pandas.MultiIndex):
+        names = ['Attributes', 'Symbols']
+        params = quotes.columns.tolist()
+        iterables = [params, [symbols]]
+        return pandas.DataFrame(quotes.values, index = quotes.index, columns = pandas.MultiIndex.from_product(iterables, names = names))
     return quotes
 
 def save_to_folder(quotes, folder = 'data'):

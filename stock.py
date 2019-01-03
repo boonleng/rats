@@ -28,6 +28,8 @@ def sma(data, period = 10, length = None):
     sma = series.rolling(window = period, min_periods = period).mean().tolist()
     if length is not None:
         sma = sma[-length:]
+        if len(sma) < length:
+            sma = np.concatenate((np.full(length - len(sma), np.nan), sma))
     return sma
 
 def ema(data, period = 10, length = None):
@@ -43,6 +45,8 @@ def ema(data, period = 10, length = None):
     ema = pd.concat([sma, rest]).ewm(span = period, adjust = False).mean().tolist()
     if length is not None:
         ema = ema[-length:]
+        if len(ema) < length:
+            ema = np.concatenate((np.full(length - len(ema), np.nan), ema))
     return ema
 
 def rsi(data, period = 14):
