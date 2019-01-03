@@ -1,4 +1,5 @@
 import os
+import types
 import datetime
 import pandas
 import pandas_datareader
@@ -66,7 +67,9 @@ def get_from_files(symbols = None, folder = 'data', force_net = False, end = Non
                 quotes = pandas.concat([quotes, df], axis=1)
     else:
         quotes = get_from_net(SYMBOLS, end = LATEST_DATE, days = 5 * 365, cache = True)
-        save_to_folder(quotes)
+    def to_datetime(self):
+        return pandas.to_datetime(self)
+    quotes.index.to_datetime = types.MethodType(to_datetime, quotes.index)
     return quotes
 
 def get_old_indices():

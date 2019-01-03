@@ -1,9 +1,12 @@
-import numpy as np
-import pandas as pd
 import matplotlib
 import matplotlib.pyplot
 import colorscheme
 import stock
+import numpy as np
+
+# Minimum matplotlib version 2.0
+if matplotlib.__version__ < '2.0':
+    print('WARNING: Unexpected results may occur')
 
 DEFAULT_SMA_SIZES = [10, 50, 200]
 DEFAULT_RSI_PERIOD = 14
@@ -38,24 +41,10 @@ def showChart(dat, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIO
     c_index = desc.index('close')
     v_index = desc.index('volume')
 
-    # if use_adj_close and dat.keys().contains('Adj Close'):
-    #     close_label = 'Adj Close'
-    # else:
-    #     close_label = 'Close'
-    # quotes = np.transpose([
-    #     list(range(len(dat))),                                    # 0 - index
-    #     list(matplotlib.dates.date2num(dat.index.tolist())),      # 1 - datenum
-    #     dat.loc[:, 'Open'].tolist(),                              # 2 - Open
-    #     dat.loc[:, 'High'].tolist(),                              # 3 - High
-    #     dat.loc[:, 'Low'].tolist(),                               # 4 - Low
-    #     dat.loc[:, close_label].tolist(),                         # 5 - Close
-    #     np.multiply(dat.loc[:, 'Volume'], 1.0e-6).tolist()        # 6 - Volume in millions
-    # ])
-
     # Build a flat array of OHLC and V data
     quotes = np.transpose([
         range(len(dat)),                                                     # index
-        matplotlib.dates.date2num(pd.to_datetime(dat.index)),                # datenum
+        matplotlib.dates.date2num(dat.index.to_datetime()),                  # datenum
         dat.iloc[:, o_index].squeeze().tolist(),                             # Open
         dat.iloc[:, h_index].squeeze().tolist(),                             # High
         dat.iloc[:, l_index].squeeze().tolist(),                             # Low
@@ -476,7 +465,6 @@ class Chart:
         self.title = self.axr.set_title(self.symbol, color = self.colormap.text, weight = 'bold')
 
         if data is not None:
-            self.set_xdata(pd.to_datetime(data.index))
             self.set_data(data)
 
     def set_xdata(self, xdata):
@@ -558,7 +546,7 @@ class Chart:
     def set_data(self, data):
         # Get the symbol from minor axis
         self.symbol = data.columns[0][1]                                         # Get it from column index ('open', 'AAPL')
-        self.set_xdata(pd.to_datetime(data.index))                               # Populate the x-axis with datetime
+        self.set_xdata(data.index.to_datetime())                                 # Populate the x-axis with datetime
 
         # Get the string description of open, high, low, close, volume
         desc = [x.lower() for x in data.columns.get_level_values(0).tolist()]
