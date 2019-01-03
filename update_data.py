@@ -25,7 +25,7 @@ new = data.get_from_net(symbols, start=start)
 u = old.iloc[-1]
 v = new.iloc[0]
 if new.shape[0] is 1 and all(u.sub(v).values < 1.0e-3):
-    print('No change in data')
+    print('No change in data, skip saving')
     quit()
 
 # Concatenate the datasets and discard the last day of the offline data

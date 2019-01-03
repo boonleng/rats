@@ -44,7 +44,7 @@ def showChart(dat, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIO
     # Build a flat array of OHLC and V data
     quotes = np.transpose([
         range(len(dat)),                                                     # index
-        matplotlib.dates.date2num(dat.index.to_datetime()),                  # datenum
+        matplotlib.dates.date2num(dat.index),                                # datenum
         dat.iloc[:, o_index].squeeze().tolist(),                             # Open
         dat.iloc[:, h_index].squeeze().tolist(),                             # High
         dat.iloc[:, l_index].squeeze().tolist(),                             # Low
@@ -546,7 +546,7 @@ class Chart:
     def set_data(self, data):
         # Get the symbol from minor axis
         self.symbol = data.columns[0][1]                                         # Get it from column index ('open', 'AAPL')
-        self.set_xdata(data.index.to_datetime())                                 # Populate the x-axis with datetime
+        self.set_xdata(data.index)                                               # Populate the x-axis with datetime
 
         # Get the string description of open, high, low, close, volume
         desc = [x.lower() for x in data.columns.get_level_values(0).tolist()]

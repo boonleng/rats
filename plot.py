@@ -16,6 +16,7 @@ def genfigs(symbols, days = 130, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES
     # Get the latest data
     if symbols == '^OLD':
         stock = data.get_from_files(end = end)
+        symbols = list(stock.columns.levels[1])
     elif force_net is False:
         stock = data.get_from_files(symbols = symbols, end = end)
     else:
@@ -26,11 +27,10 @@ def genfigs(symbols, days = 130, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES
         stock = data.get_from_net(symbols, days = int(L * 1.6))
 
     # Show parts of the data if we are in verbose mode
-    if verbose > 1:
-        print(stock)
+    if verbose:
+        print('symbols = {} ({})'.format(symbols, len(symbols)))
 
     # Get the core count
-    #print('symbols = {}'.format(symbols))
     batch_size = min(multiprocessing.cpu_count(), len(symbols))
     
     # Set up the chart

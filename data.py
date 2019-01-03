@@ -1,3 +1,9 @@
+import sys
+
+MIN_PYTHON = (3, 4)
+if sys.version_info < MIN_PYTHON:
+    sys.exit('Python %s or later is required.\n' % '.'.join("%s" % n for n in MIN_PYTHON))
+
 import os
 import types
 import datetime
@@ -67,9 +73,10 @@ def get_from_files(symbols = None, folder = 'data', force_net = False, end = Non
                 quotes = pandas.concat([quotes, df], axis=1)
     else:
         quotes = get_from_net(SYMBOLS, end = LATEST_DATE, days = 5 * 365, cache = True)
-    def to_datetime(self):
-        return pandas.to_datetime(self)
-    quotes.index.to_datetime = types.MethodType(to_datetime, quotes.index)
+#    def to_datetime(self):
+#        return pandas.to_datetime(self)
+#    quotes.index.to_datetime = types.MethodType(to_datetime, quotes.index)
+    quotes.index = pandas.to_datetime(quotes.index)
     return quotes
 
 def get_old_indices():
@@ -81,15 +88,12 @@ def get_old_indices():
     quotes = pandas_datareader.DataReader(indices, 'iex', start, end, session = session)
     return quotes
 
-def get_from_net(symbols, end = datetime.date.today(), days = None, start = None, engine = 'iex', cache = False):
+def get_from_net(symbols, end = datetime.date.today(), days = 30, start = None, engine = 'iex', cache = False):
     if symbols is None:
         symbols = SYMBOLS
     if not isinstance(symbols, list):
         symbols = [symbols]
-    if start is None and days is None:
-        print('ERROR: Either start or days must be specified.')
-        return None
-    elif start is None and days is not None:
+    if start is None:
         start = end - datetime.timedelta(days = int(days * 1.6))
     print('Loading \033[38;5;46mlive\033[0m data from ' + str(start) + ' to ' + str(end) + ' ...')
     if cache:
@@ -104,6 +108,7 @@ def get_from_net(symbols, end = datetime.date.today(), days = None, start = None
         quotes = quotes.sort_index(axis = 0, ascending = True)
     if days is not None:
         quotes = quotes.iloc[-days:]
+    quotes.index = pandas.to_datetime(quotes.index)
     return quotes
 
 def save_to_folder(quotes, folder = 'data'):
@@ -119,7 +124,7 @@ def save_to_folder(quotes, folder = 'data'):
         values = quotes.loc[pandas.IndexSlice[:], (slice(None), sym)].values
         iterables = [params, [sym]]
         df = pandas.DataFrame(values, index = quotes.index, columns = pandas.MultiIndex.from_product(iterables, names = names))
-        df.to_pickle(folder + '/' + sym + '.pkl', protocol = 2)
+        df.to_pickle(folder + '/' + sym + '.pkl')
 
 def get_symbol_frame(quotes, symbol):
     """
