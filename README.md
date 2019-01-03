@@ -10,40 +10,11 @@ Install the required packages
 sudo -H python -m pip install -r requirements.txt
 ```
 
-### Installing Tensorflow
-
-Visit [Tensorflow] installation page for the Tensorflow installation instructions
-
-### Python Packages
-
-For some macOS scenarios, Python packages that are installed may not be detected correctly by the `pip` tool. In that case, the following script may help. Create a script named `kernel.json` under the project folder and copy and paste the following lines to and adopt the actual path of where your Python library is installed to the text file.
-```json
-{
- "argv": [
-  "/usr/local/bin/python3",
-  "-m",
-  "ipykernel_launcher",
-  "-f",
-  "{connection_file}"
- ],
- "display_name": "Python 3",
- "language": "python",
- "env": {
-     "PYTHONPATH": "/usr/local/Cellar/python/3.7.2/Frameworks/Python.framework/Versions/3.7/lib/python3.7/"
- }
-}
-```
-
-If you encountered an error 'ImportError: Python is not installed as a framework.' due to `matplotlib`. You may need to create a file `~/.matplotlib/matplotlibrc` and add the following code:
-```
-backend: TkAgg
-```
-
 ## Create a Virtual Environment (Recommended)
 
 Create a new virtual environment by choosing a Python interpreter and making a `./venv` directory to hold it:
 ```shell
-virtualenv --system-site-packages -p python3 ./env
+virtualenv --system-site-packages -p python3 ./venv
 ```
 Activate the virtual environment using a shell-specific command:
 ```shell
@@ -81,6 +52,39 @@ import data
 quotes = data.get_old_indices()
 data.save_to_folder(quotes)
 ```
-[pandas-datareader]:https://pandas-datareader.readthedocs.io/en/latest/
+## Toubleshooting
 
+Here are some problems and solutions I have encountered.
+
+### Unable to Install Tensorflow
+
+Visit [Tensorflow] installation page for custom Tensorflow installation instructions
+
+### Python Packages
+
+For some macOS scenarios, Python packages that are installed may not be detected correctly by the `pip` tool. In that case, the following script may help. Create a script named `kernel.json` under the project folder and copy and paste the following lines to and adopt the actual path of where your Python library is installed to the text file.
+```json
+{
+ "argv": [
+  "/usr/local/bin/python3",
+  "-m",
+  "ipykernel_launcher",
+  "-f",
+  "{connection_file}"
+ ],
+ "display_name": "Python 3",
+ "language": "python",
+ "env": {
+     "PYTHONPATH": "/usr/local/Cellar/python/3.7.2/Frameworks/Python.framework/Versions/3.7/lib/python3.7/"
+ }
+}
+```
+
+If you encountered an error 'ImportError: Python is not installed as a framework.' due to `matplotlib`. You may need to create a file `~/.matplotlib/matplotlibrc` and add the following code:
+```
+backend: TkAgg
+```
+
+
+[pandas-datareader]:https://pandas-datareader.readthedocs.io/en/latest/
 [TensorFlow]: https://www.tensorflow.org/install/pip
