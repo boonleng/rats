@@ -41,6 +41,9 @@ def showChart(dat, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIO
     c_index = desc.index('close')
     v_index = desc.index('volume')
 
+    # Sort the data  (colums 1 ... 6) so that it is newest first
+    dat = dat.sort_index(axis = 0, ascending = False)
+
     # Build a flat array of OHLC and V data
     quotes = np.transpose([
         range(len(dat)),                                                     # index
@@ -52,20 +55,16 @@ def showChart(dat, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIO
         np.multiply(dat.iloc[:, v_index].squeeze(), 1.0e-6).tolist()         # Volume in millions
     ])
 
-    # Sort the data  (colums 1 ... 6) so that it is newest first
-    # if quotes[1, 1] > quotes[1, 0]:
-    #     # print('Resorting ... {}  {}'.format(quotes.shape, sma_sizes))
-    #     quotes[:, 1:8] = quotes[::-1, 1:8]
-
     # Initialize an empty dictionary from keys based on sma size
     sma = dict.fromkeys(sma_sizes)
     n = max(sma_sizes)
 
-    # Compute the SMA curves
+    # Compute the SMA curves (data is in descending order, so we flip, compute, then flip again)
     N = len(dat) - n - 1
     # print('N = {} - {} - 1 = {}'.format(len(dat), n, N))
     for k in sma.keys():
-        sma[k] = stock.sma(quotes[:, 5], period = k)
+        d = stock.sma(quotes[::-1, 5], period = k, length = N)
+        sma[k] = d[::-1]
 
     # Find the span of colums 2 to 5 (OHLC)
     nums = np.array(quotes[:N, 2:6]).flatten()
