@@ -97,6 +97,7 @@ figure.dpi          : 144
 ```
 Anohter option to change it without the configuration file is by entering the following code into the Python console.
 ```python
+import matplotlib
 matplotlib.rcParams['font.family'] = 'serif'
 matplotlib.rcParams['font.serif'] = ['Arial', 'Helvetica']
 matplotlib.rcParams['font.sans-serif'] = ['System Font', 'Verdana', 'Arial']

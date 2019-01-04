@@ -6,16 +6,12 @@ old = data.file()
 # Get the latest day. Will replace this day
 start = data.pandas.to_datetime(old.index[-1])
 
-print('Checking for data since {} ...'.format(start))
+print('Checking for data since {} ...'.format(start.strftime('%Y-%m-%d')))
 
 # If today hasn't concluded, there is no need to update
-if start == data.pandas.to_datetime('today'):
-    print('Check if the stock market has closed')
-    # To be continued ...
-    quit()
-elif start > data.pandas.to_datetime('today'):
-    print('Data is already at latest.')
-    quit()
+if start >= data.yesterday():
+	print('No new data is expected')
+	quit()
 
 # Retrieve the newer set using the same symbol set
 symbols = old.columns.levels[1].tolist()

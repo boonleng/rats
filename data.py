@@ -25,18 +25,19 @@ SYMBOLS = [
     'BP', 'XON', 'CVX', 'OGE',
     'F', 'GM', 'TM'
 ]
-#LATEST_DATE = datetime.date(2017, 9, 23)
-#LATEST_DATE = datetime.date(2018, 12, 28)
+
+def today():
+    return pandas.to_datetime(datetime.date.today())
+
+def yesterday():
+    return today() - pandas.to_timedelta('1 day')
 
 def to_datetime(self):
    return pandas.to_datetime(self)
 
 def file(symbols = None, end = None, days = 330, start = None, folder = 'data', verbose = 0):
     """
-        Get a set of stock data on the selected symbols
-        NOTE: If the offline folder is present, data will be loaded
-        from that folder. Newly added symbols to the script do not
-        mean they will be available
+        Get a set of stock data from the data folder
     """
     if not os.path.exists(folder):
         print('Error. Data folder does not exist.')
@@ -63,7 +64,7 @@ def file(symbols = None, end = None, days = 330, start = None, folder = 'data', 
         end_datetime = pandas.to_datetime(end)
         if end_datetime > pandas.to_datetime(index[-1]):
             end_datetime = pandas.to_datetime(index[-1])
-            if verbose:
+            if verbose > 1:
                 print('Dataset ends at {} ...'.format(end_datetime.strftime('%Y-%m-%d')))
         # Roll backward to find the previous trading day
         k = 10
@@ -85,7 +86,7 @@ def file(symbols = None, end = None, days = 330, start = None, folder = 'data', 
         start_datetime = pandas.to_datetime(start)
         if start_datetime < pandas.to_datetime(index[0]):
             start_datetime = pandas.to_datetime(index[0])
-            if verbose:
+            if verbose > 1:
                 print('Dataset starts at {} ...'.format(start_datetime.strftime('%Y-%m-%d')))
         # Roll forward to find the next trading day
         k = 10
@@ -102,10 +103,11 @@ def file(symbols = None, end = None, days = 330, start = None, folder = 'data', 
     else:
         start = df.index[0]
         start_pos = index.get_loc(start)
-    if verbose:
+    if verbose > 1:
         print('Data indices @ [{}, {}]'.format(start_pos, end_pos))
     df = df.iloc[start_pos:end_pos + 1]
-    print('Loading \033[38;5;198moffline\033[0m data from {} to {} ...'.format(start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')))
+    if verbose:
+        print('Loading \033[38;5;198moffline\033[0m data from {} to {} ...'.format(start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')))
     # Now we go through the files again and read them this time
     quotes = df.copy()
     for sym in local_symbols[1:]:
@@ -115,13 +117,14 @@ def file(symbols = None, end = None, days = 330, start = None, folder = 'data', 
         start_pos = index.get_loc(start)
         df = df.iloc[start_pos:end_pos + 1]
         quotes = pandas.concat([quotes, df], axis = 1)
-#    quotes.index.to_datetime = types.MethodType(to_datetime, quotes.index)
+    #import types
+    #quotes.index.to_datetime = types.MethodType(to_datetime, quotes.index)
     quotes.index = pandas.to_datetime(quotes.index)
     if start is None:
         quotes = quotes.iloc[-days:]
     return quotes
 
-def net(symbols, end = datetime.date.today(), days = 130, start = None, engine = 'iex', cache = True):
+def net(symbols, end = today(), days = 130, start = None, engine = 'iex', cache = True, verbose = 0):
     if symbols is None:
         symbols = SYMBOLS
     else:
@@ -132,13 +135,15 @@ def net(symbols, end = datetime.date.today(), days = 130, start = None, engine =
     if start is None:
         start = end - datetime.timedelta(days = int(days * 1.6))
     if cache:
-        print('Loading \033[38;5;220mcached\033[0m data from {} to {} ...'.format(start, end))
+        if verbose:
+            print('Loading \033[38;5;46mlive\033[0m data from {} to {} ...'.format(start, end))
         session = requests_cache.CachedSession(cache_name = '.cache-{}'.format(engine),
                                                expire_after = datetime.timedelta(days = 1),
                                                backend = 'sqlite')
         quotes = pandas_datareader.DataReader(symbols, engine, start, end, session = session)
     else:
-        print('Loading \033[38;5;46mlive\033[0m data from {} to {} ...'.format(start, end))
+        if verbose:
+            print('Loading \033[38;5;220mlive\033[0m data from {} to {} ...'.format(start, end))
         quotes = pandas_datareader.DataReader(symbols, engine, start, end)
     # Make sure time is ascending; Panel dimensions: 5/6 (items) x days (major_axis) x symbols (minor_axis)
     if quotes.shape[0] > 1 and quotes.index[1] < quotes.index[0]:
@@ -153,20 +158,30 @@ def net(symbols, end = datetime.date.today(), days = 130, start = None, engine =
         return pandas.DataFrame(quotes.values, index = quotes.index, columns = pandas.MultiIndex.from_product(iterables, names = names))
     return quotes
 
-def data(symbols, end = datetime.date.today(), days = 130, start = None, force_net = False):
+def get(symbols, end = today(), days = 130, start = None, folder = 'data', force_net = False):
+    """
+        Get data
+        If the offline folder is present, data will be loaded
+        from that folder. Newly added symbols to the script do not
+        mean they will be available
+    """
     if symbols is None:
         symbols = SYMBOLS
     if isinstance(symbols, list):
         symbols = [x.upper() for x in symbols]
     else:
-        symbols = symbols.upper()
-    if not force_net:
-        quotes = file(symbols, end = end, days = days, start = start)
+        symbols = [symbols.upper()]
+    all_exist = True
+    for symbol in symbols:
+        filename = '{}/{}.pkl'.format(folder, symbols[0])
+        all_exist &= os.path.exists(filename)
+    if all_exist and not force_net:
+        quotes = file(symbols, end = end, days = days, start = start, verbose = 1)
     else:
         d = datetime.date.today()
         start = datetime.datetime(d.year - 5, d.month, d.day)
-        quotes = net(symbols, end = end, days = days, start = start)
-    quotes.index = pandas.to_datetime(quotes.index)
+        quotes = net(symbols, end = end, days = days, start = start, verbose = 1)
+    return quotes
 
 def save(quotes, folder = 'data'):
     """
@@ -205,7 +220,7 @@ def add_offline(symbols, folder = 'data', verbose = 0):
     for symbol in symbols:
         filename = '{}/{}.pkl'.format(folder, symbol)
         if not os.path.exists(filename):
-            d = datetime.date.today()
+            d = today()
             start = datetime.datetime(d.year - 5, d.month, d.day)
             quote = net(symbol, start = start)
             # Get around: Somehow pandas Panel data comes in descending order when only one symbol is requested
@@ -220,12 +235,11 @@ def add_offline(symbols, folder = 'data', verbose = 0):
             u = old.iloc[-1]
             v = new.iloc[0]
             if new.shape[0] is 1 and all(u.sub(v).values < 1.0e-3):
-                if verbose:
-                    print('No change in {}}, skip adding ...'.format(symbol))
+                print('No change in {}, skip adding ...'.format(symbol))
                 continue
             quote = pandas.concat([old.iloc[:-1], new])
         if verbose > 1:
             quote.head()
         if verbose:
-        print('Saving {} ...'.format(symbol))
+            print('Saving {} ...'.format(symbol))
         save(quote)

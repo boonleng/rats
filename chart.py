@@ -131,7 +131,7 @@ def showChart(dat, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_
 
     color = colormap.line[3]
     rsi_line_25 = matplotlib.lines.Line2D([-1, N], [RSI_OS, RSI_OS], color = color, linewidth = 0.5, alpha = 0.33)
-    rsi_line_50 = matplotlib.lines.Line2D([-1, N], [50.0, 50.0], color = color, linewidth = 1.0, alpha = 0.75, linestyle = '-.')
+    rsi_line_50 = matplotlib.lines.Line2D([-1, N], [  50.0,   50.0], color = color, linewidth = 1.0, alpha = 0.75, linestyle = '-.')
     rsi_line_75 = matplotlib.lines.Line2D([-1, N], [RSI_OB, RSI_OB], color = color, linewidth = 0.5, alpha = 0.33)
     axr.add_line(rsi_line_25)
     axr.add_line(rsi_line_50)
@@ -321,7 +321,7 @@ class Chart:
     """
         A chart class
     """
-    def __init__(self, n = 130, data = None, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIOD,
+    def __init__(self, data = None, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIOD,
                  use_adj_close = False, use_ema = True, skip_weekends = True, forecast = 0, color_scheme = 'sunrise'):
         linewidth = 1.0
         offset = 0.4
