@@ -53,7 +53,7 @@ def file(symbols = None, end = None, days = 330, start = None, folder = 'data', 
                 symbol = m.group(1)
                 local_symbols.append(symbol)
     elif isinstance(symbols, list):
-        local_symbols = symbols
+        local_symbols = [x.upper() for x in symbols]
     else:
         local_symbols = [symbols]
     # Read the first one for the data dimensions
@@ -121,14 +121,19 @@ def file(symbols = None, end = None, days = 330, start = None, folder = 'data', 
         quotes = quotes.iloc[-days:]
     return quotes
 
-def net(symbols, end = datetime.date.today(), days = 130, start = None, engine = 'iex', cache = False):
+def net(symbols, end = datetime.date.today(), days = 130, start = None, engine = 'iex', cache = True):
     if symbols is None:
         symbols = SYMBOLS
+    else:
+        if isinstance(symbols, list):
+            symbols = [x.upper() for x in symbols]
+        else:
+            symbols = symbols.upper()
     if start is None:
         start = end - datetime.timedelta(days = int(days * 1.6))
     if cache:
         print('Loading \033[38;5;220mcached\033[0m data from {} to {} ...'.format(start, end))
-        session = requests_cache.CachedSession(cache_name = '.data-{}-cache'.format(engine),
+        session = requests_cache.CachedSession(cache_name = '.cache-{}'.format(engine),
                                                expire_after = datetime.timedelta(days = 1),
                                                backend = 'sqlite')
         quotes = pandas_datareader.DataReader(symbols, engine, start, end, session = session)
@@ -149,12 +154,18 @@ def net(symbols, end = datetime.date.today(), days = 130, start = None, engine =
     return quotes
 
 def data(symbols, end = datetime.date.today(), days = 130, start = None, force_net = False):
+    if symbols is None:
+        symbols = SYMBOLS
+    if isinstance(symbols, list):
+        symbols = [x.upper() for x in symbols]
+    else:
+        symbols = symbols.upper()
     if not force_net:
         quotes = file(symbols, end = end, days = days, start = start)
     else:
         d = datetime.date.today()
         start = datetime.datetime(d.year - 5, d.month, d.day)
-        quotes = net(symbols, end = end, days = days, start = start, cache = True)
+        quotes = net(symbols, end = end, days = days, start = start)
     quotes.index = pandas.to_datetime(quotes.index)
 
 def save(quotes, folder = 'data'):
@@ -182,14 +193,39 @@ def get_frame(quotes, symbol):
     values = quotes.loc[pandas.IndexSlice[:], (slice(None), symbol)].values
     return pandas.DataFrame(values, index = quotes.index, columns = pandas.MultiIndex.from_product(iterables, names = names))
 
-def add_offline(symbols, verbose = 0):
-    d = datetime.date.today()
-    start = datetime.datetime(d.year - 5, d.month, d.day)
-    quotes = net(symbols, start = start)
-    # Get around: Somehow pandas Panel data comes in descending order when only one symbol is requested
-    if quotes.shape[0] > 1 and quotes.axes[0][1] < quotes.axes[0][0]:
-        quotes = quotes.sort_index(axis = 0, ascending = True)
-    if verbose:
-        quotes.head()
-    save_to_folder(quotes)
-    return quotes
+def add_offline(symbols, folder = 'data', verbose = 0):
+    """
+        add_offline(quotes, symbol)
+    """
+    if isinstance(symbols, list):
+        symbols = [x.upper() for x in symbols]
+    else:
+        symbols = [symbols.upper()]
+    print(symbols)
+    for symbol in symbols:
+        filename = '{}/{}.pkl'.format(folder, symbol)
+        if not os.path.exists(filename):
+            d = datetime.date.today()
+            start = datetime.datetime(d.year - 5, d.month, d.day)
+            quote = net(symbol, start = start)
+            # Get around: Somehow pandas Panel data comes in descending order when only one symbol is requested
+            if quote.shape[0] > 1 and quote.axes[0][1] < quote.axes[0][0]:
+                quote = quote.sort_index(axis = 0, ascending = True)
+        else:
+            old = file(symbol)
+            start = pandas.to_datetime(old.index[-1])
+            if start >= pandas.to_datetime('today'):
+                continue
+            new = net(symbol, start = start)
+            u = old.iloc[-1]
+            v = new.iloc[0]
+            if new.shape[0] is 1 and all(u.sub(v).values < 1.0e-3):
+                if verbose:
+                    print('No change in {}}, skip adding ...'.format(symbol))
+                continue
+            quote = pandas.concat([old.iloc[:-1], new])
+        if verbose > 1:
+            quote.head()
+        if verbose:
+        print('Saving {} ...'.format(symbol))
+        save(quote)
