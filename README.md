@@ -80,11 +80,22 @@ For some macOS scenarios, Python packages that are installed may not be detected
 }
 ```
 
-If you encountered an error 'ImportError: Python is not installed as a framework.' due to `matplotlib`. You may need to create a file `~/.matplotlib/matplotlibrc` and add the following code:
-```
-backend: TkAgg
-```
+### Configure `matplotlib`
 
+To get the same plotting style like the example, create a file `~/.matplotlib/matplotlibrc` and add the following code:
+```
+# Add these to ~/.matplotlibrc/matplotlibrc
+
+backend             : TkAgg
+font.family         : serif
+font.style          : normal
+font.serif          : Arial, Helvetica
+font.sans-serif     : System Font, Verdana, Arial
+figure.figsize      : 8.89, 5
+figure.dpi          : 144
+
+```
+If you encountered an error 'ImportError: Python is not installed as a framework.' due to `matplotlib`. You may need to change the `backend` value to `Agg`.
 
 [pandas-datareader]:https://pandas-datareader.readthedocs.io/en/latest/
 [TensorFlow]: https://www.tensorflow.org/install/pip
