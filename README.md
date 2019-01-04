@@ -98,7 +98,7 @@ figure.dpi          : 144
 Anohter option to change it without the configuration file is by entering the following code into the Python console.
 ```python
 matplotlib.rcParams['font.family'] = 'serif'
-matplotlib.rcParams['font.serif'] = ['Arial']
+matplotlib.rcParams['font.serif'] = ['Arial', 'Helvetica']
 matplotlib.rcParams['font.sans-serif'] = ['System Font', 'Verdana', 'Arial']
 matplotlib.rcParams['figure.figsize'] = (8.89, 5)   # Change the size of plots
 matplotlib.rcParams['figure.dpi'] = 144
