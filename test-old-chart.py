@@ -1,6 +1,5 @@
 import data
 import chart
-import mystyle
 
 stock = data.get_from_files(symbols = ['NVDA'])
 

@@ -1,7 +1,6 @@
+import time
 import data
 import chart
-import mystyle
-import time
 
 # Some global variables
 sma_sizes = [10, 50, 200]     # SMA window sizes

@@ -9,7 +9,6 @@ import multiprocessing
 import argparse
 import data
 import chart
-import mystyle
 import time
 
 def savefig(chart, data_frame, filename):

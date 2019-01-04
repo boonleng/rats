@@ -1,6 +1,5 @@
 import data
 import chart
-import mystyle
 import multiprocessing
 
 quotes = data.get_from_files()
