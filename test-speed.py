@@ -29,7 +29,7 @@ for method in [0, 1]:
 
     # Go through the symbols
     for symbol in sss.columns.levels[1].tolist():
-        ss = data.get_symbol_frame(sss, symbol)
+        ss = data.get_frame(sss, symbol)
         if method is 0:
             # Recreate the chart everytime in method 0
             view = chart.showChart(ss)

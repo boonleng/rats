@@ -14,13 +14,12 @@ def savefig_worker(chart, i):
 
 proclist = []
 symbols = quotes.columns.levels[1].tolist()
-for i, chart in enumerate(charts):
-	stock = data.get_symbol_frame(quotes, symbols[i])
-	chart.set_data(stock)
-	p = multiprocessing.Process(target = savefig_worker, args = (chart, i))
+for i, c in enumerate(charts):
+	stock = data.get_frame(quotes, symbols[i])
+	c.set_data(stock)
+	p = multiprocessing.Process(target = savefig_worker, args = (c, i))
 	proclist.append(p)
 	p.start()
 
 for p in proclist:
 	p.join()
-
