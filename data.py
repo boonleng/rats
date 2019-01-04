@@ -26,7 +26,7 @@ SYMBOLS = [
     'F', 'GM', 'TM'
 ]
 #LATEST_DATE = datetime.date(2017, 9, 23)
-LATEST_DATE = datetime.date(2018, 12, 28)
+#LATEST_DATE = datetime.date(2018, 12, 28)
 
 def get_from_files(symbols = None, folder = 'data', force_net = False, end = None, days = 330):
     """
@@ -57,7 +57,7 @@ def get_from_files(symbols = None, folder = 'data', force_net = False, end = Non
             end_datetime = pandas.to_datetime(end)
             k = 5
             while k > 0 and not index.contains(end_datetime):
-                print('Data set does not contain {} (k = {})'.format(end_datetime.strftime('%Y-%m-%d'), k))
+                print('Dataset does not contain {} (k = {})'.format(end_datetime.strftime('%Y-%m-%d'), k))
                 end_datetime -= pandas.to_timedelta('1 day')
                 k -= 1
             if not index.contains(end_datetime):
@@ -65,7 +65,7 @@ def get_from_files(symbols = None, folder = 'data', force_net = False, end = Non
                 return None
             pos = index.get_loc(end_datetime)
             df = df.iloc[:pos + 1]
-        print('Loading \033[38;5;198moffline\033[0m data from ' + df.index[0] + ' to ' + df.index[-1] + ' ...')
+        print('Loading \033[38;5;198moffline\033[0m data from {} to {} ...'.format(df.index[0],df.index[-1]))
         # Now we go through the files again and read them this time
         quotes = df.copy()
         for i, sym in enumerate(local_symbols):
@@ -77,7 +77,9 @@ def get_from_files(symbols = None, folder = 'data', force_net = False, end = Non
                     df = df.iloc[:pos + 1]
                 quotes = pandas.concat([quotes, df], axis=1)
     else:
-        quotes = get_from_net(SYMBOLS, end = LATEST_DATE, days = 5 * 365, cache = True)
+        d = datetime.date.today()
+        start = datetime.datetime(d.year - 5, d.month, d.day)
+        quotes = get_from_net(SYMBOLS, start = start, cache = True)
 #    def to_datetime(self):
 #        return pandas.to_datetime(self)
 #    quotes.index.to_datetime = types.MethodType(to_datetime, quotes.index)
@@ -88,22 +90,19 @@ def get_from_files(symbols = None, folder = 'data', force_net = False, end = Non
 def get_from_net(symbols, end = datetime.date.today(), days = 130, start = None, engine = 'iex', cache = False):
     if symbols is None:
         symbols = SYMBOLS
-    if not isinstance(symbols, list):
-        symbols = [symbols]
     if start is None:
         start = end - datetime.timedelta(days = int(days * 1.6))
-    print('Loading \033[38;5;46mlive\033[0m data from ' + str(start) + ' to ' + str(end) + ' ...')
     if cache:
+        print('Loading \033[38;5;220mcached\033[0m data from {} to {} ...'.format(start, end))
         session = requests_cache.CachedSession(cache_name = '.data-' + engine + '-cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 5))
         quotes = pandas_datareader.DataReader(symbols, engine, start, end, session = session)
     else:
-        if len(symbols) == 1:
-            symbols = symbols[0]
+        print('Loading \033[38;5;46mlive\033[0m data from {} to {} ...'.format(start, end))
         quotes = pandas_datareader.DataReader(symbols, engine, start, end)
     # Make sure time is ascending; Panel dimensions: 5/6 (items) x days (major_axis) x symbols (minor_axis)
     if quotes.shape[0] > 1 and quotes.index[1] < quotes.index[0]:
         quotes = quotes.sort_index(axis = 0, ascending = True)
-    if days is not None:
+    if start is None:
         quotes = quotes.iloc[-days:]
     quotes.index = pandas.to_datetime(quotes.index)
     if not isinstance(quotes.columns, pandas.MultiIndex):
