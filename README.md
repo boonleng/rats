@@ -95,6 +95,14 @@ figure.figsize      : 8.89, 5
 figure.dpi          : 144
 
 ```
+Anohter option to change it without the configuration file is by entering the following code into the Python console.
+```python
+matplotlib.rcParams['font.family'] = 'serif'
+matplotlib.rcParams['font.serif'] = ['Arial', 'Helvetica']
+matplotlib.rcParams['font.sans-serif'] = ['System Font', 'Verdana', 'Arial']
+matplotlib.rcParams['figure.figsize'] = (8.89, 5)   # Change the size of plots
+matplotlib.rcParams['figure.dpi'] = 144
+```
 If you encountered an error 'ImportError: Python is not installed as a framework.' due to `matplotlib`. You may need to change the `backend` value to `Agg`.
 
 [pandas-datareader]:https://pandas-datareader.readthedocs.io/en/latest/
