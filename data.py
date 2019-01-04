@@ -5,16 +5,11 @@ if sys.version_info < MIN_PYTHON:
     sys.exit('Python %s or later is required.\n' % '.'.join("%s" % n for n in MIN_PYTHON))
 
 import os
-import types
 import datetime
 import pandas
 import pandas_datareader
 import requests_cache
 
-# FAANG - FB, AAPL, AMZN, NFLX, GOOG
-# Chip - MU, AMAT, MRVL, NVDA
-# '^DJI', '^GSPC', '^IXIC',
-# indices = ['$DJI', '$GSPC', '^IXIC']
 SYMBOLS = [
     'AAPL', 'TSLA',
     'GOOG', 'BIDU', 'MSFT', 'AABA',
@@ -33,7 +28,7 @@ SYMBOLS = [
 #LATEST_DATE = datetime.date(2017, 9, 23)
 LATEST_DATE = datetime.date(2018, 12, 28)
 
-def get_from_files(symbols = None, folder = 'data', force_net = False, end = None):
+def get_from_files(symbols = None, folder = 'data', force_net = False, end = None, days = 130):
     """
         Get a set of stock data on the selected symbols
         NOTE: If the offline folder is present, data will be loaded
@@ -87,18 +82,10 @@ def get_from_files(symbols = None, folder = 'data', force_net = False, end = Non
 #        return pandas.to_datetime(self)
 #    quotes.index.to_datetime = types.MethodType(to_datetime, quotes.index)
     quotes.index = pandas.to_datetime(quotes.index)
+    quotes = quotes.iloc[-days:]
     return quotes
 
-# def get_old_indices():
-#     end = LATEST_DATE
-#     #start = end - datetime.timedelta(days = 5 * 365)
-#     start = end - datetime.timedelta(days = 365)
-#     print('Loading indices from {} to {} ...'.format(start, end))
-#     session = requests_cache.CachedSession(cache_name = '.data-idx-cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 5))
-#     quotes = pandas_datareader.DataReader(indices, 'iex', start, end, session = session)
-#     return quotes
-
-def get_from_net(symbols, end = datetime.date.today(), days = 30, start = None, engine = 'iex', cache = False):
+def get_from_net(symbols, end = datetime.date.today(), days = 130, start = None, engine = 'iex', cache = False):
     if symbols is None:
         symbols = SYMBOLS
     if not isinstance(symbols, list):

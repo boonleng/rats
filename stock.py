@@ -68,6 +68,6 @@ def rsi(data, period = 14):
     # With com(center of mass) = (period - 1) ==> alpha = 1 / period
     # y[k] = (1 - 1 / period) * y[k - 1] + (1 / period) * x[k]
     rs = u.ewm(com = period - 1, adjust = False).mean() / d.ewm(com = period - 1, adjust = False).mean()
+    rs = np.concatenate((np.full(period, 0.0), rs))
     rs = np.nan_to_num(rs)
     return 100.0 - 100.0 / (1.0 + rs)
-
