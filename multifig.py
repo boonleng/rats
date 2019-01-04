@@ -2,7 +2,7 @@ import data
 import chart
 import multiprocessing
 
-quotes = data.get_from_files()
+quotes = data.file()
 
 charts = []
 for i in range(5):

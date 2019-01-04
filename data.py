@@ -28,66 +28,96 @@ SYMBOLS = [
 #LATEST_DATE = datetime.date(2017, 9, 23)
 #LATEST_DATE = datetime.date(2018, 12, 28)
 
-def get_from_files(symbols = None, folder = 'data', force_net = False, end = None, days = 330):
+def to_datetime(self):
+   return pandas.to_datetime(self)
+
+def file(symbols = None, end = None, days = 330, start = None, folder = 'data', verbose = 0):
     """
         Get a set of stock data on the selected symbols
         NOTE: If the offline folder is present, data will be loaded
         from that folder. Newly added symbols to the script do not
         mean they will be available
     """
-    if os.path.exists(folder) and not force_net:
-        import re
-        import glob
-        if symbols is None:
-            # Gather all the symbols from filenames
-            local_symbols = []
-            for file in glob.glob(folder + '/*.pkl'):
-                m = re.search(folder + '/(.+?).pkl', file)
-                if m:
-                    symbol = m.group(1)
-                    local_symbols.append(symbol)
-        elif isinstance(symbols, list):
-            local_symbols = symbols
-        else:
-            local_symbols = [symbols]
-        # Read the first one for the data dimensions
-        df = pandas.read_pickle(folder + '/' + local_symbols[0] + '.pkl')
-        index = pandas.to_datetime(df.index)
-        if end is not None:
-            end_datetime = pandas.to_datetime(end)
-            k = 5
-            while k > 0 and not index.contains(end_datetime):
-                print('Dataset does not contain {} (k = {})'.format(end_datetime.strftime('%Y-%m-%d'), k))
-                end_datetime -= pandas.to_timedelta('1 day')
-                k -= 1
-            if not index.contains(end_datetime):
-                print('Unable to continue')
-                return None
-            pos = index.get_loc(end_datetime)
-            df = df.iloc[:pos + 1]
-        print('Loading \033[38;5;198moffline\033[0m data from {} to {} ...'.format(df.index[0],df.index[-1]))
-        # Now we go through the files again and read them this time
-        quotes = df.copy()
-        for i, sym in enumerate(local_symbols):
-            file = folder + '/' + sym + '.pkl'
-            df = pandas.read_pickle(file)
-            if i > 0:
-                if end is not None:
-                    pos = index.get_loc(end_datetime)
-                    df = df.iloc[:pos + 1]
-                quotes = pandas.concat([quotes, df], axis=1)
+    if not os.path.exists(folder):
+        print('Error. Data folder does not exist.')
+        return None
+
+    import re
+    import glob
+    if symbols is None:
+        # Gather all the symbols from filenames
+        local_symbols = []
+        for file in glob.glob(folder + '/*.pkl'):
+            m = re.search(folder + '/(.+?).pkl', file)
+            if m:
+                symbol = m.group(1)
+                local_symbols.append(symbol)
+    elif isinstance(symbols, list):
+        local_symbols = symbols
     else:
-        d = datetime.date.today()
-        start = datetime.datetime(d.year - 5, d.month, d.day)
-        quotes = get_from_net(SYMBOLS, start = start, cache = True)
-#    def to_datetime(self):
-#        return pandas.to_datetime(self)
+        local_symbols = [symbols]
+    # Read the first one for the data dimensions
+    df = pandas.read_pickle(folder + '/' + local_symbols[0] + '.pkl')
+    index = pandas.to_datetime(df.index)
+    if end is not None:
+        end_datetime = pandas.to_datetime(end)
+        # Roll backward to find the previous trading day
+        k = 10
+        while k > 0 and not index.contains(end_datetime):
+            if verbose:
+                print('Dataset does not contain {} (not a trading day) (k = {})'.format(end_datetime.strftime('%Y-%m-%d'), k))
+            end_datetime -= pandas.to_timedelta('1 day')
+            k -= 1
+        if not index.contains(end_datetime):
+            print('Error. Failed to find end date. Unable to continue.')
+            return None
+        end_pos = index.get_loc(end_datetime)
+        end = df.index[end_pos]
+        #df = df.iloc[:end_pos + 1]
+    else:
+        end = df.index[-1]
+        end_pos = df.index.get_loc(end)
+    if start is not None:
+        start_datetime = pandas.to_datetime(start)
+        if start_datetime < pandas.to_datetime(index[0]):
+            start_datetime = pandas.to_datetime(index[0])
+            if verbose:
+                print('Dataset starts at {} ...'.format(start_datetime.strftime('%Y-%m-%d')))
+        # Roll forward to find the next trading day
+        k = 10
+        while k > 0 and not index.contains(start_datetime):
+            if verbose:
+                print('Dataset does not contain {} (not a trading day) (k = {})'.format(start_datetime.strftime('%Y-%m-%d'), k))
+            start_datetime += pandas.to_timedelta('1 day')
+            k -= 1
+        if not index.contains(start_datetime):
+            print('Error. Failed to find start date. Unable to continue.')
+            return None
+        start_pos = index.get_loc(start_datetime)
+        start = df.index[start_pos]
+    else:
+        start = df.index[0]
+        start_pos = index.get_loc(start)
+    if verbose:
+        print('Data start end indices @ [{}, {}]'.format(start_pos, end_pos))
+    df = df.iloc[start_pos:end_pos + 1]
+    print('Loading \033[38;5;198moffline\033[0m data from {} to {} ...'.format(start, end))
+    # Now we go through the files again and read them this time
+    quotes = df.copy()
+    for sym in local_symbols[1:]:
+        filename = '{}/{}.pkl'.format(folder, sym)
+        df = pandas.read_pickle(filename)
+        end_pos = index.get_loc(end)
+        start_pos = index.get_loc(start)
+        df = df.iloc[start_pos:end_pos + 1]
+        quotes = pandas.concat([quotes, df], axis = 1)
 #    quotes.index.to_datetime = types.MethodType(to_datetime, quotes.index)
     quotes.index = pandas.to_datetime(quotes.index)
-    quotes = quotes.iloc[-days:]
+    if start is None:
+        quotes = quotes.iloc[-days:]
     return quotes
 
-def get_from_net(symbols, end = datetime.date.today(), days = 130, start = None, engine = 'iex', cache = False):
+def net(symbols, end = datetime.date.today(), days = 130, start = None, engine = 'iex', cache = False):
     if symbols is None:
         symbols = SYMBOLS
     if start is None:
@@ -112,9 +142,18 @@ def get_from_net(symbols, end = datetime.date.today(), days = 130, start = None,
         return pandas.DataFrame(quotes.values, index = quotes.index, columns = pandas.MultiIndex.from_product(iterables, names = names))
     return quotes
 
-def save_to_folder(quotes, folder = 'data'):
+def data(symbols, end = datetime.date.today(), days = 130, start = None, force_net = False):
+    if not force_net:
+        quotes = file(symbols, end = end, days = days, start = start)
+    else:
+        d = datetime.date.today()
+        start = datetime.datetime(d.year - 5, d.month, d.day)
+        quotes = net(symbols, end = end, days = days, start = start, cache = True)
+    quotes.index = pandas.to_datetime(quotes.index)
+
+def save(quotes, folder = 'data'):
     """
-        data.save_to_folder(quotes)
+        save(quotes)
     """
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -127,9 +166,9 @@ def save_to_folder(quotes, folder = 'data'):
         df = pandas.DataFrame(values, index = quotes.index, columns = pandas.MultiIndex.from_product(iterables, names = names))
         df.to_pickle(folder + '/' + sym + '.pkl')
 
-def get_symbol_frame(quotes, symbol):
+def get_frame(quotes, symbol):
     """
-        get_symbol_frame(quotes, symbol)
+        get_frame(quotes, symbol)
     """
     names = list(quotes.columns.names)
     params = quotes.columns.levels[0].tolist()
@@ -137,11 +176,14 @@ def get_symbol_frame(quotes, symbol):
     values = quotes.loc[pandas.IndexSlice[:], (slice(None), symbol)].values
     return pandas.DataFrame(values, index = quotes.index, columns = pandas.MultiIndex.from_product(iterables, names = names))
 
-def add_offline(symbols):
-    quotes = get_from_net(symbols, end = LATEST_DATE, days = 5 * 365)
+def add_offline(symbols, verbose = 0):
+    d = datetime.date.today()
+    start = datetime.datetime(d.year - 5, d.month, d.day)
+    quotes = net(symbols, start = start)
     # Get around: Somehow pandas Panel data comes in descending order when only one symbol is requested
     if quotes.shape[0] > 1 and quotes.axes[0][1] < quotes.axes[0][0]:
         quotes = quotes.sort_index(axis = 0, ascending = True)
-    print(quotes)
+    if verbose:
+        quotes.head()
     save_to_folder(quotes)
     return quotes

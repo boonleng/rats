@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 
 sym = 'NVDA'
 
-quotes = data.get_from_files(sym)
+quotes = data.file(sym)
 
 c = np.array(quotes.loc[:, 'close'], dtype = np.float32)
 o = np.array(quotes.loc[:, 'open'], dtype = np.float32)

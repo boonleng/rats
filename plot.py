@@ -20,16 +20,16 @@ def genfigs(symbols, days = 130, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES
             open_preview = False, force_net = False):
     # Get the latest data
     if symbols == '^OLD':
-        stock = data.get_from_files(end = end)
+        stock = data.file(end = end)
         symbols = list(stock.columns.levels[1])
     elif force_net is False:
-        stock = data.get_from_files(symbols = symbols, end = end)
+        stock = data.file(symbols = symbols, end = end)
     else:
         # Total data length to retrieve to have complete valid SMA
         L = days + max(sma_sizes);
         if verbose:
             print('Retrieving data for {} for L = {} ...'.format(symbols, L))
-        stock = data.get_from_net(symbols, days = int(L * 1.6))
+        stock = data.net(symbols, days = int(L * 1.6))
 
     # Show parts of the data if we are in verbose mode
     if verbose:
@@ -57,7 +57,7 @@ def genfigs(symbols, days = 130, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES
         symbols = stock.columns.levels[1].tolist()
     for i, symbol in enumerate(symbols):
         if len(symbols) > 1:
-            data_frame = data.get_symbol_frame(stock, symbol)
+            data_frame = data.get_frame(stock, symbol)
         else:
             data_frame = stock
         if verbose > 1:

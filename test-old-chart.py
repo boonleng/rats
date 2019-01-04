@@ -1,7 +1,7 @@
 import data
 import chart
 
-stock = data.get_from_files(symbols = ['NVDA'])
+stock = data.file('NVDA')
 
 # Some global variables
 K = 130                       # Number of days to show
