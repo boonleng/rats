@@ -28,7 +28,7 @@ SYMBOLS = [
 #LATEST_DATE = datetime.date(2017, 9, 23)
 LATEST_DATE = datetime.date(2018, 12, 28)
 
-def get_from_files(symbols = None, folder = 'data', force_net = False, end = None, days = 130):
+def get_from_files(symbols = None, folder = 'data', force_net = False, end = None, days = 330):
     """
         Get a set of stock data on the selected symbols
         NOTE: If the offline folder is present, data will be loaded

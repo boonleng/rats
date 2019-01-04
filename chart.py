@@ -17,7 +17,7 @@ RSI_OB = 70
 RSI_OS = 30
 
 # The old way
-def showChart(dat, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIOD,
+def showChart(dat, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIOD,
               use_adj_close = False, use_ema = False, skip_weekends = True, color_scheme = 'sunrise'):
     """
         showChart(dat, sma_size = [10, 50, 200], skip_weekends = True)
@@ -57,7 +57,7 @@ def showChart(dat, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIO
 
     # Initialize an empty dictionary from keys based on sma size
     sma = dict.fromkeys(sma_sizes)
-    n = max(sma_sizes)
+    m = max(sma_sizes)
 
     # Compute the SMA curves (data is in descending order, so we flip, compute, then flip again)
     for k in sma.keys():
@@ -65,8 +65,8 @@ def showChart(dat, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIO
         sma[k] = d[::-1]
 
     # Find the span of colums 2 to 5 (OHLC)
-    N = max(len(dat), len(dat) - n - 1)
-    #print('N = {} - {} - 1 = {} --> {}'.format(len(dat), n, len(dat) - n - 1, N))
+    N = min(max(len(dat), len(dat) - m - 1), n)
+    #print('N = {} - {} - 1 = {} --> {}'.format(len(dat), m, len(dat) - m - 1, N))
     nums = np.array(quotes[:N, 2:6]).flatten()
     if all(np.isnan(nums)):
         ylim = [0.0, 1.0]
@@ -104,9 +104,9 @@ def showChart(dat, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIO
     for k in sma.keys():
         if skip_weekends:
             # Plot the lines in indices; will replace the tics with custom label later
-            sma_line = matplotlib.lines.Line2D(quotes[:N, 0], sma[k][:N], label = ma_label + ' ' + str(k))
+            sma_line = matplotlib.lines.Line2D(quotes[:N, 0], sma[k][:N], label = ma_label + ' ' + str(k), linewidth = linewidth)
         else:
-            sma_line = matplotlib.lines.Line2D(quotes[:N, 1], sma[k][:N], label = ma_label + ' ' + str(k))
+            sma_line = matplotlib.lines.Line2D(quotes[:N, 1], sma[k][:N], label = ma_label + ' ' + str(k), linewidth = linewidth)
         lines.append(sma_line)
         ax.add_line(sma_line)
         if np.sum(np.isfinite(sma[k][:N])):
@@ -125,7 +125,7 @@ def showChart(dat, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIO
     x = dat.iloc[:, c_index]
     if x.index[0] > x.index[1]:
         x = x[::-1]
-    N_rsi = N - rsi_period
+    N_rsi = min(n, len(dat) - rsi_period)
     rsi = stock.rsi(x, rsi_period)
     rsi = rsi[:-N_rsi-1:-1]
 
@@ -138,9 +138,9 @@ def showChart(dat, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIO
     axr.add_line(rsi_line_75)
 
     if skip_weekends:
-        rsi_line = matplotlib.lines.Line2D(quotes[:N_rsi, 0], rsi, label = 'RSI {}'.format(rsi_period), color = color)
+        rsi_line = matplotlib.lines.Line2D(quotes[:N_rsi, 0], rsi, label = 'RSI {}'.format(rsi_period), color = color, linewidth = linewidth)
     else:
-        rsi_line = matplotlib.lines.Line2D(quotes[:N_rsi, 1], rsi, label = 'RSI {}'.format(rsi_period), color = color)
+        rsi_line = matplotlib.lines.Line2D(quotes[:N_rsi, 1], rsi, label = 'RSI {}'.format(rsi_period), color = color, linewidth = linewidth)
     axr.add_line(rsi_line)
 
     axr.fill_between(range(N_rsi), rsi, RSI_OS, where = rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
@@ -386,10 +386,10 @@ class Chart:
 
         # RSI line
         color = self.colormap.line[3]
-        y = np.multiply(range(self.n - self.rsi_period), 100.0 / self.n)
-        self.rsi_line = matplotlib.lines.Line2D(range(self.rsi_period, self.n), y, label = 'RSI {}'.format(self.rsi_period), color = color, linewidth = linewidth)
-        self.rsi_fill_25 = self.axr.fill_between(range(self.rsi_period, self.n), y, RSI_OS, where = y <= RSI_OS, facecolor = color, interpolate = True, alpha = 0.33)
-        self.rsi_fill_75 = self.axr.fill_between(range(self.rsi_period, self.n), y, RSI_OB, where = y >= RSI_OB, facecolor = color, interpolate = True, alpha = 0.33)
+        y = np.multiply(range(self.n), 100.0 / self.n)
+        self.rsi_line = matplotlib.lines.Line2D(range(self.n), y, label = 'RSI {}'.format(self.rsi_period), color = color, linewidth = linewidth)
+        self.rsi_fill_25 = self.axr.fill_between(range(self.n), y, RSI_OS, where = y <= RSI_OS, facecolor = color, interpolate = True, alpha = 0.33)
+        self.rsi_fill_75 = self.axr.fill_between(range(self.n), y, RSI_OB, where = y >= RSI_OB, facecolor = color, interpolate = True, alpha = 0.33)
         self.axr.add_line(self.rsi_line)
         self.rsi_line_25 = matplotlib.lines.Line2D([0, self.n + 1], [RSI_OS, RSI_OS], color = color, linewidth = 0.5 * linewidth, alpha = 0.5)
         self.rsi_line_50 = matplotlib.lines.Line2D([0, self.n + 1], [50.0, 50.0], color = color, linewidth = linewidth, alpha = 0.67, linestyle = '-.')
@@ -639,15 +639,22 @@ class Chart:
             qlim = [round(qlim[0] * 0.2 - 1.0) * 5.0, round(qlim[1] * 0.2 + 1.0) * 5.0]
 
         # Compute RSI
-        n_rsi = self.n - self.rsi_period
-        self.rsi = stock.rsi(data.iloc[:, c_index].squeeze(), self.rsi_period)[-n_rsi:]
-        color = self.colormap.line[3]
-        self.rsi_line.set_ydata(self.rsi)
         self.rsi_fill_25.remove()
         self.rsi_fill_75.remove()
-        self.rsi_fill_25 = self.axr.fill_between(range(self.rsi_period, self.n), self.rsi, RSI_OS, where = self.rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
-        self.rsi_fill_75 = self.axr.fill_between(range(self.rsi_period, self.n), self.rsi, RSI_OB, where = self.rsi >= RSI_OB, interpolate = True, color = color, alpha = 0.33, zorder = 3)
-
+        color = self.colormap.line[3]
+        if len(data) - self.rsi_period < self.n:
+            n_rsi = self.n - self.rsi_period
+            self.rsi = stock.rsi(data.iloc[:, c_index].squeeze(), self.rsi_period)[-n_rsi:]
+            self.rsi_line.set_xdata(range(self.rsi_period, self.n))
+            self.rsi_line.set_ydata(self.rsi)
+            self.rsi_fill_25 = self.axr.fill_between(range(self.rsi_period, self.n), self.rsi, RSI_OS, where = self.rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
+            self.rsi_fill_75 = self.axr.fill_between(range(self.rsi_period, self.n), self.rsi, RSI_OB, where = self.rsi >= RSI_OB, interpolate = True, color = color, alpha = 0.33, zorder = 3)
+        else:
+            self.rsi = stock.rsi(data.iloc[:, c_index].squeeze(), self.rsi_period)[-self.n:]
+            self.rsi_line.set_ydata(self.rsi)
+            self.rsi_fill_25 = self.axr.fill_between(range(self.n), self.rsi, RSI_OS, where = self.rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
+            self.rsi_fill_75 = self.axr.fill_between(range(self.n), self.rsi, RSI_OB, where = self.rsi >= RSI_OB, interpolate = True, color = color, alpha = 0.33, zorder = 3)
+    
         # Legend position: upper right if SMA-N is increasing, upper left otherwise (Not in public API)
         sma = self.sma[list(self.sma)[-2]]
         if sma[-10] > sma[0]:
