@@ -31,4 +31,4 @@ if new.shape[0] is 1 and all(u.sub(v).values < 1.0e-3):
 # Concatenate the datasets and discard the last day of the offline data
 print('Saving new data ...')
 big = data.pandas.concat([old.iloc[:-1], new])
-data.save_to_folder(big)
+data.save(big)

@@ -63,10 +63,9 @@ def genfigs(symbols, days = 130, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES
         if verbose > 1:
             print(data_frame)
         # Derive the filename
-        filename = folder + '/' + symbol + '.' + image_format
+        filename = '{}/{}.{}'.format(folder, symbol, image_format)
         oc = data_frame.loc[:, (['open', 'close'])].values[-1]
         delta = oc[1] - oc[0]
-        #delta = data_frame[['Open', 'Close'], :, :].iloc[:, -1, 0].diff().tolist()[-1]
         if delta > 0:
             print('\033[38;5;46m{}\033[0m -> \033[38;5;206m{}\033[0m'.format(symbol.rjust(5), filename))
         else:
@@ -80,7 +79,6 @@ def genfigs(symbols, days = 130, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES
             for proc in procs:
                 proc.join()
             procs = []
-
         command += ' ' + filename
 
     # Finish whatever that is left in the queue

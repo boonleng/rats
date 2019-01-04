@@ -61,6 +61,10 @@ def file(symbols = None, end = None, days = 330, start = None, folder = 'data', 
     index = pandas.to_datetime(df.index)
     if end is not None:
         end_datetime = pandas.to_datetime(end)
+        if end_datetime > pandas.to_datetime(index[-1]):
+            end_datetime = pandas.to_datetime(index[-1])
+            if verbose:
+                print('Dataset ends at {} ...'.format(end_datetime.strftime('%Y-%m-%d')))
         # Roll backward to find the previous trading day
         k = 10
         while k > 0 and not index.contains(end_datetime):
@@ -99,9 +103,9 @@ def file(symbols = None, end = None, days = 330, start = None, folder = 'data', 
         start = df.index[0]
         start_pos = index.get_loc(start)
     if verbose:
-        print('Data start end indices @ [{}, {}]'.format(start_pos, end_pos))
+        print('Data indices @ [{}, {}]'.format(start_pos, end_pos))
     df = df.iloc[start_pos:end_pos + 1]
-    print('Loading \033[38;5;198moffline\033[0m data from {} to {} ...'.format(start, end))
+    print('Loading \033[38;5;198moffline\033[0m data from {} to {} ...'.format(start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')))
     # Now we go through the files again and read them this time
     quotes = df.copy()
     for sym in local_symbols[1:]:
@@ -124,7 +128,9 @@ def net(symbols, end = datetime.date.today(), days = 130, start = None, engine =
         start = end - datetime.timedelta(days = int(days * 1.6))
     if cache:
         print('Loading \033[38;5;220mcached\033[0m data from {} to {} ...'.format(start, end))
-        session = requests_cache.CachedSession(cache_name = '.data-' + engine + '-cache', backend = 'sqlite', expire_after = datetime.timedelta(days = 5))
+        session = requests_cache.CachedSession(cache_name = '.data-{}-cache'.format(engine),
+                                               expire_after = datetime.timedelta(days = 1),
+                                               backend = 'sqlite')
         quotes = pandas_datareader.DataReader(symbols, engine, start, end, session = session)
     else:
         print('Loading \033[38;5;46mlive\033[0m data from {} to {} ...'.format(start, end))
