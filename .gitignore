@@ -9,6 +9,7 @@ xcuserdata/
 *.csv
 *.png
 .ipynb_checkpoints
+.egg-info
 
 # Some folders
 data
@@ -18,3 +19,6 @@ figs
 *.sqlite
 
 # Log files
+
+# Others
+kernel.json
