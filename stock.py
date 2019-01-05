@@ -1,21 +1,31 @@
 import numpy as np
 import pandas as pd
 
-def sma2(data, period = 10, length = None, ascending = False):
+def sma2(data, period = 10, length = None):
     """
         Compute SMA (Simple Moving Average)
     """
-    sma = np.convolve(data, np.ones((period, )) / period, mode = 'valid')
-    if length is None:
-        length = len(data)
-    if len(sma) < length:
-        if ascending:
-            sma = np.concatenate((np.full(length - len(sma), np.nan), sma))
-        else:
-            sma = np.pad(sma, (0, period - 1), mode = 'constant', constant_values = np.nan)
-    else:
-        sma = sma[-length:]
-    return sma
+    w = np.ones((period, ))
+    w /= w.sum()
+    n = len(data)
+    ma = np.convolve(data, w, mode = 'full')[:n]
+    ma[:period] = np.nan
+    if not length is None:
+        ma = ma[-length:]
+    return ma
+
+def ema2(data, period = 10, length = None):
+    """
+        Compute EMA (Exponential Moving Average)
+    """
+    w = np.exp(np.linspace(-1.0, 0.0, period))
+    w /= w.sum()
+    n = len(data)
+    ma = np.convolve(data, w, mode = 'full')[:n]
+    ma[:period] = np.nan
+    if not length is None:
+        ma = ma[-length:]
+    return ma
 
 def sma(data, period = 10, length = None):
     """
@@ -72,12 +82,14 @@ def rsi(data, period = 14):
     rs = np.nan_to_num(rs)
     return 100.0 - 100.0 / (1.0 + rs)
 
-def macd(data, period = 9, period_fast = 12, period_slow = 26):
+def macd(data, period_fast = 12, period_slow = 26):
     """
         Compute the MACD (Moving Average Convergence Divergence)
     """
     series = pd.Series(data)
     ema_fast = ema(series, period = period_fast)
     ema_slow = ema(series, period = period_slow)
+    #ema_fast = ema2(data, period = period_fast)
+    #ema_slow = ema2(data, period = period_slow)
     macd = ema_fast - ema_slow
     return ema_fast, ema_slow, macd
