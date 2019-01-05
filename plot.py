@@ -42,7 +42,7 @@ def genfigs(symbols, days = 130, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES
     print('Preparing background (batch size = {}) ...'.format(batch_size))
     views = []
     for _ in range(batch_size):
-        view = chart.Chart(days, color_scheme = color_scheme)
+        view = chart.Chart(None, n = days, color_scheme = color_scheme)
         views.append(view)
 
     # Create the output folder if it doesn't exist
