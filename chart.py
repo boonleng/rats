@@ -565,12 +565,13 @@ class Chart:
 
         # Build a flat array of OHLC and V data
         quotes = np.transpose([
-            data.iloc[:, o_index].squeeze().tolist(),                            # 0 - Open
-            data.iloc[:, h_index].squeeze().tolist(),                            # 1 - High
-            data.iloc[:, l_index].squeeze().tolist(),                            # 2 - Low
-            data.iloc[:, c_index].squeeze().tolist(),                            # 3 - Close
-            np.multiply(data.iloc[:, v_index].squeeze(), 1.0e-6).tolist()        # 4 - Volume in millions
+            data.iloc[:, o_index].squeeze(),          # 0 - Open
+            data.iloc[:, h_index].squeeze(),          # 1 - High
+            data.iloc[:, l_index].squeeze(),          # 2 - Low
+            data.iloc[:, c_index].squeeze(),          # 3 - Close
+            data.iloc[:, v_index].squeeze()           # 4 - Volume
         ])
+        quotes[: , -1] *= 1.0e-6                    # Volume to counts of millions
 
         if data.shape[0] < self.n:
             print('ERROR: Supplied data is less than the promised setup: {} vs {}'.format(self.n, data.shape[0]))
@@ -642,18 +643,22 @@ class Chart:
         self.rsi_fill_25.remove()
         self.rsi_fill_75.remove()
         color = self.colormap.line[3]
-        if len(data) - self.rsi_period < self.n:
-            n_rsi = self.n - self.rsi_period
-            self.rsi = stock.rsi(data.iloc[:, c_index].squeeze(), self.rsi_period)[-n_rsi:]
-            self.rsi_line.set_xdata(range(self.rsi_period, self.n))
-            self.rsi_line.set_ydata(self.rsi)
-            self.rsi_fill_25 = self.axr.fill_between(range(self.rsi_period, self.n), self.rsi, RSI_OS, where = self.rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
-            self.rsi_fill_75 = self.axr.fill_between(range(self.rsi_period, self.n), self.rsi, RSI_OB, where = self.rsi >= RSI_OB, interpolate = True, color = color, alpha = 0.33, zorder = 3)
-        else:
-            self.rsi = stock.rsi(data.iloc[:, c_index].squeeze(), self.rsi_period)[-self.n:]
-            self.rsi_line.set_ydata(self.rsi)
-            self.rsi_fill_25 = self.axr.fill_between(range(self.n), self.rsi, RSI_OS, where = self.rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
-            self.rsi_fill_75 = self.axr.fill_between(range(self.n), self.rsi, RSI_OB, where = self.rsi >= RSI_OB, interpolate = True, color = color, alpha = 0.33, zorder = 3)
+        # if len(data) - self.rsi_period < self.n:
+        #     n_rsi = self.n - self.rsi_period
+        #     self.rsi = stock.rsi(data.iloc[:, c_index].squeeze(), self.rsi_period)[-n_rsi:]
+        #     self.rsi_line.set_xdata(range(self.rsi_period, self.n))
+        #     self.rsi_line.set_ydata(self.rsi)
+        #     self.rsi_fill_25 = self.axr.fill_between(range(self.rsi_period, self.n), self.rsi, RSI_OS, where = self.rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
+        #     self.rsi_fill_75 = self.axr.fill_between(range(self.rsi_period, self.n), self.rsi, RSI_OB, where = self.rsi >= RSI_OB, interpolate = True, color = color, alpha = 0.33, zorder = 3)
+        # else:
+        #     self.rsi = stock.rsi(data.iloc[:, c_index].squeeze(), self.rsi_period)[-self.n:]
+        #     self.rsi_line.set_ydata(self.rsi)
+        #     self.rsi_fill_25 = self.axr.fill_between(range(self.n), self.rsi, RSI_OS, where = self.rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
+        #     self.rsi_fill_75 = self.axr.fill_between(range(self.n), self.rsi, RSI_OB, where = self.rsi >= RSI_OB, interpolate = True, color = color, alpha = 0.33, zorder = 3)
+        self.rsi = stock.rsi(data.iloc[:, c_index].squeeze(), self.rsi_period, length = self.n)
+        self.rsi_line.set_ydata(self.rsi)
+        self.rsi_fill_25 = self.axr.fill_between(range(self.n), self.rsi, RSI_OS, where = self.rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
+        self.rsi_fill_75 = self.axr.fill_between(range(self.n), self.rsi, RSI_OB, where = self.rsi >= RSI_OB, interpolate = True, color = color, alpha = 0.33, zorder = 3)
     
         # Legend position: upper right if SMA-N is increasing, upper left otherwise (Not in public API)
         sma = self.sma[list(self.sma)[-2]]

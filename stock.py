@@ -36,10 +36,11 @@ def sma(data, period = 10, length = None):
     else:
         series = data
     sma = series.rolling(window = period, min_periods = period).mean().values
-    if length is not None:
-        sma = sma[-length:]
+    if not length is None:
         if len(sma) < length:
             sma = np.concatenate((np.full(length - len(sma), np.nan), sma))
+        else:
+            sma = sma[-length:]
     return sma
 
 def ema(data, period = 10, length = None):
@@ -53,13 +54,14 @@ def ema(data, period = 10, length = None):
     sma = series.rolling(window = period, min_periods = period).mean()[:period]
     rest = series[period:]
     ema = pd.concat([sma, rest]).ewm(span = period, adjust = False).mean().values
-    if length is not None:
-        ema = ema[-length:]
+    if not length is None:
         if len(ema) < length:
             ema = np.concatenate((np.full(length - len(ema), np.nan), ema))
+        else:
+            ema = ema[-length:]
     return ema
 
-def rsi(data, period = 14):
+def rsi(data, period = 14, length = None):
     """
         Compute RSI (Relative Strength Index)
     """
@@ -79,17 +81,21 @@ def rsi(data, period = 14):
     # y[k] = (1 - 1 / period) * y[k - 1] + (1 / period) * x[k]
     rs = u.ewm(com = period - 1, adjust = False).mean() / d.ewm(com = period - 1, adjust = False).mean()
     rs = np.concatenate((np.full(period, 0.0), rs))
-    rs = np.nan_to_num(rs)
+    if not length is None:
+        if len(rs) < length:
+            rs = np.concatenate((np.full(length - len(rs), np.nan), rs))
+        else:
+            rs = rs[-length:]
     return 100.0 - 100.0 / (1.0 + rs)
 
-def macd(data, period_fast = 12, period_slow = 26):
+def macd(data, period_fast = 12, period_slow = 26, length = None):
     """
         Compute the MACD (Moving Average Convergence Divergence)
     """
     series = pd.Series(data)
-    ema_fast = ema(series, period = period_fast)
-    ema_slow = ema(series, period = period_slow)
-    #ema_fast = ema2(data, period = period_fast)
-    #ema_slow = ema2(data, period = period_slow)
+    ema_fast = ema(series, period = period_fast, length = length)
+    ema_slow = ema(series, period = period_slow, length = length)
+    #ema_fast = ema2(data, period = period_fast, length = length)
+    #ema_slow = ema2(data, period = period_slow, length = length)
     macd = ema_fast - ema_slow
     return ema_fast, ema_slow, macd
