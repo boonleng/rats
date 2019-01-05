@@ -25,7 +25,7 @@ def sma(data, period = 10, length = None):
         series = pd.Series(data)
     else:
         series = data
-    sma = series.rolling(window = period, min_periods = period).mean().tolist()
+    sma = series.rolling(window = period, min_periods = period).mean().values
     if length is not None:
         sma = sma[-length:]
         if len(sma) < length:
@@ -42,7 +42,7 @@ def ema(data, period = 10, length = None):
         series = data
     sma = series.rolling(window = period, min_periods = period).mean()[:period]
     rest = series[period:]
-    ema = pd.concat([sma, rest]).ewm(span = period, adjust = False).mean().tolist()
+    ema = pd.concat([sma, rest]).ewm(span = period, adjust = False).mean().values
     if length is not None:
         ema = ema[-length:]
         if len(ema) < length:
@@ -71,3 +71,13 @@ def rsi(data, period = 14):
     rs = np.concatenate((np.full(period, 0.0), rs))
     rs = np.nan_to_num(rs)
     return 100.0 - 100.0 / (1.0 + rs)
+
+def macd(data, period = 9, period_fast = 12, period_slow = 26):
+    """
+        Compute the MACD (Moving Average Convergence Divergence)
+    """
+    series = pd.Series(data)
+    ema_fast = ema(series, period = period_fast)
+    ema_slow = ema(series, period = period_slow)
+    macd = ema_fast - ema_slow
+    return ema_fast, ema_slow, macd

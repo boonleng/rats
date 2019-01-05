@@ -5,8 +5,8 @@ import multiprocessing
 quotes = data.file()
 
 charts = []
-for i in range(5):
-	charts.append(chart.Chart(90))
+for i in range(4):
+	charts.append(chart.Chart(n = 90))
 
 def savefig_worker(chart, i):
 	print('Saving fig {} ...'.format(chart.symbol))

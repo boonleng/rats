@@ -20,7 +20,7 @@ for method in [0, 1]:
 
     # Set up the chart in method 1
     if method is 1:
-        view = chart.Chart(K)
+        view = chart.Chart(n = K)
 
     # Make sure we get enough data so that all SMA curves are valid
     sss = quotes.iloc[-L:]

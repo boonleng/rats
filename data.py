@@ -11,19 +11,21 @@ import pandas_datareader
 import requests_cache
 
 SYMBOLS = [
-    'AAPL', 'TSLA',
-    'GOOG', 'BIDU', 'MSFT', 'AABA',
-    'NVDA', 'AMAT', 'MRVL', 'MU', 'AMD', 'INTC',
-    'AMZN', 'NFLX', 'EBAY', 'BABA', 'BKS',
-    'FB', 'TWTR', 'YELP',
+    'FB', 'AMZN', 'AAPL', 'NFLX', 'GOOG',
+    'TSLA', 'F', 'GM', 'TM',
+    'BABA', 'EBAY', 'BKS',
+    'NVDA', 'AMD', 'INTC',
+    'BIDU', 'MSFT', 'AABA',
+    'AMAT', 'MRVL', 'MU',
+    'TWTR', 'YELP',
     'NDLS', 'CMG', 'MCD',
     'S', 'T', 'VZ', 'TMUS', 'QCOM',
     'SBUX',
     'STX', 'WDC', 'TXN', 'ADI', 'MCHP',
-    'SNE',
+    'GPRO', 'SNE',
     'C', 'V', 'BAC', 'WFC', 'AMTD',
     'BP', 'XON', 'CVX', 'OGE',
-    'F', 'GM', 'TM'
+    'FIT', 'SNAP'
 ]
 
 def today():
