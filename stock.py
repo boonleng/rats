@@ -88,14 +88,19 @@ def rsi(data, period = 14, length = None):
             rs = rs[-length:]
     return 100.0 - 100.0 / (1.0 + rs)
 
-def macd(data, period_fast = 12, period_slow = 26, length = None):
+def macd(data, periods = [9, 12, 26], length = None):
     """
         Compute the MACD (Moving Average Convergence Divergence)
     """
     series = pd.Series(data)
-    ema_fast = ema(series, period = period_fast, length = length)
-    ema_slow = ema(series, period = period_slow, length = length)
-    #ema_fast = ema2(data, period = period_fast, length = length)
-    #ema_slow = ema2(data, period = period_slow, length = length)
+    ema_fast = ema(series, period = periods[1])
+    ema_slow = ema(series, period = periods[2])
     macd = ema_fast - ema_slow
-    return ema_fast, ema_slow, macd
+    macd_ema = ema(macd, period = periods[0], length = length)
+    if not length is None:
+        if len(macd) < length:
+            macd = np.concatenate((np.full(length - len(macd), np.nan), macd))
+        else:
+            macd = macd[-length:]
+    macd_div = macd - macd_ema
+    return macd, macd_ema, macd_div

@@ -10,9 +10,16 @@ if matplotlib.__version__ < '2.0':
 
 DEFAULT_SMA_SIZES = [10, 50, 200]
 DEFAULT_RSI_PERIOD = 14
+DEFAULT_MACD_PERIODS = [9, 12, 26]
 BACK_RECT = [0.075, 0.11, 0.83, 0.82]
-MAIN_RECT = [0.075, 0.11, 0.83, 0.63]
-RSI_RECT = [0.075, 0.74, 0.83, 0.19]
+# MAIN_RECT = [0.075, 0.11, 0.83, 0.63]
+# RSI_RECT = [0.075, 0.74, 0.83, 0.19]
+# MAIN_RECT = [0.075, 0.11, 0.83, 0.52]
+# RSI_RECT  = [0.075, 0.63, 0.83, 0.15]
+# MACD_RECT = [0.075, 0.78, 0.83, 0.15] 
+RSI_RECT  = [0.075, 0.78, 0.83, 0.15]
+MAIN_RECT = [0.075, 0.26, 0.83, 0.52]
+MACD_RECT = [0.075, 0.11, 0.83, 0.15] 
 RSI_OB = 70
 RSI_OS = 30
 
@@ -75,13 +82,15 @@ def showChart(dat, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_
 
     dpi = 144.0
 
-    rect = [(round(x * dpi) + 0.5) / dpi for x in BACK_RECT]
+    #rect = [(round(x * dpi) + 0.5) / dpi for x in BACK_RECT]
+    rect = BACK_RECT
     axb = fig.add_axes(rect, frameon = False)
     axb.yaxis.set_visible(False)
     axb.xaxis.set_visible(False)
 
     # Main axis and volume axis
-    rect = [(round(x * dpi) + 0.5) / dpi for x in MAIN_RECT]
+    # rect = [(round(x * dpi) + 0.5) / dpi for x in MAIN_RECT]
+    rect = MAIN_RECT
     ax = fig.add_axes(rect, label = 'Quotes')
     ax.patch.set_visible(False)
 
@@ -91,7 +100,8 @@ def showChart(dat, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_
     axv.xaxis.set_visible(False)
 
     # RSI axis
-    rect = [(round(x * dpi) + 0.5) / dpi for x in RSI_RECT]
+    # rect = [(round(x * dpi) + 0.5) / dpi for x in RSI_RECT]
+    rect = RSI_RECT
     axr = matplotlib.pyplot.axes(rect, facecolor = None)
     axr.patch.set_visible(False)
 
@@ -181,7 +191,7 @@ def showChart(dat, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_
         vline = matplotlib.lines.Line2D(xdata = (i, i), ydata = (l, h), color = line_color, linewidth = linewidth)
         oline = matplotlib.lines.Line2D(xdata = (i + offset, i), ydata = (o, o), color = line_color, linewidth = linewidth)
         cline = matplotlib.lines.Line2D(xdata = (i - offset, i), ydata = (c, c), color = line_color, linewidth = linewidth)
-        vrect = matplotlib.patches.Rectangle(xy = (i - 0.5, 0.0),
+        vrect = matplotlib.patches.Rectangle(xy = (i - 0.5, 0.05),
             fill = True,
             width = 1.0,
             height = v,
@@ -321,8 +331,15 @@ class Chart:
     """
         A chart class
     """
-    def __init__(self, data = None, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIOD,
-                 use_adj_close = False, use_ema = True, skip_weekends = True, forecast = 0, color_scheme = 'sunrise'):
+    def __init__(self, data = None, n = 130,
+                 sma_sizes = DEFAULT_SMA_SIZES,
+                 rsi_period = DEFAULT_RSI_PERIOD,
+                 macd_periods = DEFAULT_MACD_PERIODS,
+                 use_adj_close = False,
+                 skip_weekends = True,
+                 use_ema = True,
+                 forecast = 0,
+                 color_scheme = 'sunrise'):
         linewidth = 1.0
         offset = 0.4
 
@@ -337,20 +354,24 @@ class Chart:
         self.skip_weekends = skip_weekends
         self.forecast = forecast
         self.rsi_period = rsi_period
+        self.macd_periods = macd_periods
         self.use_adj_close = use_adj_close
         self.use_ema = use_ema
 
+        print(self.macd_periods)
         self.fig = matplotlib.pyplot.figure()
         self.fig.patch.set_alpha(0.0)
 
         dpi = 144.0
 
-        rect = [(round(x * dpi) + 0.5) / dpi for x in BACK_RECT]
+        # rect = [(round(x * dpi) + 0.5) / dpi for x in BACK_RECT]
+        rect = BACK_RECT
         self.axb = self.fig.add_axes(rect, frameon = False)
         self.axb.yaxis.set_visible(False)
         self.axb.xaxis.set_visible(False)
         
-        rect = [(round(x * dpi) + 0.5) / dpi for x in MAIN_RECT]
+        #rect = [(round(x * dpi) + 0.5) / dpi for x in MAIN_RECT]
+        rect = MAIN_RECT        
         self.axq = self.fig.add_axes(rect, label = 'Quotes')
         self.axq.patch.set_visible(False)
         self.axq.yaxis.tick_right()
@@ -359,9 +380,15 @@ class Chart:
         self.axv.patch.set_visible(False)
         self.axv.xaxis.set_visible(False)
         
-        rect = [(round(x * dpi) + 0.5) / dpi for x in RSI_RECT]
+        #rect = [(round(x * dpi) + 0.5) / dpi for x in RSI_RECT]
+        rect = RSI_RECT
         self.axr = self.fig.add_axes(rect, label = 'RSI')
         self.axr.patch.set_visible(False)
+
+        #rect = [(round(x * dpi) + 0.5) / dpi for x in MACD_RECT]
+        rect = MACD_RECT
+        self.axm = self.fig.add_axes(rect, label = 'MACD')
+        self.axm.patch.set_visible(False)
 
         # Backdrop gradient
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', self.colormap.backdrop)
@@ -392,11 +419,36 @@ class Chart:
         self.rsi_fill_75 = self.axr.fill_between(range(self.n), y, RSI_OB, where = y >= RSI_OB, facecolor = color, interpolate = True, alpha = 0.33)
         self.axr.add_line(self.rsi_line)
         self.rsi_line_25 = matplotlib.lines.Line2D([0, self.n + 1], [RSI_OS, RSI_OS], color = color, linewidth = 0.5 * linewidth, alpha = 0.5)
-        self.rsi_line_50 = matplotlib.lines.Line2D([0, self.n + 1], [50.0, 50.0], color = color, linewidth = linewidth, alpha = 0.67, linestyle = '-.')
+        self.rsi_line_50 = matplotlib.lines.Line2D([0, self.n + 1], [  50.0,   50.0], color = color, linewidth = 1.0 * linewidth, alpha = 0.7, linestyle = '-.')
         self.rsi_line_75 = matplotlib.lines.Line2D([0, self.n + 1], [RSI_OB, RSI_OB], color = color, linewidth = 0.5 * linewidth, alpha = 0.5)
         self.axr.add_line(self.rsi_line_25)
         self.axr.add_line(self.rsi_line_50)
         self.axr.add_line(self.rsi_line_75)
+
+        # MACD lines
+        self.macd_lines = []
+        color = self.colormap.line[4]
+        y = np.multiply(range(self.n), 2.0 / self.n) - 1.0
+        macd_line = matplotlib.lines.Line2D(range(self.n), y, label = 'MACD ({}, {}, {})'.format(self.macd_periods[0], self.macd_periods[1], self.macd_periods[2]), color = self.colormap.line[4], linewidth = linewidth)
+        self.axm.add_line(macd_line)
+        self.macd_lines.append(macd_line)
+        y += 0.1
+        macd_line = matplotlib.lines.Line2D(range(self.n), y, label = 'EMA MACD {}'.format(self.macd_periods[0]), color = self.colormap.line[5], linewidth = linewidth)
+        self.axm.add_line(macd_line)
+        self.macd_lines.append(macd_line)
+        self.macd_rects = []
+        for i in range(self.n):
+            rect = matplotlib.patches.Rectangle(xy = (i - 0.5, 0.0),
+                fill = True,
+                snap = True,
+                width = 1.0,
+                height = 5.0,
+                facecolor = '#00dd00',
+                edgecolor = self.colormap.text,
+                linewidth = linewidth,
+                alpha = 0.35)
+            self.macd_rects.append(rect)
+            self.axm.add_patch(rect)
 
         # Candles and bars
         self.majors = []
@@ -438,36 +490,32 @@ class Chart:
         self.leg_rsi = self.axr.legend(handles = [self.rsi_line], loc = 'upper left', frameon = False, fontsize = 9)
         for text in self.leg_rsi.get_texts():
             text.set_color(self.colormap.text)
+        self.leg_macd = self.axm.legend(handles = [self.macd_lines[0]], loc = 'upper left', frameon = False, fontsize = 9)
+        for text in self.leg_macd.get_texts():
+            text.set_color(self.colormap.text)
 
         # Grid
-        self.axq.grid(alpha = self.colormap.grid_alpha, color = self.colormap.grid, linestyle=':')
-        self.axr.grid(alpha = self.colormap.grid_alpha, color = self.colormap.grid, linestyle=':')
+        for ax in [self.axq, self.axr, self.axm]:
+            ax.grid(alpha = self.colormap.grid_alpha, color = self.colormap.grid, linestyle=':')
         for side in ['top', 'bottom', 'left', 'right']:
-            self.axq.spines[side].set_color(self.colormap.text)
-            self.axv.spines[side].set_color(self.colormap.text)
-            self.axr.spines[side].set_color(self.colormap.text)
-        self.axq.spines['top'].set_visible(False)
-        self.axv.spines['top'].set_visible(False)
-        self.axr.spines['bottom'].set_visible(False)
-        self.axq.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
-        self.axq.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
-        self.axv.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
-        self.axv.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
-        self.axr.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
-        self.axr.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
+            for ax in [self.axq, self.axv, self.axr, self.axm]:
+                ax.spines[side].set_color(self.colormap.text)
+        for ax in [self.axq, self.axv, self.axr, self.axm]:
+            ax.spines['top'].set_visible(False)
+            ax.spines['bottom'].set_visible(False)
+            ax.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
+            ax.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
+            ax.xaxis.set_data_interval(-1.0, self.n + 2.0)
+            ax.set_xlim([-1.5, self.n + 0.5])
 
         # Set the search limit here for x-tick lookup in matplotlib
-        self.axq.xaxis.set_data_interval(-1.0, self.n + 2.0)
-        self.axv.xaxis.set_data_interval(-1.0, self.n + 2.0)
-        self.axr.xaxis.set_data_interval(-1.0, self.n + 2.0)
         dr = RSI_OB - 50.0
         self.axr.set_yticks([RSI_OS - dr, RSI_OS, 50, RSI_OB, RSI_OB + dr])
-        self.axq.set_xlim([-1.5, self.n + 0.5])
-        self.axv.set_xlim([-1.5, self.n + 0.5])
-        self.axr.set_xlim([-1.5, self.n + 0.5])
-        self.axq.set_ylim([0, 110])
-        self.axv.set_ylim([0, 10])
+        self.axm.set_yticks([-25.0, -10.0, 0.0, 10.0, 25.0])
+        #self.axq.set_ylim([0, 110])
+        #self.axv.set_ylim([0, 10])
         self.axr.set_ylim([0, 100])
+        self.axm.set_ylim([-25.0, 25.0])
 
         self.title = self.axr.set_title(self.symbol, color = self.colormap.text, weight = 'bold')
 
@@ -530,33 +578,41 @@ class Chart:
             return date.strftime('%b %d')
 
         if self.skip_weekends:
-            self.axq.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
-            self.axq.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
+            #self.axq.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
+            #self.axq.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
             # self.axq.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(5))
             # self.axq.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
             self.axq.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[-1] % 5 + 1))  # Use the last Monday
             self.axr.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[-1] % 5 + 1))  # Use the last Monday
+            self.axm.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
+            self.axm.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
+            self.axm.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[-1] % 5 + 1))  # Use the last Monday
         else:
             mondays = matplotlib.dates.WeekdayLocator(matplotlib.dates.MONDAY)      # major ticks on the mondays
             alldays = matplotlib.dates.DayLocator()                                 # minor ticks on the days
             self.axq.xaxis.set_major_locator(mondays)
-            self.axq.xaxis.set_minor_locator(alldays)
-            self.axq.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
             self.axr.xaxis.set_major_locator(mondays)
+            self.axm.xaxis.set_major_locator(mondays)
+            self.axm.xaxis.set_minor_locator(alldays)
+            self.axm.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
 
         for tic in self.axr.xaxis.get_major_ticks():
             tic.tick1On = tic.tick2On = False
             tic.label1On = tic.label2On = False
 
-        matplotlib.pyplot.setp(self.axq.get_xticklabels(), rotation = 45, horizontalalignment = 'right')
+        for tic in self.axq.xaxis.get_major_ticks():
+            tic.tick1On = tic.tick2On = False
+            tic.label1On = tic.label2On = False
 
-    def set_data(self, data):
+        matplotlib.pyplot.setp(self.axm.get_xticklabels(), rotation = 45, horizontalalignment = 'right')
+
+    def set_data(self, X):
         # Get the symbol from minor axis
-        self.symbol = data.columns[0][1]                                         # Get it from column index ('open', 'AAPL')
-        self.set_xdata(data.index)                                               # Populate the x-axis with datetime
+        self.symbol = X.columns[0][1]                                            # Get it from column index ('open', 'AAPL')
+        self.set_xdata(X.index)                                                  # Populate the x-axis with datetime
 
         # Get the string description of open, high, low, close, volume
-        desc = [x.lower() for x in data.columns.get_level_values(0).tolist()]
+        desc = [x.lower() for x in X.columns.get_level_values(0).tolist()]
         o_index = desc.index('open')
         h_index = desc.index('high')
         l_index = desc.index('low')
@@ -565,16 +621,16 @@ class Chart:
 
         # Build a flat array of OHLC and V data
         quotes = np.transpose([
-            data.iloc[:, o_index].squeeze(),          # 0 - Open
-            data.iloc[:, h_index].squeeze(),          # 1 - High
-            data.iloc[:, l_index].squeeze(),          # 2 - Low
-            data.iloc[:, c_index].squeeze(),          # 3 - Close
-            data.iloc[:, v_index].squeeze()           # 4 - Volume
+            X.iloc[:, o_index].squeeze(),          # 0 - Open
+            X.iloc[:, h_index].squeeze(),          # 1 - High
+            X.iloc[:, l_index].squeeze(),          # 2 - Low
+            X.iloc[:, c_index].squeeze(),          # 3 - Close
+            X.iloc[:, v_index].squeeze()           # 4 - Volume
         ])
         quotes[: , -1] *= 1.0e-6                    # Volume to counts of millions
 
-        if data.shape[0] < self.n:
-            print('ERROR: Supplied data is less than the promised setup: {} vs {}'.format(self.n, data.shape[0]))
+        if X.shape[0] < self.n:
+            print('ERROR: Supplied data is less than the promised setup: {} vs {}'.format(self.n, X.shape[0]))
             return
 
         # self.axq.draw_artist(self.axq.patch)
@@ -643,31 +699,29 @@ class Chart:
         self.rsi_fill_25.remove()
         self.rsi_fill_75.remove()
         color = self.colormap.line[3]
-        # if len(data) - self.rsi_period < self.n:
-        #     n_rsi = self.n - self.rsi_period
-        #     self.rsi = stock.rsi(data.iloc[:, c_index].squeeze(), self.rsi_period)[-n_rsi:]
-        #     self.rsi_line.set_xdata(range(self.rsi_period, self.n))
-        #     self.rsi_line.set_ydata(self.rsi)
-        #     self.rsi_fill_25 = self.axr.fill_between(range(self.rsi_period, self.n), self.rsi, RSI_OS, where = self.rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
-        #     self.rsi_fill_75 = self.axr.fill_between(range(self.rsi_period, self.n), self.rsi, RSI_OB, where = self.rsi >= RSI_OB, interpolate = True, color = color, alpha = 0.33, zorder = 3)
-        # else:
-        #     self.rsi = stock.rsi(data.iloc[:, c_index].squeeze(), self.rsi_period)[-self.n:]
-        #     self.rsi_line.set_ydata(self.rsi)
-        #     self.rsi_fill_25 = self.axr.fill_between(range(self.n), self.rsi, RSI_OS, where = self.rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
-        #     self.rsi_fill_75 = self.axr.fill_between(range(self.n), self.rsi, RSI_OB, where = self.rsi >= RSI_OB, interpolate = True, color = color, alpha = 0.33, zorder = 3)
-        self.rsi = stock.rsi(data.iloc[:, c_index].squeeze(), self.rsi_period, length = self.n)
+        self.rsi = stock.rsi(X.iloc[:, c_index].squeeze(), self.rsi_period, length = self.n)
         self.rsi_line.set_ydata(self.rsi)
         self.rsi_fill_25 = self.axr.fill_between(range(self.n), self.rsi, RSI_OS, where = self.rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
         self.rsi_fill_75 = self.axr.fill_between(range(self.n), self.rsi, RSI_OB, where = self.rsi >= RSI_OB, interpolate = True, color = color, alpha = 0.33, zorder = 3)
     
+        # Compute MACD
+        self.macd, self.macd_ema, self.macd_div = stock.macd(X.iloc[:, c_index].squeeze(), self.macd_periods, length = self.n)
+        self.macd_lines[0].set_ydata(self.macd)
+        self.macd_lines[1].set_ydata(self.macd_ema)
+        div = self.macd - self.macd_ema
+        for k, m in enumerate(div):
+            self.macd_rects[k].set_height(m)
+
         # Legend position: upper right if SMA-N is increasing, upper left otherwise (Not in public API)
         sma = self.sma[list(self.sma)[-2]]
         if sma[-10] > sma[0]:
             self.leg_sma._loc = 2
             self.leg_rsi._loc = 2
+            self.leg_macd._loc = 2
         else:
             self.leg_sma._loc = 1
             self.leg_rsi._loc = 1
+            self.leg_macd._loc = 1
 
         # Volume bars to have the mean at around 10% of the vertical space
         v = np.nanmean(quotes[-self.n:, 4])

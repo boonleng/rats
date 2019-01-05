@@ -13,7 +13,7 @@ def default():
 def colorscheme(name = 'sunset'):
 	# Initialize an empty object
 	scheme = type('colorscheme', (), {})()
-	scheme.line = ['#0055ff', '#ee8800', '#55aa00', '#dd0044', '#004499']
+	scheme.line = ['#0055ff', '#ee8800', '#55aa00', '#dd0044', '#004499', '#773399']
 	scheme.up = 'k'
 	scheme.down = 'r'
 	scheme.bar_up = 'g'
