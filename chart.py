@@ -339,6 +339,7 @@ class Chart:
                  skip_weekends = True,
                  use_ema = True,
                  forecast = 0,
+                 figsize = (11.11112, 6.25),
                  color_scheme = 'sunrise'):
         linewidth = 1.0
         offset = 0.4
@@ -358,36 +359,27 @@ class Chart:
         self.use_adj_close = use_adj_close
         self.use_ema = use_ema
 
-        print(self.macd_periods)
-        self.fig = matplotlib.pyplot.figure()
+        self.fig = matplotlib.pyplot.figure(figsize = figsize)
         self.fig.patch.set_alpha(0.0)
 
         dpi = 144.0
 
-        # rect = [(round(x * dpi) + 0.5) / dpi for x in BACK_RECT]
-        rect = BACK_RECT
-        self.axb = self.fig.add_axes(rect, frameon = False)
+        self.axb = self.fig.add_axes(BACK_RECT, frameon = False)
         self.axb.yaxis.set_visible(False)
         self.axb.xaxis.set_visible(False)
         
-        #rect = [(round(x * dpi) + 0.5) / dpi for x in MAIN_RECT]
-        rect = MAIN_RECT        
-        self.axq = self.fig.add_axes(rect, label = 'Quotes')
+        self.axq = self.fig.add_axes(MAIN_RECT, label = 'Quotes')
         self.axq.patch.set_visible(False)
         self.axq.yaxis.tick_right()
         
-        self.axv = self.fig.add_axes(rect, frameon = False, sharex = self.axq)
+        self.axv = self.fig.add_axes(MAIN_RECT, frameon = False, sharex = self.axq)
         self.axv.patch.set_visible(False)
         self.axv.xaxis.set_visible(False)
         
-        #rect = [(round(x * dpi) + 0.5) / dpi for x in RSI_RECT]
-        rect = RSI_RECT
-        self.axr = self.fig.add_axes(rect, label = 'RSI')
+        self.axr = self.fig.add_axes(RSI_RECT, label = 'RSI')
         self.axr.patch.set_visible(False)
 
-        #rect = [(round(x * dpi) + 0.5) / dpi for x in MACD_RECT]
-        rect = MACD_RECT
-        self.axm = self.fig.add_axes(rect, label = 'MACD')
+        self.axm = self.fig.add_axes(MACD_RECT, label = 'MACD')
         self.axm.patch.set_visible(False)
 
         # Backdrop gradient
@@ -501,21 +493,24 @@ class Chart:
             for ax in [self.axq, self.axv, self.axr, self.axm]:
                 ax.spines[side].set_color(self.colormap.text)
         for ax in [self.axq, self.axv, self.axr, self.axm]:
-            ax.spines['top'].set_visible(False)
-            ax.spines['bottom'].set_visible(False)
             ax.tick_params(axis = 'x', which = 'both', colors = self.colormap.text)
             ax.tick_params(axis = 'y', which = 'both', colors = self.colormap.text)
             ax.xaxis.set_data_interval(-1.0, self.n + 2.0)
             ax.set_xlim([-1.5, self.n + 0.5])
+        for ax in [self.axq, self.axv, self.axm]:
+            ax.spines['top'].set_visible(False)
+        for ax in [self.axr, self.axq, self.axv]:
+            ax.spines['bottom'].set_visible(False)
+
 
         # Set the search limit here for x-tick lookup in matplotlib
         dr = RSI_OB - 50.0
         self.axr.set_yticks([RSI_OS - dr, RSI_OS, 50, RSI_OB, RSI_OB + dr])
-        self.axm.set_yticks([-25.0, -10.0, 0.0, 10.0, 25.0])
+        self.axm.set_yticks([-20.0, -10.0, 0.0, 10.0, 20.0])
         #self.axq.set_ylim([0, 110])
         #self.axv.set_ylim([0, 10])
         self.axr.set_ylim([0, 100])
-        self.axm.set_ylim([-25.0, 25.0])
+        self.axm.set_ylim([-22.0, 22.0])
 
         self.title = self.axr.set_title(self.symbol, color = self.colormap.text, weight = 'bold')
 
@@ -714,14 +709,19 @@ class Chart:
 
         # Legend position: upper right if SMA-N is increasing, upper left otherwise (Not in public API)
         sma = self.sma[list(self.sma)[-2]]
-        if sma[-10] > sma[0]:
+        if sma[int(len(sma) * 0.5)] < sma[0]:
+            self.leg_sma._loc = 1
+        else:
             self.leg_sma._loc = 2
-            self.leg_rsi._loc = 2
+
+        #print('rsi beg = {}'.format(self.rsi[0:int(len(self.rsi) * 0.1)].mean()))
+        if self.rsi[0:int(len(self.rsi) * 0.1)].mean() > 70.0:
+            self.leg_rsi._loc = 1
+
+        if self.macd_div[0] < 0.0:
             self.leg_macd._loc = 2
         else:
-            self.leg_sma._loc = 1
-            self.leg_rsi._loc = 1
-            self.leg_macd._loc = 1
+            self.leg_macd._loc = 3
 
         # Volume bars to have the mean at around 10% of the vertical space
         v = np.nanmean(quotes[-self.n:, 4])
@@ -754,10 +754,27 @@ class Chart:
                 labels.append(str(t * 0.001) + 'B')
         # print('step = {}'.format(step))
 
+        # MACD range
+        m = np.nanmax(np.abs(self.macd))
+        if m > 17.0:
+            mticks = np.arange(-20.0, 21.0, 10.0)
+            mlim = [-22.0, 22.0]
+        elif m > 12.0:
+            mticks = np.arange(-15.0, 16.0, 5.0)
+            mlim = [-17.0, 17.0]
+        elif m > 7.0:
+            mticks = np.arange(-10.0, 11.0, 5.0)
+            mlim = [-12.0, 12.0]
+        else:
+            mticks = np.arange(-5.0, 6.0, 1.0)
+            mlim = [-7.0, 7.0]
+
         # Update axis limits
         self.axq.set_ylim(qlim)
         self.axv.set_ylim(vlim)
+        self.axm.set_ylim(mlim)
         self.axv.set_yticks(ticks)
+        self.axm.set_yticks(mticks)
         self.axv.set_yticklabels(labels)
         self.title.set_text(self.symbol)
         self.st.set_text(self.symbol)

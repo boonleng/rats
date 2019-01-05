@@ -21,7 +21,7 @@ def savefig(chart, data_frame, filename):
     chart.set_data(data_frame)
     chart.savefig(filename)
 
-def genfigs(symbols, days = 130, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = 'figs',
+def genfigs(symbols, days = 150, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = 'figs',
             color_scheme = 'default', image_format = 'png', verbose = 0,
             open_preview = False, force_net = False):
     # Get the latest data
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog = 'plot', usage = usage)
     parser.add_argument('symbols', default = '^OLD', nargs = '*', help = 'specify symbols, e.g., NVDA TSLA AAPL')
     parser.add_argument('-c', '--color-scheme', default = 'default', help = 'specify color scheme to use (sunrise, sunset, night).')
-    parser.add_argument('-d', '--days', default = 130, help = 'specify the number of days')
+    parser.add_argument('-d', '--days', default = 165, help = 'specify the number of days')
     parser.add_argument('-e', '--end', default = None, help = 'specify the end date')
     parser.add_argument('-n', '--new', action = 'store_true', help = 'retrieve new data')
     parser.add_argument('-o', '--open', action = 'store_true', help = 'open the file with default application (macOS only)')
