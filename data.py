@@ -70,7 +70,8 @@ def file(symbols = None, end = None, days = 330, start = None, folder = 'data', 
         k = 10
         while k > 0 and not index.contains(end_datetime):
             if verbose:
-                print('Dataset does not contain {} (not a trading day) (k = {})'.format(end_datetime.strftime('%Y-%m-%d'), k))
+                print('Dataset does not contain {} (not a trading day) (k = {})'.format(
+                    end_datetime.strftime('%Y-%m-%d'), k))
             end_datetime -= pandas.to_timedelta('1 day')
             k -= 1
         if not index.contains(end_datetime):
@@ -92,7 +93,8 @@ def file(symbols = None, end = None, days = 330, start = None, folder = 'data', 
         k = 10
         while k > 0 and not index.contains(start_datetime):
             if verbose:
-                print('Dataset does not contain {} (not a trading day) (k = {})'.format(start_datetime.strftime('%Y-%m-%d'), k))
+                print('Dataset does not contain {} (not a trading day) (k = {})'.format(
+                    start_datetime.strftime('%Y-%m-%d'), k))
             start_datetime += pandas.to_timedelta('1 day')
             k -= 1
         if not index.contains(start_datetime):
@@ -107,7 +109,9 @@ def file(symbols = None, end = None, days = 330, start = None, folder = 'data', 
         print('Data indices @ [{}, {}]'.format(start_pos, end_pos))
     df = df.iloc[start_pos:end_pos + 1]
     if verbose:
-        print('Loading \033[38;5;198moffline\033[0m data from {} to {} ...'.format(start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')))
+        print('Loading \033[38;5;198moffline\033[0m data from {} to {} ...'.format(
+            start.strftime('%Y-%m-%d'),
+            end.strftime('%Y-%m-%d')))
     # Now we go through the files again and read them this time
     quotes = df.copy()
     for sym in local_symbols[1:]:
@@ -155,7 +159,9 @@ def net(symbols, end = today(), days = 130, start = None, engine = 'iex', cache 
         names = ['Attributes', 'Symbols']
         params = quotes.columns.tolist()
         iterables = [params, [symbols]]
-        return pandas.DataFrame(quotes.values, index = quotes.index, columns = pandas.MultiIndex.from_product(iterables, names = names))
+        return pandas.DataFrame(quotes.values,
+                                index = quotes.index,
+                                columns = pandas.MultiIndex.from_product(iterables, names = names))
     return quotes
 
 def get(symbols, end = today(), days = 130, start = None, folder = 'data', force_net = False):
@@ -195,7 +201,9 @@ def save(quotes, folder = 'data'):
     for sym in symbols:
         values = quotes.loc[pandas.IndexSlice[:], (slice(None), sym)].values
         iterables = [params, [sym]]
-        df = pandas.DataFrame(values, index = quotes.index, columns = pandas.MultiIndex.from_product(iterables, names = names))
+        df = pandas.DataFrame(values,
+                              index = quotes.index,
+                              columns = pandas.MultiIndex.from_product(iterables, names = names))
         df.to_pickle(folder + '/' + sym + '.pkl')
 
 def get_frame(quotes, symbol):
@@ -206,7 +214,9 @@ def get_frame(quotes, symbol):
     params = quotes.columns.levels[0].tolist()
     iterables = [params, [symbol]]
     values = quotes.loc[pandas.IndexSlice[:], (slice(None), symbol)].values
-    return pandas.DataFrame(values, index = quotes.index, columns = pandas.MultiIndex.from_product(iterables, names = names))
+    return pandas.DataFrame(values,
+                            index = quotes.index,
+                            columns = pandas.MultiIndex.from_product(iterables, names = names))
 
 def add_offline(symbols, folder = 'data', verbose = 0):
     """
