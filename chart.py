@@ -12,11 +12,6 @@ DEFAULT_SMA_SIZES = [10, 50, 200]
 DEFAULT_RSI_PERIOD = 14
 DEFAULT_MACD_PERIODS = [9, 12, 26]
 BACK_RECT = [0.075, 0.11, 0.83, 0.82]
-# MAIN_RECT = [0.075, 0.11, 0.83, 0.63]
-# RSI_RECT = [0.075, 0.74, 0.83, 0.19]
-# MAIN_RECT = [0.075, 0.11, 0.83, 0.52]
-# RSI_RECT  = [0.075, 0.63, 0.83, 0.15]
-# MACD_RECT = [0.075, 0.78, 0.83, 0.15] 
 RSI_RECT  = [0.075, 0.78, 0.83, 0.15]
 MAIN_RECT = [0.075, 0.26, 0.83, 0.52]
 MACD_RECT = [0.075, 0.11, 0.83, 0.15] 
@@ -24,8 +19,15 @@ RSI_OB = 70
 RSI_OS = 30
 
 # The old way
-def showChart(dat, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_RSI_PERIOD,
-              use_adj_close = False, use_ema = False, skip_weekends = True, color_scheme = 'sunrise'):
+def showChart(dat, n = 130,
+              sma_sizes = DEFAULT_SMA_SIZES,
+              rsi_period = DEFAULT_RSI_PERIOD,
+              macd_periods = DEFAULT_MACD_PERIODS,
+              use_adj_close = False,
+              skip_weekends = True,
+              use_ema = False,
+              figsize = (11.11112, 6.25),
+              color_scheme = 'sunrise'):
     """
         showChart(dat, sma_size = [10, 50, 200], skip_weekends = True)
         - dat - Data frame from pandas-datareader
@@ -35,7 +37,7 @@ def showChart(dat, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_
     linewidth = 1.0
     offset = 0.4
 
-    fig = matplotlib.pyplot.figure()
+    fig = matplotlib.pyplot.figure(figsize = figsize)
     fig.patch.set_alpha(0.0)
 
     colormap = colorscheme.colorscheme(color_scheme)
@@ -80,30 +82,26 @@ def showChart(dat, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_
     else:
         ylim = [np.nanmin(nums), np.nanmax(nums)]
 
-    dpi = 144.0
-
-    #rect = [(round(x * dpi) + 0.5) / dpi for x in BACK_RECT]
-    rect = BACK_RECT
-    axb = fig.add_axes(rect, frameon = False)
+    axb = fig.add_axes(BACK_RECT, frameon = False)
     axb.yaxis.set_visible(False)
     axb.xaxis.set_visible(False)
 
-    # Main axis and volume axis
-    # rect = [(round(x * dpi) + 0.5) / dpi for x in MAIN_RECT]
-    rect = MAIN_RECT
-    ax = fig.add_axes(rect, label = 'Quotes')
-    ax.patch.set_visible(False)
+    # Main axis for quotes and volume axis
+    axq = fig.add_axes(MAIN_RECT, label = 'Quotes')
+    axq.patch.set_visible(False)
 
     # Volume axis
-    axv = fig.add_axes(rect, frameon = False)
+    axv = fig.add_axes(MAIN_RECT, frameon = False)
     axv.patch.set_visible(False)
     axv.xaxis.set_visible(False)
 
     # RSI axis
-    # rect = [(round(x * dpi) + 0.5) / dpi for x in RSI_RECT]
-    rect = RSI_RECT
-    axr = matplotlib.pyplot.axes(rect, facecolor = None)
+    axr = matplotlib.pyplot.axes(RSI_RECT, facecolor = None)
     axr.patch.set_visible(False)
+
+    # MACD axis
+    axm = matplotlib.pyplot.axes(MACD_RECT, facecolor = None)
+    axm.patch.set_visible(False)
 
     # SMA lines
     lines = []
@@ -118,7 +116,7 @@ def showChart(dat, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_
         else:
             sma_line = matplotlib.lines.Line2D(quotes[:N, 1], sma[k][:N], label = ma_label + ' ' + str(k), linewidth = linewidth)
         lines.append(sma_line)
-        ax.add_line(sma_line)
+        axq.add_line(sma_line)
         if np.sum(np.isfinite(sma[k][:N])):
             y = np.nanpercentile(sma[k][:N], 25)
             if y < ylim[0]:
@@ -156,6 +154,41 @@ def showChart(dat, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_
     axr.fill_between(range(N_rsi), rsi, RSI_OS, where = rsi <= RSI_OS, interpolate = True, color = color, alpha = 0.33, zorder = 3)
     axr.fill_between(range(N_rsi), rsi, RSI_OB, where = rsi >= RSI_OB, interpolate = True, color = color, alpha = 0.33, zorder = 3)
 
+    # MACD lines
+    macd, macd_ema, macd_div = stock.macd(x, macd_periods, length = n)
+    macd = macd[::-1]
+    macd_ema = macd_ema[::-1]
+    macd_div = macd_div[::-1]
+    if skip_weekends:
+        macd_line = matplotlib.lines.Line2D(quotes[:n, 0], macd, label = 'MACD ({}, {}, {})'.format(macd_periods[0], macd_periods[1], macd_periods[2]), color = colormap.line[4], linewidth = linewidth)
+        macd_line2 = matplotlib.lines.Line2D(quotes[:n, 0], macd_ema, label = 'MACD EMA', color = colormap.line[5], linewidth = linewidth)
+    else:
+        macd_line = matplotlib.lines.Line2D(quotes[:n, 1], macd, label = 'MACD ({}, {}, {})'.format(macd_periods[0], macd_periods[1], macd_periods[2]), color = colormap.line[4], linewidth = linewidth)
+        macd_line2 = matplotlib.lines.Line2D(quotes[:n, 1], macd_ema, label = 'MACD EMA', color = colormap.line[5], linewidth = linewidth)
+    axm.add_line(macd_line)
+    axm.add_line(macd_line2)
+
+    majors = []
+    for i in range(N):
+        if skip_weekends:
+            k = quotes[i, 0]
+            t = quotes[i, 1]
+            # Gather the indices of weeday == Monday
+            if matplotlib.dates.num2date(t).weekday() == 0:
+               majors.append(k)
+        else:
+            k = quotes[i, 1]
+        rect = matplotlib.patches.Rectangle(xy = (k - 0.5, 0.0),
+            fill = True,
+            snap = True,
+            width = 1.0,
+            height = macd_div[i],
+            facecolor = colormap.bar,
+            edgecolor = colormap.text,
+            linewidth = linewidth,
+            alpha = 0.35)
+        axm.add_patch(rect)
+
     # Round toward nice numbers
     if ylim[1] < 10:
         ylim[0] = np.floor(ylim[0])
@@ -164,22 +197,19 @@ def showChart(dat, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_
         ylim[0] = np.floor(ylim[0] * 0.2) * 5.0
         ylim[1] = np.ceil(ylim[1] * 0.2) * 5.0
 
-    majors = []
     vlines = []
     olines = []
     clines = []
     vrects = []
 
     # Add a dummy line at integer to get around tick locations not properly selected
-    vline = matplotlib.lines.Line2D(xdata = (-1, -1), ydata = (0, 0), color = 'k', linewidth = linewidth)
-    ax.add_line(vline)
+    axr.add_line(matplotlib.lines.Line2D(xdata = (-1, -1), ydata = (0, 0), color = 'k', linewidth = linewidth))
+    axq.add_line(matplotlib.lines.Line2D(xdata = (-1, -1), ydata = (0, 0), color = 'k', linewidth = linewidth))
+    axm.add_line(matplotlib.lines.Line2D(xdata = (-1, -1), ydata = (0, 0), color = 'k', linewidth = linewidth))
 
     for q in quotes[:N]:
         if skip_weekends:
             i, t, o, h, l, c, v = q[:7]
-            # Gather the indices of weeday == Monday
-            if matplotlib.dates.num2date(t).weekday() == 0:
-               majors.append(i)
         else:
             k, i, o, h, l, c, v = q[:7]
         if c >= o:
@@ -191,7 +221,7 @@ def showChart(dat, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_
         vline = matplotlib.lines.Line2D(xdata = (i, i), ydata = (l, h), color = line_color, linewidth = linewidth)
         oline = matplotlib.lines.Line2D(xdata = (i + offset, i), ydata = (o, o), color = line_color, linewidth = linewidth)
         cline = matplotlib.lines.Line2D(xdata = (i - offset, i), ydata = (c, c), color = line_color, linewidth = linewidth)
-        vrect = matplotlib.patches.Rectangle(xy = (i - 0.5, 0.05),
+        vrect = matplotlib.patches.Rectangle(xy = (i - 0.5, 0.0),
             fill = True,
             width = 1.0,
             height = v,
@@ -203,19 +233,36 @@ def showChart(dat, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_
         olines.append(oline)
         clines.append(cline)
         vrects.append(vrect)
-        ax.add_line(vline)
-        ax.add_line(oline)
-        ax.add_line(cline)
+        axq.add_line(vline)
+        axq.add_line(oline)
+        axq.add_line(cline)
         axv.add_patch(vrect)
 
-    ax.set_xlim([N + 0.5, -1.5])
+    axq.set_xlim([N + 0.5, -1.5])
     axv.set_xlim([N + 0.5, -1.5])
     axr.set_xlim([N + 0.5, -1.5])
+    axm.set_xlim([N + 0.5, -1.5])
 
     axr.set_ylim([-1, 100])
 
     dr = RSI_OB - 50.0
     axr.set_yticks([RSI_OS - dr, RSI_OS, 50, RSI_OB, RSI_OB + dr])
+
+    m = np.nanmax(np.abs(macd))
+    if m > 17.0:
+        mticks = np.arange(-20.0, 21.0, 10.0)
+        mlim = [-22.0, 22.0]
+    elif m > 12.0:
+        mticks = np.arange(-15.0, 16.0, 5.0)
+        mlim = [-17.0, 17.0]
+    elif m > 7.0:
+        mticks = np.arange(-10.0, 11.0, 5.0)
+        mlim = [-12.0, 12.0]
+    else:
+        mticks = np.arange(-5.0, 6.0, 1.0)
+        mlim = [-7.0, 7.0]
+    axm.set_ylim(mlim)
+    axm.set_yticks(mticks)
 
     L = len(quotes)
 
@@ -250,17 +297,17 @@ def showChart(dat, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_
         return date.strftime('%b %d')
 
     if skip_weekends:
-        ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
-        ax.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
-        ax.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[0] % 5 - 4))  # Use the latest Monday
         axr.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[0] % 5 - 4))  # Use the latest Monday
+        axq.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[0] % 5 - 4))  # Use the latest Monday
+        axm.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[0] % 5 - 4))  # Use the latest Monday
+        axm.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
+        axm.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
     else:
         mondays = matplotlib.dates.WeekdayLocator(matplotlib.dates.MONDAY)      # major ticks on the mondays
         alldays = matplotlib.dates.DayLocator()                                 # minor ticks on the days
-        ax.xaxis.set_major_locator(mondays)
-        ax.xaxis.set_minor_locator(alldays)
-        ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
-        axr.xaxis.set_major_locator(mondays)
+        axm.xaxis.set_major_locator(mondays)
+        axm.xaxis.set_minor_locator(alldays)
+        axm.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
 
     # Volume bars to have the mean at around 10% of the vertical space
     v = np.nanmean(np.array(quotes[:, 6]))
@@ -284,42 +331,52 @@ def showChart(dat, n = 130, sma_sizes = DEFAULT_SMA_SIZES, rsi_period = DEFAULT_
 
     # Backdrop gradient
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', colormap.backdrop)
-    axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, extent = (-1, 1, -1, 1), aspect = 'auto')
+    axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, extent = (0, 1, 0, 1), aspect = 'auto')
+    axb.add_line(matplotlib.lines.Line2D([0.0, 1.0], np.multiply([1.0, 1.0], (RSI_RECT[1] - BACK_RECT[1]) / BACK_RECT[3]), color = '#000000', linewidth = 0.5, alpha = 0.5))
+    axb.set_ylim([0, 1])
 
-    matplotlib.pyplot.setp(ax.get_xticklabels(), rotation = 45, horizontalalignment = 'right')
+    matplotlib.pyplot.setp(axm.get_xticklabels(), rotation = 45, horizontalalignment = 'right')
 
     lines[0].set_color(colormap.line[0])
     lines[1].set_color(colormap.line[1])
     lines[2].set_color(colormap.line[2])
 
-    leg = ax.legend(handles = lines, loc = 'upper left', ncol = 3, frameon = False, fontsize = 9)
+    leg = axq.legend(handles = lines, loc = 'upper left', ncol = 3, frameon = False, fontsize = 9)
     for text in leg.get_texts():
         text.set_color(colormap.text)
     leg_rsi = axr.legend(handles = [rsi_line], loc = 'upper left', frameon = False, fontsize = 9)
     for text in leg_rsi.get_texts():
         text.set_color(colormap.text)
+    leg_macd = axm.legend(handles = [macd_line], loc = 'upper left', frameon = False, fontsize = 9)
+    for text in leg_macd.get_texts():
+        text.set_color(colormap.text)
 
-    ax.grid(alpha = colormap.grid_alpha, color = colormap.grid, linestyle = ':')
+    axq.grid(alpha = colormap.grid_alpha, color = colormap.grid, linestyle = ':')
     axr.grid(alpha = colormap.grid_alpha, color = colormap.grid, linestyle = ':')
-    ax.tick_params(axis = 'x', which = 'both', colors = colormap.text)
-    ax.tick_params(axis = 'y', which = 'both', colors = colormap.text)
-    axv.tick_params(axis = 'x', which = 'both', colors = colormap.text)
-    axv.tick_params(axis = 'y', which = 'both', colors = colormap.text)
-    axr.tick_params(axis = 'x', which = 'both', colors = colormap.text)
-    axr.tick_params(axis = 'y', which = 'both', colors = colormap.text)
-    ax.set_ylim(ylim)
-    ax.yaxis.tick_right()
+    axm.grid(alpha = colormap.grid_alpha, color = colormap.grid, linestyle = ':')
+    for ax in [axq, axv, axr, axm]:
+        ax.tick_params(axis = 'x', which = 'both', colors = colormap.text)
+        ax.tick_params(axis = 'y', which = 'both', colors = colormap.text)
+    axq.set_ylim(ylim)
+    axq.yaxis.tick_right()
     for side in ['top', 'bottom', 'left', 'right']:
         ax.spines[side].set_color(colormap.text)
         axv.spines[side].set_color(colormap.text)
         axr.spines[side].set_color(colormap.text)
-    ax.spines['top'].set_visible(False)
+    axq.spines['top'].set_visible(False)
+    axq.spines['bottom'].set_visible(False)
     axv.spines['top'].set_visible(False)
+    axv.spines['bottom'].set_visible(False)
     axr.spines['bottom'].set_visible(False)
+    axm.spines['top'].set_visible(False)
 
     axr.set_title(dat.columns[0][1], color = colormap.text, weight = 'bold')
 
     for tic in axr.xaxis.get_major_ticks():
+        tic.tick1On = tic.tick2On = False
+        tic.label1On = tic.label2On = False
+
+    for tic in axq.xaxis.get_major_ticks():
         tic.tick1On = tic.tick2On = False
         tic.label1On = tic.label2On = False
 
@@ -341,7 +398,7 @@ class Chart:
                  forecast = 0,
                  figsize = (11.11112, 6.25),
                  color_scheme = 'sunrise'):
-        linewidth = 1.0
+        linewidth = 1.25
         offset = 0.4
 
         if not data is None:
@@ -361,8 +418,6 @@ class Chart:
 
         self.fig = matplotlib.pyplot.figure(figsize = figsize)
         self.fig.patch.set_alpha(0.0)
-
-        dpi = 144.0
 
         self.axb = self.fig.add_axes(BACK_RECT, frameon = False)
         self.axb.yaxis.set_visible(False)
@@ -384,11 +439,14 @@ class Chart:
 
         # Backdrop gradient
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', self.colormap.backdrop)
-        self.im = self.axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, extent = (-1, 1, -1, 1), aspect = 'auto')
-        self.st = self.axb.text(0, 0, self.symbol,
+        self.im = self.axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, extent = (0, 1, 0, 1), aspect = 'auto')
+        self.st = self.axb.text(0.5, 0.5, self.symbol,
                                 fontproperties = matplotlib.font_manager.FontProperties(style = 'normal', size = 100, weight = 'bold'),
                                 color = self.colormap.background_text_color, alpha = self.colormap.background_text_alpha,
                                 horizontalalignment = 'center', verticalalignment = 'center')
+        self.brs = self.axb.add_line(matplotlib.lines.Line2D([0.0, 1.0], np.multiply([1.0, 1.0], (RSI_RECT[1] - BACK_RECT[1]) / BACK_RECT[3]),
+                                     color = '#000000', linewidth = 0.5, alpha = 0.5))
+        self.axb.set_ylim([0, 1])
 
         # SMA lines
         self.sma_lines = []
@@ -435,9 +493,9 @@ class Chart:
                 snap = True,
                 width = 1.0,
                 height = 5.0,
-                facecolor = '#00dd00',
+                facecolor = self.colormap.bar,
                 edgecolor = self.colormap.text,
-                linewidth = linewidth,
+                linewidth = 1.0,
                 alpha = 0.35)
             self.macd_rects.append(rect)
             self.axm.add_patch(rect)
@@ -460,7 +518,7 @@ class Chart:
                 height = 10.0,
                 facecolor = '#0000ff',
                 edgecolor = self.colormap.text,
-                linewidth = linewidth,
+                linewidth = 1.0,
                 alpha = 0.35)
             self.vlines.append(vline)
             self.olines.append(oline)
@@ -507,8 +565,6 @@ class Chart:
         dr = RSI_OB - 50.0
         self.axr.set_yticks([RSI_OS - dr, RSI_OS, 50, RSI_OB, RSI_OB + dr])
         self.axm.set_yticks([-20.0, -10.0, 0.0, 10.0, 20.0])
-        #self.axq.set_ylim([0, 110])
-        #self.axv.set_ylim([0, 10])
         self.axr.set_ylim([0, 100])
         self.axm.set_ylim([-22.0, 22.0])
 
@@ -756,18 +812,30 @@ class Chart:
 
         # MACD range
         m = np.nanmax(np.abs(self.macd))
-        if m > 17.0:
-            mticks = np.arange(-20.0, 21.0, 10.0)
-            mlim = [-22.0, 22.0]
-        elif m > 12.0:
-            mticks = np.arange(-15.0, 16.0, 5.0)
-            mlim = [-17.0, 17.0]
-        elif m > 7.0:
+        if m > 36.0:
+            mticks = np.arange(-40.0, 44.0, 20.0)
+            mlim = [-48.0, 48.0]
+        elif m > 18.0:
+            mticks = np.arange(-20.0, 22.0, 10.0)
+            mlim = [-24.0, 24.0]
+        elif m > 7.2:
             mticks = np.arange(-10.0, 11.0, 5.0)
             mlim = [-12.0, 12.0]
+        elif m > 3.5:
+            mticks = np.arange(-4.0, 4.4, 2.0)
+            mlim = [-4.8, 4.8]
+        elif m > 1.8:
+            mticks = np.arange(-2.0, 2.2, 1.0)
+            mlim = [-2.4, 2.4]
+        elif m > 0.9:
+            mticks = np.arange(-1.0, 1.1, 0.5)
+            mlim = [-1.2, 1.2]
+        elif m > 0.33:
+            mticks = np.arange(-0.5, 0.6, 0.2)
+            mlim = [-0.6, 0.6]
         else:
-            mticks = np.arange(-5.0, 6.0, 1.0)
-            mlim = [-7.0, 7.0]
+            mticks = np.arange(-0.2, 0.21, 0.1)
+            mlim = [-0.22, 0.22]
 
         # Update axis limits
         self.axq.set_ylim(qlim)
