@@ -23,7 +23,7 @@ def savefig(chart, data_frame, filename):
 
 def genfigs(symbols, days = 150, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = 'figs',
             color_scheme = 'default', image_format = 'png', verbose = 0,
-            open_preview = False, force_net = False):
+            open_preview = False, force_net = False, figsize = (8.89, 5.0)):
     # Get the latest data
     if symbols == '^OLD':
         stock = data.file(end = end)
@@ -48,7 +48,7 @@ def genfigs(symbols, days = 150, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES
     print('Preparing background (batch size = {}) ...'.format(batch_size))
     views = []
     for _ in range(batch_size):
-        view = chart.Chart(n = days, color_scheme = color_scheme)
+        view = chart.Chart(n = days, color_scheme = color_scheme, figsize = figsize)
         views.append(view)
 
     # Create the output folder if it doesn't exist
@@ -123,6 +123,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--open', action = 'store_true', help = 'open the file with default application (macOS only)')
     parser.add_argument('-p', '--pdf', action = 'store_true', help = 'generate PDF.')
     parser.add_argument('-q', '--quiet', action = 'store_true', help = 'quiet mode.')
+    parser.add_argument('-s', '--small', action = 'store_true', help = 'make small size figures')
     parser.add_argument('-v', '--verbose', default = 0, action = 'count', help = 'increases verbosity level')
     args = parser.parse_args()
 
@@ -141,11 +142,15 @@ if __name__ == '__main__':
         print('symbols = {}'.format(args.symbols))
         print('days = {}   end = {}   new = {}'.format(args.days, args.end, args.new))
 
+    figsize = (11.11112, 6.25)
+    if args.small:
+        figsize = None
+
     try:
         genfigs(args.symbols,
                 days = args.days, end = args.end,
                 verbose = args.verbose, image_format = args.format,
                 color_scheme = args.color_scheme, open_preview = args.open,
-                force_net = args.new)
+                force_net = args.new, figsize = figsize)
     except KeyboardInterrupt:
         print('Exiting ...')

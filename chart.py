@@ -26,7 +26,7 @@ def showChart(dat, n = 130,
               use_adj_close = False,
               skip_weekends = True,
               use_ema = False,
-              figsize = (11.11112, 6.25),
+              figsize = (8.89, 5.0),
               color_scheme = 'sunrise'):
     """
         showChart(dat, sma_size = [10, 50, 200], skip_weekends = True)
@@ -248,19 +248,32 @@ def showChart(dat, n = 130,
     dr = RSI_OB - 50.0
     axr.set_yticks([RSI_OS - dr, RSI_OS, 50, RSI_OB, RSI_OB + dr])
 
+    # MACD range
     m = np.nanmax(np.abs(macd))
-    if m > 17.0:
-        mticks = np.arange(-20.0, 21.0, 10.0)
-        mlim = [-22.0, 22.0]
-    elif m > 12.0:
-        mticks = np.arange(-15.0, 16.0, 5.0)
-        mlim = [-17.0, 17.0]
-    elif m > 7.0:
+    if m > 36.0:
+        mticks = np.arange(-50.0, 51.0, 25.0)
+        mlim = [-60.0, 60.0]
+    elif m > 18.0:
+        mticks = np.arange(-20.0, 22.0, 10.0)
+        mlim = [-24.0, 24.0]
+    elif m > 9.0:
         mticks = np.arange(-10.0, 11.0, 5.0)
         mlim = [-12.0, 12.0]
+    elif m > 3.6:
+        mticks = np.arange(-5.0, 5.1, 2.5)
+        mlim = [-6.0, 6.0]
+    elif m > 1.8:
+        mticks = np.arange(-2.0, 2.1, 1.0)
+        mlim = [-2.4, 2.4]
+    elif m > 0.9:
+        mticks = np.arange(-1.0, 1.1, 0.5)
+        mlim = [-1.2, 1.2]
+    elif m > 0.36:
+        mticks = np.arange(-0.5, 0.51, 0.25)
+        mlim = [-0.6, 0.6]
     else:
-        mticks = np.arange(-5.0, 6.0, 1.0)
-        mlim = [-7.0, 7.0]
+        mticks = np.arange(-0.2, 0.21, 0.1)
+        mlim = [-0.24, 0.24]
     axm.set_ylim(mlim)
     axm.set_yticks(mticks)
 
@@ -396,7 +409,7 @@ class Chart:
                  skip_weekends = True,
                  use_ema = True,
                  forecast = 0,
-                 figsize = (11.11112, 6.25),
+                 figsize = (8.89, 5.0),
                  color_scheme = 'sunrise'):
         linewidth = 1.25
         offset = 0.4
@@ -813,29 +826,29 @@ class Chart:
         # MACD range
         m = np.nanmax(np.abs(self.macd))
         if m > 36.0:
-            mticks = np.arange(-40.0, 44.0, 20.0)
-            mlim = [-48.0, 48.0]
+            mticks = np.arange(-50.0, 51.0, 25.0)
+            mlim = [-60.0, 60.0]
         elif m > 18.0:
             mticks = np.arange(-20.0, 22.0, 10.0)
             mlim = [-24.0, 24.0]
-        elif m > 7.2:
+        elif m > 9.0:
             mticks = np.arange(-10.0, 11.0, 5.0)
             mlim = [-12.0, 12.0]
-        elif m > 3.5:
-            mticks = np.arange(-4.0, 4.4, 2.0)
-            mlim = [-4.8, 4.8]
+        elif m > 3.6:
+            mticks = np.arange(-5.0, 5.1, 2.5)
+            mlim = [-6.0, 6.0]
         elif m > 1.8:
-            mticks = np.arange(-2.0, 2.2, 1.0)
+            mticks = np.arange(-2.0, 2.1, 1.0)
             mlim = [-2.4, 2.4]
         elif m > 0.9:
             mticks = np.arange(-1.0, 1.1, 0.5)
             mlim = [-1.2, 1.2]
-        elif m > 0.33:
-            mticks = np.arange(-0.5, 0.6, 0.2)
+        elif m > 0.36:
+            mticks = np.arange(-0.5, 0.51, 0.25)
             mlim = [-0.6, 0.6]
         else:
             mticks = np.arange(-0.2, 0.21, 0.1)
-            mlim = [-0.22, 0.22]
+            mlim = [-0.24, 0.24]
 
         # Update axis limits
         self.axq.set_ylim(qlim)
