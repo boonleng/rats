@@ -40,6 +40,18 @@ import data
 quotes = data.get_old_indices()
 data.save_to_folder(quotes)
 ```
+
+## Get the Spyder IDE (Recommended)
+
+Under macOS with [Homebrew]:
+```shell
+brew install spyder3
+```
+Under Ubuntu:
+```shell
+sudo apt-get install spyder3
+```
+
 ## US Stock Market Time Series
 
 The stock market is arguably one of the most interesting time-series data, right? So, that's what we will start with.
@@ -108,3 +120,4 @@ If you encountered an error 'ImportError: Python is not installed as a framework
 
 [pandas-datareader]:https://pandas-datareader.readthedocs.io/en/latest/
 [TensorFlow]: https://www.tensorflow.org/install/pip
+[Homebrew]: https://brew.sh
