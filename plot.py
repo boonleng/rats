@@ -111,11 +111,12 @@ if __name__ == '__main__':
 
     examples:
     
-    python plot.py AAPL
+    python plot.py NVDA
     python plot.py FB AMZN
+    python plot.py -s AAPL
     python plot.py -x TSLA
-    python plot.py -n -o NVDA TSLA
-    python plot.py -e 2017-09-25 AAPL
+    python plot.py -n -o GOOG MSFT
+    python plot.py -e 2017-09-25 -s AAPL
     python plot.py -e 2017-12-31 NVDA TSLA GOOG
     '''
     parser = argparse.ArgumentParser(prog = 'plot', usage = usage)
@@ -142,7 +143,9 @@ if __name__ == '__main__':
     if args.pdf:
         args.format = 'pdf'
     if args.small:
-        args.figsize = None
+        args.figsize = '(10.6667, 6)'
+        args.dpi = 120
+        args.days = 130
     if args.extra_large:
         args.figsize = '(10, 5.625)'
         args.dpi = 256
