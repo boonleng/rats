@@ -16,13 +16,14 @@ import argparse
 import data
 import chart
 import time
+from ast import literal_eval
 
 def savefig(chart, data_frame, filename):
     chart.set_data(data_frame)
     chart.savefig(filename)
 
 def genfigs(symbols, days = 150, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = 'figs',
-            color_scheme = 'default', image_format = 'png', verbose = 0,
+            color_scheme = 'default', image_format = 'png', dpi = 144, verbose = 0,
             open_preview = False, force_net = False, figsize = (8.89, 5.0)):
     # Get the latest data
     if symbols == '^OLD':
@@ -48,7 +49,7 @@ def genfigs(symbols, days = 150, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES
     print('Preparing background (batch size = {}) ...'.format(batch_size))
     views = []
     for _ in range(batch_size):
-        view = chart.Chart(n = days, color_scheme = color_scheme, figsize = figsize)
+        view = chart.Chart(n = days, color_scheme = color_scheme, figsize = figsize, dpi = int(dpi))
         views.append(view)
 
     # Create the output folder if it doesn't exist
@@ -119,37 +120,40 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--color-scheme', default = 'default', help = 'specify color scheme to use (sunrise, sunset, night).')
     parser.add_argument('-d', '--days', default = 165, help = 'specify the number of days')
     parser.add_argument('-e', '--end', default = None, help = 'specify the end date')
+    parser.add_argument('-f', '--figsize', default = '(11.11112, 6.25)', help = 'specify the figsize')
+    parser.add_argument('-i', '--format', default = 'png', help = 'specify the image format')
     parser.add_argument('-n', '--new', action = 'store_true', help = 'retrieve new data')
     parser.add_argument('-o', '--open', action = 'store_true', help = 'open the file with default application (macOS only)')
     parser.add_argument('-p', '--pdf', action = 'store_true', help = 'generate PDF.')
     parser.add_argument('-q', '--quiet', action = 'store_true', help = 'quiet mode.')
+    parser.add_argument('-r', '--dpi', default = 144, help = 'specify the DPI resoultion')
     parser.add_argument('-s', '--small', action = 'store_true', help = 'make small size figures')
     parser.add_argument('-v', '--verbose', default = 0, action = 'count', help = 'increases verbosity level')
+    parser.add_argument('-x', '--extra-large', action = 'store_true', help = 'set the figsize to be extra-large (2560 x 1440)')
     args = parser.parse_args()
-
+    # Post process the arguments
     if args.quiet:
         args.verbose = 0
-
     if args.symbols != '^OLD':
         args.symbols = [x.upper() for x in args.symbols]
-
     if args.pdf:
         args.format = 'pdf'
-    else:
-        args.format = 'png'
-
+    if args.small:
+        args.figsize = None
+    if args.extra_large:
+        args.figsize = '(10, 5.625)'
+        args.dpi = 256
+    # Internal variables
+    figsize = literal_eval(args.figsize)
+    # Show a summary if verbose
     if args.verbose:
         print('symbols = {}'.format(args.symbols))
         print('days = {}   end = {}   new = {}'.format(args.days, args.end, args.new))
-
-    figsize = (11.11112, 6.25)
-    if args.small:
-        figsize = None
-
+    # Spin up the workers
     try:
         genfigs(args.symbols,
                 days = args.days, end = args.end,
-                verbose = args.verbose, image_format = args.format,
+                verbose = args.verbose, image_format = args.format, dpi = args.dpi,
                 color_scheme = args.color_scheme, open_preview = args.open,
                 force_net = args.new, figsize = figsize)
     except KeyboardInterrupt:

@@ -18,7 +18,7 @@ MACD_RECT = [0.075, 0.11, 0.83, 0.15]
 RSI_OB = 70
 RSI_OS = 30
 
-# The old way
+# The typical way not not reusable
 def showChart(dat, n = 130,
               sma_sizes = DEFAULT_SMA_SIZES,
               rsi_period = DEFAULT_RSI_PERIOD,
@@ -333,11 +333,12 @@ def showChart(dat, n = 130,
     lines[2].set_color(colormap.line[2])
 
     leg = axq.legend(handles = lines, loc = 'upper left', ncol = 3, frameon = False, fontsize = 9)
-    leg._loc = best_legend_loc(quotes[:N, 5][::-1], exclude = [[0, 0], [0, 1], [0, 2], [1, 1]])
+    b = best_legend_loc(quotes[:N, 5][::-1], exclude = [[0, 0], [0, 1], [0, 2], [1, 1]])
+    leg._loc = b
     for text in leg.get_texts():
         text.set_color(colormap.text)
     leg_rsi = axr.legend(handles = [rsi_line], loc = 'upper left', frameon = False, fontsize = 9)
-    leg_rsi._loc = best_legend_loc(rsi[::-1], exclude_middle = True)
+    leg_rsi._loc = b
     for text in leg_rsi.get_texts():
         text.set_color(colormap.text)
     leg_macd = axm.legend(handles = [macd_line], loc = 'upper left', frameon = False, fontsize = 9)
@@ -391,6 +392,7 @@ class Chart:
                  use_ema = True,
                  forecast = 0,
                  figsize = (8.89, 5.0),
+                 dpi = 144,
                  color_scheme = 'sunrise'):
         linewidth = 1.25
         offset = 0.4
@@ -410,7 +412,7 @@ class Chart:
         self.use_adj_close = use_adj_close
         self.use_ema = use_ema
 
-        self.fig = matplotlib.pyplot.figure(figsize = figsize)
+        self.fig = matplotlib.pyplot.figure(figsize = figsize, dpi = dpi)
         self.fig.patch.set_alpha(0.0)
 
         self.axb = self.fig.add_axes(BACK_RECT, frameon = False)
@@ -759,9 +761,10 @@ class Chart:
         for k, m in enumerate(div):
             self.macd_rects[k].set_height(m)
 
-        # Legend position: upper right if SMA-N is increasing, upper left otherwise (Not in public API)
-        self.leg_sma._loc = best_legend_loc(quotes[-self.n:, 1], exclude = [[0, 0], [0, 1], [0, 2], [1, 1]])
-        self.leg_rsi._loc = best_legend_loc(self.rsi[-self.n:], exclude_middle = True)
+        # Legend position: use the close values to determine the best quadrant
+        b = best_legend_loc(quotes[-self.n:, 3], exclude = [[0, 0], [0, 1], [0, 2], [1, 1], [2, 1]])
+        self.leg_sma._loc = b
+        self.leg_rsi._loc = b
         self.leg_macd._loc = best_legend_loc(self.macd_ema[-self.n:], exclude_middle = True)
 
         # Volume bars to have the mean at around 10% of the vertical space
