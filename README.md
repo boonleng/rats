@@ -1,7 +1,7 @@
 Regression Analysis with Tensorflow System
 ===
 
-Example analysis techniques using deep-learning techniques, filtering, and preditions. These are just simple illustrative scripts that either I put together from scratch to help me learn or something that I modified from a tutorial somewhere in the internet.
+This is a collection of example analyses using deep-learning inference, filtering, and preditions. Most examples are just simple illustrative scripts that either I put together from scratch to help me learn or something that I modified from a tutorial somewhere in the internet.
 
 ## Requirements
 
@@ -25,18 +25,6 @@ And to exit virtualenv later:
 deactivate
 ```
 
-## US Stock Market Time Series
-
-The stock market is arguably one of the most interesting time-series data, right? So, that's what we will start with.
-
-The data can be retrieved live using the [pandas-datareader]. There are several back-end engines to choose from depending on the package is updated. While the some API may yet to be stable, a local copy can be stored for repetitive experimentation.
-
-## Chart
-
-A convenient function to generate chart is included.
-
-![chart](images/AAPL.png)
-
 ## Example Scripts
 
 A few trivial example scripts as I was learning how to setup NN through tensorflow.
@@ -52,6 +40,18 @@ import data
 quotes = data.get_old_indices()
 data.save_to_folder(quotes)
 ```
+## US Stock Market Time Series
+
+The stock market is arguably one of the most interesting time-series data, right? So, that's what we will start with.
+
+The data can be retrieved live using the [pandas-datareader]. There are several back-end engines to choose from depending on the package is updated. While the some API may yet to be stable, a local copy can be stored for repetitive experimentation.
+
+## Stock Chart
+
+A convenient function to generate stock chart is included.
+
+![chart](images/AAPL.png)
+
 ## Toubleshooting
 
 Here are some problems and solutions I have encountered.
