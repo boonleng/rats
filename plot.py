@@ -111,25 +111,28 @@ if __name__ == '__main__':
 
     examples:
     
-    python plot.py AAPL BIDU
+    python plot.py AAPL
+    python plot.py FB AMZN
+    python plot.py -x TSLA
     python plot.py -n -o NVDA TSLA
-    python plot.py -e 2017-12-31 NVDA TSLA
+    python plot.py -e 2017-09-25 AAPL
+    python plot.py -e 2017-12-31 NVDA TSLA GOOG
     '''
     parser = argparse.ArgumentParser(prog = 'plot', usage = usage)
     parser.add_argument('symbols', default = '^OLD', nargs = '*', help = 'specify symbols, e.g., NVDA TSLA AAPL')
-    parser.add_argument('-c', '--color-scheme', default = 'default', help = 'specify color scheme to use (sunrise, sunset, night).')
+    parser.add_argument('-c', '--color-scheme', default = 'default', help = 'specify color scheme to use (sunrise, sunset, night)')
     parser.add_argument('-d', '--days', default = 165, help = 'specify the number of days')
     parser.add_argument('-e', '--end', default = None, help = 'specify the end date')
-    parser.add_argument('-f', '--figsize', default = '(11.11112, 6.25)', help = 'specify the figsize')
-    parser.add_argument('-i', '--format', default = 'png', help = 'specify the image format')
     parser.add_argument('-n', '--new', action = 'store_true', help = 'retrieve new data')
     parser.add_argument('-o', '--open', action = 'store_true', help = 'open the file with default application (macOS only)')
-    parser.add_argument('-p', '--pdf', action = 'store_true', help = 'generate PDF.')
-    parser.add_argument('-q', '--quiet', action = 'store_true', help = 'quiet mode.')
-    parser.add_argument('-r', '--dpi', default = 144, help = 'specify the DPI resoultion')
+    parser.add_argument('-p', '--pdf', action = 'store_true', help = 'generate PDF')
+    parser.add_argument('-q', '--quiet', action = 'store_true', help = 'quiet mode')
     parser.add_argument('-s', '--small', action = 'store_true', help = 'make small size figures')
     parser.add_argument('-v', '--verbose', default = 0, action = 'count', help = 'increases verbosity level')
     parser.add_argument('-x', '--extra-large', action = 'store_true', help = 'set the figsize to be extra-large (2560 x 1440)')
+    parser.add_argument('--dpi', default = 144, help = 'specify the DPI resoultion')
+    parser.add_argument('--figsize', default = '(11.11112, 6.25)', help = 'specify the figsize')
+    parser.add_argument('--format', default = 'png', help = 'specify the image format')
     args = parser.parse_args()
     # Post process the arguments
     if args.quiet:
