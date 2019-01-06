@@ -764,7 +764,19 @@ class Chart:
         # Legend position: use the close values to determine the best quadrant
         b = best_legend_loc(quotes[-self.n:, 3], exclude = [[0, 0], [0, 1], [0, 2], [1, 1], [2, 1]])
         self.leg_sma._loc = b
-        self.leg_rsi._loc = b
+        # Make RSI be on the same side as the SMA / EMA legengds
+        v = self.rsi[-int(0.2 * self.n)].mean()
+        #print(b, v)
+        if b == 1 or b == 4:
+            if v > 50:
+                self.leg_rsi._loc = 4
+            else:
+                self.leg_rsi._loc = 1
+        else:
+            if v > 50:
+                self.leg_rsi._loc = 3
+            else:
+                self.leg_rsi._loc = 2
         self.leg_macd._loc = best_legend_loc(self.macd_ema[-self.n:], exclude_middle = True)
 
         # Volume bars to have the mean at around 10% of the vertical space

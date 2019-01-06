@@ -22,7 +22,7 @@ def savefig(chart, data_frame, filename):
     chart.set_data(data_frame)
     chart.savefig(filename)
 
-def genfigs(symbols, days = 150, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = 'figs',
+def genfigs(symbols, days = 165, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES, folder = 'figs',
             color_scheme = 'default', image_format = 'png', dpi = 144, verbose = 0,
             open_preview = False, force_net = False, figsize = (8.89, 5.0)):
     # Get the latest data
@@ -30,7 +30,7 @@ def genfigs(symbols, days = 150, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES
         stock = data.file(end = end)
         symbols = list(stock.columns.levels[1])
     elif force_net is False:
-        stock = data.file(symbols = symbols, end = end)
+        stock = data.file(symbols = symbols, end = end, verbose = verbose)
     else:
         # Total data length to retrieve to have complete valid SMA
         L = days + max(sma_sizes);
@@ -40,7 +40,7 @@ def genfigs(symbols, days = 150, end = None, sma_sizes = chart.DEFAULT_SMA_SIZES
 
     # Show parts of the data if we are in verbose mode
     if verbose:
-        print('symbols = {} ({})'.format(symbols, len(symbols)))
+        print('symbols = {} ({})   end = {}'.format(symbols, len(symbols), end))
 
     # Get the core count
     batch_size = min(multiprocessing.cpu_count(), len(symbols))
