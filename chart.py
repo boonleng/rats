@@ -25,7 +25,7 @@ def showChart(dat, n = 130,
               macd_periods = DEFAULT_MACD_PERIODS,
               use_adj_close = False,
               skip_weekends = True,
-              use_ema = False,
+              use_ema = True,
               figsize = (8.89, 5.0),
               color_scheme = 'sunrise'):
     """
@@ -323,6 +323,7 @@ def showChart(dat, n = 130,
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list('backdrop', colormap.backdrop)
     axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, extent = (0, 1, 0, 1), aspect = 'auto')
     axb.add_line(matplotlib.lines.Line2D([0.0, 1.0], np.multiply([1.0, 1.0], (RSI_RECT[1] - BACK_RECT[1]) / BACK_RECT[3]), color = '#000000', linewidth = 0.5, alpha = 0.5))
+    axb.add_line(matplotlib.lines.Line2D([0.0, 1.0], np.multiply([1.0, 1.0], (MAIN_RECT[1] - BACK_RECT[1]) / BACK_RECT[3]), color = '#000000', linewidth = 0.5, alpha = 0.5))
     axb.set_ylim([0, 1])
 
     matplotlib.pyplot.setp(axm.get_xticklabels(), rotation = 45, horizontalalignment = 'right')
@@ -432,10 +433,12 @@ class Chart:
         self.im = self.axb.imshow(np.linspace(0, 1, 100).reshape(-1, 1), cmap = cmap, extent = (0, 1, 0, 1), aspect = 'auto')
         self.st = self.axb.text(0.5, 0.5, self.symbol,
                                 fontproperties = matplotlib.font_manager.FontProperties(style = 'normal', size = 100, weight = 'bold'),
-                                color = self.colormap.background_text_color, alpha = self.colormap.background_text_alpha,
+                                color = self.colormap.background_text, alpha = self.colormap.background_text_alpha,
                                 horizontalalignment = 'center', verticalalignment = 'center')
-        self.brs = self.axb.add_line(matplotlib.lines.Line2D([0.0, 1.0], np.multiply([1.0, 1.0], (RSI_RECT[1] - BACK_RECT[1]) / BACK_RECT[3]),
-                                     color = '#000000', linewidth = 0.5, alpha = 0.5))
+        self.brs = [self.axb.add_line(matplotlib.lines.Line2D([0.0, 1.0], np.multiply([1.0, 1.0], (RSI_RECT[1] - BACK_RECT[1]) / BACK_RECT[3]),
+                                     color = '#000000', linewidth = 0.5, alpha = 0.5))]
+        self.brs.append(self.axb.add_line(matplotlib.lines.Line2D([0.0, 1.0], np.multiply([1.0, 1.0], (MAIN_RECT[1] - BACK_RECT[1]) / BACK_RECT[3]),
+                                     color = '#000000', linewidth = 0.5, alpha = 0.5)))
         self.axb.set_ylim([0, 1])
 
         # SMA lines
@@ -754,11 +757,8 @@ class Chart:
             self.macd_rects[k].set_height(m)
 
         # Legend position: upper right if SMA-N is increasing, upper left otherwise (Not in public API)
-        sma = self.sma[list(self.sma)[-2]]
-        if sma[int(len(sma) * 0.5)] < sma[0]:
-            self.leg_sma._loc = 1
-        else:
-            self.leg_sma._loc = 2
+        v = quotes[-self.n:, 1]
+        self.leg_sma._loc = best_legend_loc(v)
 
         #print('rsi beg = {}'.format(self.rsi[0:int(len(self.rsi) * 0.1)].mean()))
         if self.rsi[0:int(len(self.rsi) * 0.1)].mean() > 70.0:
@@ -863,3 +863,21 @@ def ticks_lims_finder(n, count = 2, allowance = 1.2):
             lims = np.array([-x * s, x * s])
             break
     return ticks, lims
+
+def best_legend_loc(y):
+    n = len(y)
+    x = np.arange(n)
+    origin = np.array([np.nanmin(x), np.nanmin(y)])
+    size = np.array([np.nanmax(x), np.nanmax(y)]) - origin
+    center = origin + 0.5 * size
+    mask = np.isfinite(y)
+    x = x[mask]
+    y = y[mask]
+    quad = np.array([((x > center[0]) & (y > center[1])).sum(),      # 1 - upper right
+                     ((x > center[0]) & (y < center[1])).sum(),      # 2 - upper left
+                     n,                                              # 3 - lower left
+                     n,                                              # 4 - lower right
+                     n,                                              # 5 - right
+                     ((x < center[0]) & (y < center[1])).sum(),      # 6 - center left
+                     ((x < center[0]) & (y > center[1])).sum()])     # 7 - center right
+    return np.argmin(quad) + 1
