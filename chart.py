@@ -333,12 +333,15 @@ def showChart(dat, n = 130,
     lines[2].set_color(colormap.line[2])
 
     leg = axq.legend(handles = lines, loc = 'upper left', ncol = 3, frameon = False, fontsize = 9)
+    leg._loc = best_legend_loc(quotes[:N, 5][::-1], exclude = [[0, 0], [0, 1], [0, 2], [1, 1]])
     for text in leg.get_texts():
         text.set_color(colormap.text)
     leg_rsi = axr.legend(handles = [rsi_line], loc = 'upper left', frameon = False, fontsize = 9)
+    leg_rsi._loc = best_legend_loc(rsi[::-1], exclude_middle = True)
     for text in leg_rsi.get_texts():
         text.set_color(colormap.text)
     leg_macd = axm.legend(handles = [macd_line], loc = 'upper left', frameon = False, fontsize = 9)
+    leg_macd._loc = best_legend_loc(macd_ema[::-1], exclude_middle = True)
     for text in leg_macd.get_texts():
         text.set_color(colormap.text)
 
@@ -757,17 +760,9 @@ class Chart:
             self.macd_rects[k].set_height(m)
 
         # Legend position: upper right if SMA-N is increasing, upper left otherwise (Not in public API)
-        v = quotes[-self.n:, 1]
-        self.leg_sma._loc = best_legend_loc(v)
-
-        #print('rsi beg = {}'.format(self.rsi[0:int(len(self.rsi) * 0.1)].mean()))
-        if self.rsi[0:int(len(self.rsi) * 0.1)].mean() > 70.0:
-            self.leg_rsi._loc = 1
-
-        if self.macd_div[0] < 0.0:
-            self.leg_macd._loc = 2
-        else:
-            self.leg_macd._loc = 3
+        self.leg_sma._loc = best_legend_loc(quotes[-self.n:, 1], exclude = [[0, 0], [0, 1], [0, 2], [1, 1]])
+        self.leg_rsi._loc = best_legend_loc(self.rsi[-self.n:], exclude_middle = True)
+        self.leg_macd._loc = best_legend_loc(self.macd_ema[-self.n:], exclude_middle = True)
 
         # Volume bars to have the mean at around 10% of the vertical space
         v = np.nanmean(quotes[-self.n:, 4])
@@ -835,8 +830,8 @@ def ticks_lims_finder(n, count = 2, allowance = 1.2):
         while n >= x:
             n /= 10.0
             p += 1
-    elif n <= 1.0 and n > 0.0:
-        while n <= 1.0:
+    elif n <= count:
+        while n <= count:
             n *= 10.0
             p -= 1
     ss = [9.0, 8.0, 7.5, 7.0, 6.0, 5.0, 4.0, 3.0, 2.5, 2.0, 1.0]
@@ -862,22 +857,36 @@ def ticks_lims_finder(n, count = 2, allowance = 1.2):
         if n <= allowance * x * s:
             lims = np.array([-x * s, x * s])
             break
+    #print(ticks, lims)
     return ticks, lims
 
-def best_legend_loc(y):
-    n = len(y)
-    x = np.arange(n)
-    origin = np.array([np.nanmin(x), np.nanmin(y)])
-    size = np.array([np.nanmax(x), np.nanmax(y)]) - origin
-    center = origin + 0.5 * size
-    mask = np.isfinite(y)
-    x = x[mask]
-    y = y[mask]
-    quad = np.array([((x > center[0]) & (y > center[1])).sum(),      # 1 - upper right
-                     ((x > center[0]) & (y < center[1])).sum(),      # 2 - upper left
-                     n,                                              # 3 - lower left
-                     n,                                              # 4 - lower right
-                     n,                                              # 5 - right
-                     ((x < center[0]) & (y < center[1])).sum(),      # 6 - center left
-                     ((x < center[0]) & (y > center[1])).sum()])     # 7 - center right
-    return np.argmin(quad) + 1
+def best_legend_loc(v, exclude = [], exclude_middle = False):
+    n = len(v)
+    u = np.arange(n)
+    mask = np.isfinite(v)
+    u = u[mask]
+    v = v[mask]
+    xx = np.linspace(np.min(u), np.max(u), 4)
+    yy = np.linspace(np.min(v), np.max(v), 4)
+    grid, _, _ = np.histogram2d(u, v, bins=(xx, yy))
+    grid = grid.T
+    # Some locations are forbidden
+    if exclude_middle:
+        exclude.append([1, 0])
+        exclude.append([1, 1])
+        exclude.append([1, 2])
+        exclude.append([0, 1])
+        exclude.append([2, 1])
+    for coord in exclude:
+        grid[coord[0], coord[1]] = n
+    loc = [grid[2, 2],  # 1 - upper right
+           grid[2, 0],  # 2 - upper left
+           grid[0, 0],  # 3 - lower left
+           grid[0, 2],  # 4 - lower right
+           n,           # 5 - right
+           grid[1, 0],  # 6 - center left
+           grid[1, 2],  # 7 - center right
+           grid[0, 1],  # 8 - lower center
+           grid[2, 1],  # 9 - upper center
+           grid[1, 1]]  # 10 - center
+    return np.argmin(loc) + 1
