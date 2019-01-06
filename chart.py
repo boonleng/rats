@@ -250,32 +250,9 @@ def showChart(dat, n = 130,
 
     # MACD range
     m = np.nanmax(np.abs(macd))
-    if m > 36.0:
-        mticks = np.arange(-50.0, 51.0, 25.0)
-        mlim = [-60.0, 60.0]
-    elif m > 18.0:
-        mticks = np.arange(-20.0, 22.0, 10.0)
-        mlim = [-24.0, 24.0]
-    elif m > 9.0:
-        mticks = np.arange(-10.0, 11.0, 5.0)
-        mlim = [-12.0, 12.0]
-    elif m > 3.6:
-        mticks = np.arange(-5.0, 5.1, 2.5)
-        mlim = [-6.0, 6.0]
-    elif m > 1.8:
-        mticks = np.arange(-2.0, 2.1, 1.0)
-        mlim = [-2.4, 2.4]
-    elif m > 0.9:
-        mticks = np.arange(-1.0, 1.1, 0.5)
-        mlim = [-1.2, 1.2]
-    elif m > 0.36:
-        mticks = np.arange(-0.5, 0.51, 0.25)
-        mlim = [-0.6, 0.6]
-    else:
-        mticks = np.arange(-0.2, 0.21, 0.1)
-        mlim = [-0.24, 0.24]
-    axm.set_ylim(mlim)
+    mticks, mlim = ticks_lims_finder(m)
     axm.set_yticks(mticks)
+    axm.set_ylim(mlim)
 
     L = len(quotes)
 
@@ -284,7 +261,7 @@ def showChart(dat, n = 130,
     def format_date(x, pos = None):
         if warned_x_tick[0] > 0 and abs(x - round(x)) > 1.0e-3:
             warned_x_tick[0] -= 1
-            print('\033[38;5;220mWARNING: x = {} ticks are too far away from day boundaries.\033[0m'.format(x))
+            print('\033[38;5;220mWARNING: x = {} ticks are too far away from day boundaries. Find the dummy line\033[0m'.format(x))
             if warned_x_tick[0] == 0:
                 print('\033[38;5;220mWARNING message repeated 3 times.\033[0m'.format(x))
         index = int(x)
@@ -606,7 +583,7 @@ class Chart:
         def format_date(x, pos = None):
             if self.warned_x_tick > 0 and abs(x - round(x)) > 1.0e-3:
                 self.warned_x_tick -= 1
-                print('\033[38;5;220mWARNING: x = {} ticks are too far away from day boundaries.\033[0m'.format(x))
+                print('\033[38;5;220mWARNING: x = {} ticks are too far away from day boundaries. Find the dummy line\033[0m'.format(x))
                 if self.warned_x_tick == 0:
                     print('\033[38;5;220mWARNING message repeated 3 times.\033[0m'.format(x))
             index = int(x)
@@ -644,8 +621,8 @@ class Chart:
         if self.skip_weekends:
             #self.axq.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
             #self.axq.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
-            # self.axq.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(5))
-            # self.axq.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
+            #self.axq.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(5))
+            #self.axq.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
             self.axq.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[-1] % 5 + 1))  # Use the last Monday
             self.axr.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[-1] % 5 + 1))  # Use the last Monday
             self.axm.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
@@ -825,30 +802,7 @@ class Chart:
 
         # MACD range
         m = np.nanmax(np.abs(self.macd))
-        if m > 36.0:
-            mticks = np.arange(-50.0, 51.0, 25.0)
-            mlim = [-60.0, 60.0]
-        elif m > 18.0:
-            mticks = np.arange(-20.0, 22.0, 10.0)
-            mlim = [-24.0, 24.0]
-        elif m > 9.0:
-            mticks = np.arange(-10.0, 11.0, 5.0)
-            mlim = [-12.0, 12.0]
-        elif m > 3.6:
-            mticks = np.arange(-5.0, 5.1, 2.5)
-            mlim = [-6.0, 6.0]
-        elif m > 1.8:
-            mticks = np.arange(-2.0, 2.1, 1.0)
-            mlim = [-2.4, 2.4]
-        elif m > 0.9:
-            mticks = np.arange(-1.0, 1.1, 0.5)
-            mlim = [-1.2, 1.2]
-        elif m > 0.36:
-            mticks = np.arange(-0.5, 0.51, 0.25)
-            mlim = [-0.6, 0.6]
-        else:
-            mticks = np.arange(-0.2, 0.21, 0.1)
-            mlim = [-0.24, 0.24]
+        mticks, mlim = ticks_lims_finder(m)
 
         # Update axis limits
         self.axq.set_ylim(qlim)
@@ -868,3 +822,44 @@ class Chart:
 
     def savefig(self, filename):
         self.fig.savefig(filename)
+
+def ticks_lims_finder(n, count = 2, allowance = 1.2):
+    if n == 0:
+        print('Error. Input n must be > 0')
+        return [-0.5, 0.0, 0.5], [-1.0, 1.0]
+    # Get the value to be within 10
+    x = 9.0 * count * allowance
+    s = 0.1
+    p = 0
+    if n > x:
+        while n >= x:
+            n /= 10.0
+            p += 1
+    elif n <= 1.0 and n > 0.0:
+        while n <= 1.0:
+            n *= 10.0
+            p -= 1
+    ss = [9.0, 8.0, 7.5, 7.0, 6.0, 5.0, 4.0, 3.0, 2.5, 2.0, 1.0]
+    c1 = np.round(np.divide(0.8 * n, ss))
+    c2 = np.round(np.divide(0.9 * n, ss))
+    c3 = np.round(np.divide(n, ss))    
+    if any(c1 == 2.0):
+        i = np.argmin(np.abs(c1 - count))
+        s = ss[i]
+    elif any(c2 == 2.0):
+        i = np.argmin(np.abs(c2 - count))
+        s = ss[i]
+    elif any(c3 == 2.0):
+        i = np.argmin(np.abs(c3 - count))
+        s = ss[i]
+    else:
+        print('Error. Unable to find a good match.')
+    s *= np.power(10.0, p)
+    n *= np.power(10.0, p)
+    ticks = np.arange(-count * s, 1.1 * count * s, s)
+    lims = [-1.0, 1.0]
+    for x in [count + 0.1, count + 0.2, count + 0.5, count + 0.7]:
+        if n <= allowance * x * s:
+            lims = np.array([-x * s, x * s])
+            break
+    return ticks, lims
