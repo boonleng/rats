@@ -39,6 +39,12 @@ def genfigs(symbols, days = 165, start = None, end = None, verbose = 0,
             print('Retrieving data for {} for L = {} ...'.format(symbols, L))
         stock = data.net(symbols, start = start, end = end, days = int(L * 1.6))
 
+    # Shorten the chart if there is no data available
+    if days > len(stock):
+        if verbose:
+            print('days = {} -> {}'.format(days, len(stock)))
+        days = len(stock)
+
     # Show parts of the data if we are in verbose mode
     if verbose:
         print('symbols = {} ({})   start = {}   end = {}   days = {}'.format(symbols, len(symbols), start, end, days))
@@ -73,12 +79,12 @@ def genfigs(symbols, days = 165, start = None, end = None, verbose = 0,
         # Derive the filename
         filename = '{}/{}.{}'.format(folder, symbol, image_format)
         oc = data_frame.loc[:, (['open', 'close'])].values[-1]
-        delta = oc[1] - oc[0]
-        if delta > 0:
-            print('\033[38;5;46m{}\033[0m -> \033[38;5;206m{}\033[0m'.format(symbol.rjust(5), filename))
+        if oc[1] - oc[0] > 0:
+            color = '\033[38;5;46m'
         else:
-            print('\033[38;5;196m{}\033[0m -> \033[38;5;206m{}\033[0m'.format(symbol.rjust(5), filename))
-       # Update data and save an image
+            color = '\033[38;5;196m'
+        print('{}{}\033[0m -> \033[38;5;206m{}\033[0m'.format(color, symbol.rjust(5), filename))
+        # Update data and save an image
         proc = multiprocessing.Process(target = savefig, args = (views[i % batch_size], data_frame, filename))
         procs.append(proc)
         proc.start()
@@ -118,6 +124,7 @@ if __name__ == '__main__':
     python plot.py -x TSLA
     python plot.py -n -o GOOG MSFT
     python plot.py -e 2017-09-25 -s AAPL
+    python plot.py -s 20180601 -e 20180930 -v AAPL
     python plot.py -e 2018-12-31 TSLA FB BABA TWTR NVDA AAPL
     '''
     parser = argparse.ArgumentParser(prog = 'plot', usage = usage)
@@ -152,10 +159,7 @@ if __name__ == '__main__':
     elif args.extra_large:
         args.figsize = '(10, 5.625)'
         args.dpi = 256
-    if not args.start is None:
-        args.start = None
-        print('This feature is not fully implemented yet.')
-    # Internal variables
+    # Format variables
     args.figsize = literal_eval(args.figsize)
     args.dpi = int(args.dpi)
     # Show a summary if verbose
