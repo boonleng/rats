@@ -34,10 +34,10 @@ def genfigs(symbols, days = 165, start = None, end = None, verbose = 0,
         stock = data.file(symbols, start = start, end = end, days = days, verbose = verbose)
     else:
         # Total data length to retrieve to have complete valid SMA
-        L = days + max(sma_sizes);
+        L = int(days + max(sma_sizes));
         if verbose:
             print('Retrieving data for {} for L = {} ...'.format(symbols, L))
-        stock = data.net(symbols, start = start, end = end, days = int(L * 1.6))
+        stock = data.net(symbols, start = start, end = end, days = L)
 
     # Shorten the chart if there is no data available
     if days > len(stock):
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--days', default = 165, help = 'specify the number of days')
     parser.add_argument('-e', '--end', default = None, help = 'specify the end date')
     parser.add_argument('-m', '--medium', action = 'store_true', help = 'set the figsize to be extra-large (1280 x 720)')
-    parser.add_argument('-n', '--new', action = 'store_true', help = 'force to retrieve new data')
+    parser.add_argument('-n', '--net', action = 'store_true', help = 'force to retrieve data from the internet')
     parser.add_argument('-o', '--open', action = 'store_true', help = 'open the file with default application (macOS only)')
     parser.add_argument('-p', '--pdf', action = 'store_true', help = 'generate PDF')
     parser.add_argument('-q', '--quiet', action = 'store_true', help = 'quiet mode')
@@ -164,12 +164,12 @@ if __name__ == '__main__':
     args.dpi = int(args.dpi)
     # Show a summary if verbose
     if args.verbose:
-        print('symbols = {}'.format(args.symbols))
-        print('days = {}   start = {}   end = {}   new = {}'.format(args.days, args.start, args.end, args.new))
+        print('symbols = {} ({})'.format(args.symbols, type(args.symbols)))
+        print('days = {}   start = {}   end = {}   new = {}'.format(args.days, args.start, args.end, args.net))
     # Spin up the workers
     try:
         genfigs(args.symbols, days = args.days, start = args.start, end = args.end, verbose = args.verbose,
                 folder = 'figs', color_scheme = args.color_scheme, image_format = args.format,
-                figsize = args.figsize, dpi = args.dpi, open_preview = args.open, force_net = args.new)
+                figsize = args.figsize, dpi = args.dpi, open_preview = args.open, force_net = args.net)
     except KeyboardInterrupt:
         print('Exiting ...')

@@ -37,7 +37,7 @@ def yesterday():
 def to_datetime(self):
    return pandas.to_datetime(self)
 
-def file(symbols = None, end = None, days = 330, start = None, folder = 'data', verbose = 0):
+def file(symbols = None, end = None, days = None, start = None, folder = 'data', verbose = 0):
     """
         Get a set of stock data from the data folder
     """
@@ -58,7 +58,7 @@ def file(symbols = None, end = None, days = 330, start = None, folder = 'data', 
     elif isinstance(symbols, list):
         local_symbols = [x.upper() for x in symbols]
     else:
-        local_symbols = [symbols]
+        local_symbols = [symbols.upper()]
     # Read the first one for the data dimensions
     df = pandas.read_pickle(folder + '/' + local_symbols[0] + '.pkl')
     index = pandas.to_datetime(df.index)
@@ -126,20 +126,29 @@ def file(symbols = None, end = None, days = 330, start = None, folder = 'data', 
     #import types
     #quotes.index.to_datetime = types.MethodType(to_datetime, quotes.index)
     quotes.index = pandas.to_datetime(quotes.index)
-    if start is None:
+    if not days is None:
         quotes = quotes.iloc[-days:]
     return quotes
 
 def net(symbols, end = today(), days = 130, start = None, engine = 'iex', cache = True, verbose = 0):
+    cut_later = False
     if symbols is None:
         symbols = SYMBOLS
     else:
         if isinstance(symbols, list):
-            symbols = [x.upper() for x in symbols]
+            if len(symbols) == 1:
+                symbols = str(symbols[0].upper())
+            else:
+                symbols = [x.upper() for x in symbols]
         else:
-            symbols = symbols.upper()
+            symbols = str(symbols.upper())
+    if end is None:
+        end = today()
     if start is None:
         start = end - datetime.timedelta(days = int(days * 1.6))
+        cut_later = True
+    if verbose > 1:
+        print(symbols, type(symbols), engine, start, end, int(days * 1.6))
     if cache:
         if verbose:
             print('Loading \033[38;5;46mlive\033[0m data from {} to {} ...'.format(start, end))
@@ -154,7 +163,7 @@ def net(symbols, end = today(), days = 130, start = None, engine = 'iex', cache 
     # Make sure time is ascending; Panel dimensions: 5/6 (items) x days (major_axis) x symbols (minor_axis)
     if quotes.shape[0] > 1 and quotes.index[1] < quotes.index[0]:
         quotes = quotes.sort_index(axis = 0, ascending = True)
-    if start is None:
+    if cut_later:
         quotes = quotes.iloc[-days:]
     quotes.index = pandas.to_datetime(quotes.index)
     if not isinstance(quotes.columns, pandas.MultiIndex):
