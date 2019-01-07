@@ -8,8 +8,8 @@ import stock
 if matplotlib.__version__ < '2.0':
     print('WARNING: Unexpected results may occur')
 
-DEFAULT_SMA_SIZES = [10, 50, 200]
 DEFAULT_RSI_PERIOD = 14
+DEFAULT_SMA_PERIODS = [10, 50, 200]
 DEFAULT_MACD_PERIODS = [9, 12, 26]
 BACK_RECT = [0.075, 0.11, 0.83, 0.82]
 RSI_RECT  = [0.075, 0.78, 0.83, 0.15]
@@ -20,19 +20,24 @@ RSI_OS = 30
 
 # The typical way not not reusable
 def showChart(dat, n = 130,
-              sma_sizes = DEFAULT_SMA_SIZES,
               rsi_period = DEFAULT_RSI_PERIOD,
+              sma_periods = DEFAULT_SMA_PERIODS,
               macd_periods = DEFAULT_MACD_PERIODS,
-              use_adj_close = False,
               skip_weekends = True,
               use_ema = True,
               figsize = (8.89, 5.0),
+              dpi = 144,
               color_scheme = 'sunrise'):
     """
-        showChart(dat, sma_size = [10, 50, 200], skip_weekends = True)
-        - dat - Data frame from pandas-datareader
-        - sma_sizes - Window sizes for SMA (sliding moving average)
-        - skip_weekends - Skip plotting weekends and days with no data
+        - n                - The data in pandas.DataFrame form
+        - dat              - Data frame from pandas-datareader
+        - rsi_period       - The period to compute RSI
+        - sma_periods      - The periods for SMA
+        - macd_periods     - The periods for MACD
+        - skip_weekends    - Skip plotting weekends and days with no data
+        - use_ema          - Use EMA instead of SMA
+        - figsize          - Figure size for matplotlib
+        - color_scheme     - Color scheme
     """
     linewidth = 1.0
     offset = 0.4
@@ -65,8 +70,8 @@ def showChart(dat, n = 130,
     ])
 
     # Initialize an empty dictionary from keys based on sma size
-    sma = dict.fromkeys(sma_sizes)
-    m = max(sma_sizes)
+    sma = dict.fromkeys(sma_periods)
+    m = max(sma_periods)
 
     # Compute the SMA curves (data is in descending order, so we flip, compute, then flip again)
     for k in sma.keys():
@@ -384,16 +389,26 @@ class Chart:
         A chart class
     """
     def __init__(self, data = None, n = 130,
-                 sma_sizes = DEFAULT_SMA_SIZES,
                  rsi_period = DEFAULT_RSI_PERIOD,
+                 sma_periods = DEFAULT_SMA_PERIODS,
                  macd_periods = DEFAULT_MACD_PERIODS,
-                 use_adj_close = False,
                  skip_weekends = True,
                  use_ema = True,
                  forecast = 0,
                  figsize = (8.89, 5.0),
                  dpi = 144,
                  color_scheme = 'sunrise'):
+        """
+            - n                - The data in pandas.DataFrame form
+            - dat              - Data frame from pandas-datareader
+            - rsi_period       - The period to compute RSI
+            - sma_periods      - The periods for SMA
+            - macd_periods     - The periods for MACD
+            - skip_weekends    - Skip plotting weekends and days with no data
+            - use_ema          - Use EMA instead of SMA
+            - figsize          - Figure size for matplotlib
+            - color_scheme     - Color scheme
+        """
         linewidth = 1.25
         offset = 0.4
 
@@ -402,14 +417,13 @@ class Chart:
         else:
             self.n = n
 
-        self.sma = dict.fromkeys(sma_sizes)
         self.symbol = ''
         self.colormap = colorscheme.colorscheme(color_scheme)
         self.skip_weekends = skip_weekends
         self.forecast = forecast
         self.rsi_period = rsi_period
+        self.sma_periods = sma_periods
         self.macd_periods = macd_periods
-        self.use_adj_close = use_adj_close
         self.use_ema = use_ema
 
         self.fig = matplotlib.pyplot.figure(figsize = figsize, dpi = dpi)
@@ -452,6 +466,7 @@ class Chart:
             ma_label = 'EMA'
         else:
             ma_label = 'SMA'
+        self.sma = dict.fromkeys(self.sma_periods)
         for j, k in enumerate(self.sma.keys()):
             sma_line = matplotlib.lines.Line2D(range(self.n), np.multiply(range(self.n), k / self.n),
                                                label = ma_label + ' ' + str(k),
@@ -633,9 +648,9 @@ class Chart:
             #self.axq.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(majors))
             self.axq.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[-1] % 5 + 1))  # Use the last Monday
             self.axr.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[-1] % 5 + 1))  # Use the last Monday
-            self.axm.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
-            self.axm.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
             self.axm.xaxis.set_major_locator(matplotlib.ticker.IndexLocator(5, majors[-1] % 5 + 1))  # Use the last Monday
+            self.axm.xaxis.set_minor_locator(matplotlib.ticker.IndexLocator(1, 0))
+            self.axm.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_date))
         else:
             mondays = matplotlib.dates.WeekdayLocator(matplotlib.dates.MONDAY)      # major ticks on the mondays
             alldays = matplotlib.dates.DayLocator()                                 # minor ticks on the days
